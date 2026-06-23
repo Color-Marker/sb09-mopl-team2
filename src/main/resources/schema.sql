@@ -98,7 +98,7 @@ CREATE TABLE contents
     status varchar(10),
     created_at timestamp with time zone,
     updated_at timestamp with time zone,
-    average_rating double,
+    average_rating double precision,
     review_count int,
     watcher_count int
 );
@@ -126,7 +126,7 @@ ALTER TABLE content_tags
 CREATE TABLE reviews
 (
     id uuid primary key,
-    rating double not null,
+    rating double precision not null,
     text text not null,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone,
