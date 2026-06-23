@@ -1,0 +1,104 @@
+services:
+  reverse-proxy:
+    image: nginx:1.28.0
+    container_name: reverse-proxy
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - mopl-network
+    volumes:
+      - ./src/main/resources/static:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+      - redis
+      - broker
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mopl
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - STORAGE_TYPE=local
+      - STORAGE_LOCAL_ROOT_PATH=.mopl/storage
+      - MOPL_ADMIN_USERNAME=${MOPL_ADMIN_USERNAME}
+      - MOPL_ADMIN_EMAIL=${MOPL_ADMIN_EMAIL}
+      - MOPL_ADMIN_PASSWORD=${MOPL_ADMIN_PASSWORD}
+      - KAFKA_BOOTSTRAP_SERVERS=broker:29092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    expose:
+      - 8080
+    networks:
+      - mopl-network
+    volumes:
+      - binary-content-storage:/app/.mopl/storage
+    deploy:
+      replicas: 3
+
+  db:
+    image: postgres:16-alpine
+    container_name: mopl-db
+    environment:
+      - POSTGRES_DB=mopl
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    expose:
+      - 5432
+    networks:
+      - mopl-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+
+  broker:
+    image: apache/kafka:4.0.0
+    container_name: broker
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:29093
+      KAFKA_LISTENERS: PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    expose:
+      - 29092
+    networks:
+      - mopl-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    expose:
+      - 6379
+    networks:
+      - mopl-network
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+
+
+volumes:
+  postgres-data:
+  binary-content-storage:
+  redis-data:
+
+networks:
+  mopl-network:
+    driver: bridge
