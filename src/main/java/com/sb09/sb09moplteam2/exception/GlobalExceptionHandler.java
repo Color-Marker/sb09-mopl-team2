@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MoplException.class)
   public ResponseEntity<ErrorResponse> handleMoplException(MoplException exception) {
     log.error("커스텀 예외 발생: code={}, message={}", exception.getErrorCode(), exception.getMessage(), exception);
-    HttpStatus status = determineHttpStatus(exception);
+    HttpStatus status = exception.getErrorCode().getHttpStatus();
     ErrorResponse response = new ErrorResponse(exception);
     return ResponseEntity
         .status(status)
@@ -63,18 +63,6 @@ public class GlobalExceptionHandler {
     return ResponseEntity
         .status(HttpStatus.FORBIDDEN)
         .body(response);
-  }
-
-  private HttpStatus determineHttpStatus(MoplException exception) {
-    ErrorCode errorCode = exception.getErrorCode();
-    return switch (errorCode) {
-      case USER_NOT_FOUND, NOTIFICATION_NOT_FOUND -> HttpStatus.NOT_FOUND;
-      case DUPLICATE_USER -> HttpStatus.CONFLICT;
-      case INVALID_USER_CREDENTIALS, INVALID_TOKEN, INVALID_USER_DETAILS -> HttpStatus.UNAUTHORIZED;
-      case NOTIFICATION_FORBIDDEN -> HttpStatus.FORBIDDEN;
-      case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
-      case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
-    };
   }
 
 }
