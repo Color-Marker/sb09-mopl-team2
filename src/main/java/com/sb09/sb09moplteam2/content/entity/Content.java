@@ -2,6 +2,8 @@ package com.sb09.sb09moplteam2.content.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,7 +27,8 @@ public class Content {
   private UUID id;
 
   @Column(nullable = false, length = 20)
-  private String type;
+  @Enumerated(EnumType.STRING)
+  private ContentType type;
 
   @Column(name = "external_id", nullable = false, length = 1024)
   private String externalId;
@@ -61,7 +64,7 @@ public class Content {
   private LocalDateTime updatedAt;
 
   @Builder
-  public Content(String type, String externalId, String title, String description,
+  public Content(ContentType type, String externalId, String title, String description,
       String thumbnailUrl, LocalDate releaseDate, String status) {
     this.type = type;
     this.externalId = externalId;
