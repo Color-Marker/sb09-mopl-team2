@@ -6,12 +6,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -61,10 +60,16 @@ public class Content {
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 
-  public Content(String type, String title, String description) {
+  @Builder
+  public Content(String type, String externalId, String title, String description,
+      String thumbnailUrl, LocalDate releaseDate, String status) {
     this.type = type;
+    this.externalId = externalId;
     this.title = title;
     this.description = description;
+    this.thumbnailUrl = thumbnailUrl;
+    this.releaseDate = releaseDate;
+    this.status = status;
     this.averageRating = 0.0;
     this.reviewCount = 0;
     this.watcherCount = 0L;
