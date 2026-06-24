@@ -1,6 +1,6 @@
-package com.sb09.sb09moplteam2.dto;
+package com.sb09.sb09moplteam2.user.dto;
 
-import com.sb09.sb09moplteam2.entity.Role;
+import com.sb09.sb09moplteam2.user.entity.Role;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.entity;
+package com.sb09.sb09moplteam2.user.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

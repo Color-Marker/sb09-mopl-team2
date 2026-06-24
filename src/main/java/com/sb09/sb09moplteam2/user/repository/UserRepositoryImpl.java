@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.repository;
+package com.sb09.sb09moplteam2.user.repository;
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -6,10 +6,10 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.sb09.sb09moplteam2.dto.UserSearchCondition;
-import com.sb09.sb09moplteam2.entity.QUser;
-import com.sb09.sb09moplteam2.entity.Role;
-import com.sb09.sb09moplteam2.entity.User;
+import com.sb09.sb09moplteam2.user.dto.UserSearchCondition;
+import com.sb09.sb09moplteam2.user.entity.QUser;
+import com.sb09.sb09moplteam2.user.entity.Role;
+import com.sb09.sb09moplteam2.user.entity.User;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
