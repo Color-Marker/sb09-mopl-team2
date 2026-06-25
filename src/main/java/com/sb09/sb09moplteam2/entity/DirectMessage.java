@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "direct_message",
+@Table(name = "direct_messages",
     indexes = {
         @Index(name = "idx_direct_message_conversation_id", columnList = "conversation_id"),
         @Index(name = "idx_direct_message_sent_at", columnList = "sent_at")

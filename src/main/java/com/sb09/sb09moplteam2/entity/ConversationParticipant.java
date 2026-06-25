@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.entity;
 
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -11,7 +12,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "conversations_participant",
+@Table(name = "conversations_participants",
     uniqueConstraints = {
         @UniqueConstraint(name = "uq_participant_conversation_user",
             columnNames = {"conversation_id", "user_id"})
