@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.user.repository;
+package com.sb09.sb09moplteam2.user.repository.Custom;
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
-public class UserRepositoryImpl implements UserRepositoryCustom {
+public class CustomUserRepositoryImpl implements CustomUserRepository {
 
   private static final QUser user = QUser.user;
 
