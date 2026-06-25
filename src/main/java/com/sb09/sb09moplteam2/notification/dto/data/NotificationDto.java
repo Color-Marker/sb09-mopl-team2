@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.notification.dto;
+package com.sb09.sb09moplteam2.notification.dto.data;
 
 import com.sb09.sb09moplteam2.notification.entity.NotificationLevel;
 import java.time.Instant;
