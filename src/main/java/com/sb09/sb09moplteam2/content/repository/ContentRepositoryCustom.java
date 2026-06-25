@@ -4,7 +4,7 @@ import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
 import java.util.List;
 import java.util.UUID;
 
-public interface ContentRepositoryCustom {
+public interface ContentRepositoryCustom  {
   CursorResponseContentDto findContentsWithCursor(
       String typeEqual,
       String keywordLike,

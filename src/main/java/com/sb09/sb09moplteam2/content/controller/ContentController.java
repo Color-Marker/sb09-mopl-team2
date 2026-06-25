@@ -3,8 +3,11 @@ package com.sb09.sb09moplteam2.content.controller;
 import com.sb09.sb09moplteam2.content.dto.data.ContentDto;
 import com.sb09.sb09moplteam2.content.dto.request.ContentCreateRequest;
 import com.sb09.sb09moplteam2.content.dto.request.ContentUpdateRequest;
+import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
 import com.sb09.sb09moplteam2.content.service.ContentService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -60,5 +64,22 @@ public class ContentController {
     log.info("DELETE /api/contents/{}", contentId);
     contentService.delete(contentId);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping
+  public ResponseEntity<CursorResponseContentDto> findContents(
+      @RequestParam(required = false) String typeEqual,
+      @RequestParam(required = false) String keywordLike,
+      @RequestParam(required = false) List<String> tagsIn,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) UUID idAfter,
+      @RequestParam @NotNull Integer limit,
+      @RequestParam @NotNull String sortDirection,
+      @RequestParam @NotNull String sortBy
+  ) {
+    log.info("GET /api/contents");
+    return ResponseEntity.ok(contentService.findContents(
+        typeEqual, keywordLike, tagsIn, cursor, idAfter, limit, sortDirection, sortBy
+    ));
   }
 }

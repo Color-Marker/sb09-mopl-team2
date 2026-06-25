@@ -4,10 +4,12 @@ package com.sb09.sb09moplteam2.content.service;
 import com.sb09.sb09moplteam2.content.dto.data.ContentDto;
 import com.sb09.sb09moplteam2.content.dto.request.ContentCreateRequest;
 import com.sb09.sb09moplteam2.content.dto.request.ContentUpdateRequest;
+import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.mapper.ContentMapper;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.content.repository.ContentRepositoryCustom;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContentService {
 
   private final ContentRepository contentRepository;
+  private final ContentRepositoryCustom contentRepositoryCustom;
   private final ContentTagRepository contentTagRepository;
   private final ContentMapper contentMapper;
 
@@ -49,6 +52,16 @@ public class ContentService {
 
     log.info("콘텐츠 생성 완료 - id: {}", content.getId());
     return contentMapper.toDto(content, tags);
+  }
+
+  public CursorResponseContentDto findContents(
+      String typeEqual, String keywordLike, List<String> tagsIn,
+      String cursor, UUID idAfter, Integer limit, String sortDirection, String sortBy
+  ) {
+    log.info("콘텐츠 목록 조회 - sortBy: {}, sortDirection: {}, limit: {}", sortBy, sortDirection, limit);
+    return contentRepository.findContentsWithCursor(
+        typeEqual, keywordLike, tagsIn, cursor, idAfter, limit, sortDirection, sortBy
+    );
   }
 
   public ContentDto findById(UUID contentId) {
