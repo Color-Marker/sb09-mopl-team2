@@ -11,7 +11,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "conversation_participant",
+@Table(name = "conversations_participant",
     uniqueConstraints = {
         @UniqueConstraint(name = "uq_participant_conversation_user",
             columnNames = {"conversation_id", "user_id"})

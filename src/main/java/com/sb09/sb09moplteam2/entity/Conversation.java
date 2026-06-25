@@ -11,7 +11,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "conversation")
+@Table(name = "conversations")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Conversation {
