@@ -1,0 +1,98 @@
+package com.sb09.sb09moplteam2.user.controller;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.sb09.sb09moplteam2.exception.GlobalExceptionHandler;
+import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
+import com.sb09.sb09moplteam2.user.dto.response.UserDto;
+import com.sb09.sb09moplteam2.user.entity.Role;
+import com.sb09.sb09moplteam2.user.service.UserService;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+@WebMvcTest(controllers = UserController.class)
+@Import(GlobalExceptionHandler.class)
+@AutoConfigureMockMvc(addFilters = false)
+class UserControllerTest {
+
+  @Autowired
+  private MockMvc mockMvc;
+
+  @MockitoBean
+  private UserService userService;
+
+  @Test
+  void 회원가입_성공시_201과_사용자정보를_반환한다() throws Exception {
+    UserDto response = UserDto.builder()
+        .id(UUID.randomUUID())
+        .createdAt(OffsetDateTime.now())
+        .name("우디")
+        .email("woody@mopl.io")
+        .role(Role.USER)
+        .locked(false)
+        .build();
+
+    given(userService.createUser(any())).willReturn(response);
+
+    String body = """
+                {
+                  "name": "우디",
+                  "email": "woody@mopl.io",
+                  "password": "mopl1!@#$"
+                }
+                """;
+
+    mockMvc.perform(post("/api/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.email").value("woody@mopl.io"))
+        .andExpect(jsonPath("$.name").value("우디"));
+  }
+
+  @Test
+  void 이메일이_중복되면_409를_반환한다() throws Exception {
+    given(userService.createUser(any())).willThrow(DuplicateEmailException.withEmail("woody@mopl.io"));
+
+    String body = """
+                {
+                  "name": "우디",
+                  "email": "woody@mopl.io",
+                  "password": "mopl1!@#$"
+                }
+                """;
+
+    mockMvc.perform(post("/api/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
+  void 입력값이_유효하지_않으면_400을_반환한다() throws Exception {
+    String body = """
+                {
+                  "name": "",
+                  "email": "invalid-email",
+                  "password": "1234567"
+                }
+                """;
+
+    mockMvc.perform(post("/api/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+        .andExpect(status().isBadRequest());
+  }
+}
