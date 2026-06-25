@@ -1,6 +1,6 @@
-package com.sb09.sb09moplteam2.repository.websocket;
+package com.sb09.sb09moplteam2.websocket.repository;
 
-import com.sb09.sb09moplteam2.entity.websocket.Conversation;
+import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

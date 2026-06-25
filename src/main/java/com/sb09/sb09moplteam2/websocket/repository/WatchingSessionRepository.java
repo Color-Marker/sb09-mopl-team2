@@ -1,7 +1,7 @@
-package com.sb09.sb09moplteam2.repository.websocket;
+package com.sb09.sb09moplteam2.websocket.repository;
 
-import com.sb09.sb09moplteam2.entity.websocket.WatchingSession;
-import com.sb09.sb09moplteam2.entity.websocket.WatchingSessionStatus;
+import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
+import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

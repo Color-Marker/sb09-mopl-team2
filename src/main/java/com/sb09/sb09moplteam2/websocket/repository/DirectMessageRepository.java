@@ -1,7 +1,7 @@
-package com.sb09.sb09moplteam2.repository.websocket;
+package com.sb09.sb09moplteam2.websocket.repository;
 
-import com.sb09.sb09moplteam2.entity.websocket.Conversation;
-import com.sb09.sb09moplteam2.entity.websocket.DirectMessage;
+import com.sb09.sb09moplteam2.websocket.entity.Conversation;
+import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
