@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.notification.entity;
 
+import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -39,7 +40,7 @@ public class Notification {
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "message_id", columnDefinition = "uuid")
-  private Message message;
+  private DirectMessage message;
 
   @Column(nullable = false)
   private String title;
@@ -56,7 +57,7 @@ public class Notification {
   private NotificationLevel level;
 
   // dm 알람일 경우
-  public Notification(User receiver, Message message, String title,
+  public Notification(User receiver, DirectMessage message, String title,
       String content) {
     this.receiver = receiver;
     this.message = message;
