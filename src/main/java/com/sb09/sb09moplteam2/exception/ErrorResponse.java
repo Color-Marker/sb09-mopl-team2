@@ -1,14 +1,22 @@
 package com.sb09.sb09moplteam2.exception;
 
+import java.util.HashMap;
 import java.util.Map;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@Builder
+@RequiredArgsConstructor
 public class ErrorResponse {
+  private final String exceptionName;
+  private final String message;
+  private final Map<String, Object> details;
 
-  private String exceptionName;
-  private String message;
-  private Map<String, String> details;
+  public ErrorResponse(MoplException exception) {
+    this(exception.getClass().getSimpleName(), exception.getMessage(), exception.getDetails());
+  }
+
+  public ErrorResponse(Exception exception) {
+    this(exception.getClass().getSimpleName(), exception.getMessage(), new HashMap<>());
+  }
 }

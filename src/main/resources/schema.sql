@@ -217,12 +217,13 @@ ALTER TABLE playlist_subscriptions
 -- watching_sessions
 CREATE TABLE watching_sessions
 (
-    id uuid primary key,
-    user_id uuid not null,
-    content_id uuid not null,
-    status varchar(10),
+    id         uuid PRIMARY KEY,
+    user_id    uuid        NOT NULL,
+    content_id uuid        NOT NULL,
+    status     varchar(10),
     started_at timestamp with time zone,
-    ended_at timestamp with time zone
+    ended_at   timestamp with time zone,
+    version    bigint      NOT NULL DEFAULT 0
 );
 
 -- watching_sessions -> users
@@ -230,42 +231,43 @@ ALTER TABLE watching_sessions
     ADD CONSTRAINT fk_sessions_user_id
         FOREIGN KEY (user_id)
             REFERENCES users (id)
-            ON DELETE set null;
+            ON DELETE SET NULL;
 
 -- watching_sessions -> contents
 ALTER TABLE watching_sessions
     ADD CONSTRAINT fk_sessions_content_id
         FOREIGN KEY (content_id)
             REFERENCES contents (id)
-            ON DELETE set null;
+            ON DELETE SET NULL;
 
 -- conversations
 CREATE TABLE conversations
 (
-    id uuid primary key,
-    type varchar(10),
-    name varchar(100),
-    created_at timestamp with time zone not null
+    id         uuid PRIMARY KEY,
+    type       varchar(10),
+    name       varchar(100),
+    created_at timestamp with time zone NOT NULL,
+    version    bigint                   NOT NULL DEFAULT 0
 );
 
--- conversation_participants
+-- conversations_participants
 CREATE TABLE conversations_participants
 (
-    id uuid primary key,
-    user_id uuid not null,
-    conversation_id uuid not null,
-    joined_at timestamp with time zone,
-    last_read_at timestamp with time zone
+    id              uuid PRIMARY KEY,
+    user_id         uuid NOT NULL,
+    conversation_id uuid NOT NULL,
+    joined_at       timestamp with time zone,
+    last_read_at    timestamp with time zone
 );
 
--- conversation_participants -> users
+-- conversations_participants -> users
 ALTER TABLE conversations_participants
     ADD CONSTRAINT fk_participants_user_id
         FOREIGN KEY (user_id)
             REFERENCES users (id)
             ON DELETE CASCADE;
 
--- conversation_participants -> conversations
+-- conversations_participants -> conversations
 ALTER TABLE conversations_participants
     ADD CONSTRAINT fk_participants_conversation_id
         FOREIGN KEY (conversation_id)
@@ -275,11 +277,11 @@ ALTER TABLE conversations_participants
 -- direct_messages
 CREATE TABLE direct_messages
 (
-    id uuid primary key,
-    conversation_id uuid not null,
-    sender_id uuid not null,
-    content text,
-    created_at timestamp with time zone not null
+    id              uuid PRIMARY KEY,
+    conversation_id uuid NOT NULL,
+    sender_id       uuid NOT NULL,
+    content         text,
+    sent_at         timestamp with time zone NOT NULL  -- created_at → sent_at 변경
 );
 
 -- direct_messages -> conversations
