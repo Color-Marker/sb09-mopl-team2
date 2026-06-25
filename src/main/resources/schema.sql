@@ -98,9 +98,9 @@ CREATE TABLE contents
     status varchar(10),
     created_at timestamp with time zone,
     updated_at timestamp with time zone,
-    average_rating double precision,
-    review_count int,
-    watcher_count int
+    average_rating double precision not null default 0.0,
+    review_count int not null default 0,
+    watcher_count BIGINT NOT NULL DEFAULT 0
 );
 
 ALTER TABLE contents
