@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class NotificationListdRequest {
+public class NotificationListRequest {
   private String cursor;
   private UUID idAfter;
   @NotNull(message = "제한 범위는 필수입니다")
