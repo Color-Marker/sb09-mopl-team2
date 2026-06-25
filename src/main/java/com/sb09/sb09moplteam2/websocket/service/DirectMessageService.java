@@ -4,6 +4,7 @@ import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
+import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
@@ -11,9 +12,12 @@ import com.sb09.sb09moplteam2.websocket.repository.ConversationParticipantReposi
 import com.sb09.sb09moplteam2.websocket.repository.ConversationRepository;
 import com.sb09.sb09moplteam2.websocket.repository.DirectMessageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,25 +44,47 @@ public class DirectMessageService {
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> new ConversationNotFoundException(conversationId));
 
-    // 참여자가 아니면 조회 불가
     if (!conversationParticipantRepository.existsByConversationAndUserId(conversation, myUserId)) {
       throw new ConversationParticipantNotFoundException(conversationId, myUserId);
     }
 
-    // TODO: 커서 페이지네이션 쿼리 구현
-    List<DirectMessage> messages = directMessageRepository
-        .findByConversationOrderBySentAtDesc(conversation, org.springframework.data.domain.PageRequest.of(0, limit))
-        .getContent();
+    // 참여자 한 번만 조회 (N+1 방지)
+    List<ConversationParticipant> participants =
+        conversationParticipantRepository.findByConversation(conversation);
 
-    List<DirectMessageDto> data = messages.stream()
-        .map(dm -> toDto(dm, conversation))
+    Pageable pageable = PageRequest.of(0, limit + 1);
+    List<DirectMessage> messages;
+
+    if (cursor != null && idAfter != null) {
+      Instant cursorSentAt = Instant.parse(cursor);
+      messages = directMessageRepository.findByConversationWithCursor(
+          conversation, cursorSentAt, idAfter, pageable);
+    } else {
+      messages = directMessageRepository.findByConversationOrderBySentAtDesc(
+          conversation, pageable);
+    }
+
+    boolean hasNext = messages.size() > limit;
+    List<DirectMessage> content = hasNext ? messages.subList(0, limit) : messages;
+
+    // participants 재사용해서 toDto에 넘김
+    List<DirectMessageDto> data = content.stream()
+        .map(dm -> toDto(dm, conversation, participants))
         .toList();
+
+    String nextCursor = null;
+    UUID nextIdAfter = null;
+    if (hasNext && !content.isEmpty()) {
+      DirectMessage last = content.get(content.size() - 1);
+      nextCursor = last.getSentAt().toString();
+      nextIdAfter = last.getId();
+    }
 
     return new CursorResponse<>(
         data,
-        null,       // TODO: nextCursor 계산
-        null,       // TODO: nextIdAfter 계산
-        false,      // TODO: hasNext 계산
+        nextCursor,
+        nextIdAfter,
+        hasNext,
         data.size(),
         sortBy,
         sortDirection
@@ -78,19 +104,17 @@ public class DirectMessageService {
         .updateLastReadAt();
   }
 
-  private DirectMessageDto toDto(DirectMessage dm, Conversation conversation) {
-    // TODO: 팀원 User 도메인 연동 후 실제 UserSummary로 교체
+  private DirectMessageDto toDto(DirectMessage dm, Conversation conversation,
+      List<ConversationParticipant> participants) {
+
     UserSummary sender = new UserSummary(
         dm.getSenderId(),
         null,   // TODO: senderName
         null    // TODO: senderProfileImageUrl
     );
 
-    // 수신자 = 참여자 중 발신자가 아닌 사람
-    UUID receiverId = conversationParticipantRepository
-        .findByConversation(conversation)
-        .stream()
-        .map(cp -> cp.getUserId())
+    UUID receiverId = participants.stream()
+        .map(ConversationParticipant::getUserId)
         .filter(id -> !id.equals(dm.getSenderId()))
         .findFirst()
         .orElse(null);

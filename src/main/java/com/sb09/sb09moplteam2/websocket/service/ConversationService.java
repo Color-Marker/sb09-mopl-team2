@@ -6,9 +6,12 @@ import com.sb09.sb09moplteam2.websocket.dto.ConversationDto;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
+import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
 import com.sb09.sb09moplteam2.websocket.repository.ConversationParticipantRepository;
 import com.sb09.sb09moplteam2.websocket.repository.ConversationRepository;
 import com.sb09.sb09moplteam2.websocket.repository.DirectMessageRepository;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,28 +84,39 @@ public class ConversationService {
     List<Conversation> conversations = conversationRepository
         .findAllByParticipantUserId(myUserId);
 
+    // conversation ID 목록 추출
+    List<UUID> conversationIds = conversations.stream()
+        .map(Conversation::getId)
+        .toList();
+
+    // IN 쿼리로 참여자 한 번에 조회 (N+1 방지)
+    List<ConversationParticipant> allParticipants = conversationParticipantRepository
+        .findByConversationIdIn(conversationIds);
+
+    // conversationId 기준으로 그룹핑
+    Map<UUID, List<ConversationParticipant>> participantMap = allParticipants.stream()
+        .collect(Collectors.groupingBy(cp -> cp.getConversation().getId()));
+
     List<ConversationDto> data = conversations.stream()
-        .map(c -> toDto(c, myUserId))
+        .map(c -> toDto(c, myUserId, participantMap.getOrDefault(c.getId(), List.of())))
         .toList();
 
     return new CursorResponse<>(
         data,
-        null,       // TODO: nextCursor 계산
-        null,       // TODO: nextIdAfter 계산
-        false,      // TODO: hasNext 계산
+        null,
+        null,
+        false,
         data.size(),
         sortBy,
         sortDirection
     );
   }
 
-  private ConversationDto toDto(Conversation conversation, UUID myUserId) {
-    // TODO: 팀원 User 도메인 연동 후 상대방 UserSummary로 교체
-    // 상대방 userId = 참여자 중 내가 아닌 사람
-    UUID withUserId = conversationParticipantRepository
-        .findByConversation(conversation)
-        .stream()
-        .map(cp -> cp.getUserId())
+  private ConversationDto toDto(Conversation conversation, UUID myUserId,
+      List<ConversationParticipant> participants) {
+
+    UUID withUserId = participants.stream()
+        .map(ConversationParticipant::getUserId)
         .filter(id -> !id.equals(myUserId))
         .findFirst()
         .orElse(null);
@@ -113,11 +127,8 @@ public class ConversationService {
         null    // TODO: profileImageUrl
     );
 
-    // TODO: 마지막 메시지 조회 구현
-    DirectMessageDto latestMessage = null; // TODO: directMessageRepository로 조회
-
-    // TODO: lastReadAt 기준 읽지 않은 메시지 존재 여부 계산
-    boolean hasUnread = false; // TODO: ConversationParticipant.lastReadAt과 비교
+    DirectMessageDto latestMessage = null; // TODO: 마지막 메시지 조회
+    boolean hasUnread = false;             // TODO: lastReadAt 기준 계산
 
     return new ConversationDto(
         conversation.getId(),
