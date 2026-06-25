@@ -37,17 +37,10 @@ public class BasicNotificationService implements NotificationService {
   public CursorResponseNotificationDto<NotificationDto> list(UUID userId,
       NotificationListRequest request) {
     log.debug("알림 목록 조회 시작: receiverId={}", userId);
-    User user = userRepository.findById(userId).orElseThrow(
-        () -> {
-          log.warn("사용자를 찾을 수 없습니다.");
-          return UserNotFoundException.withId(userId);
-        }
-    );
 
-    Slice<Notification> slice = notificationRepository.searchNotification(request);
+    Slice<Notification> slice = notificationRepository.searchNotification(userId, request);
     Long totalCount = notificationRepository.countByReceiver_Id(userId);
 
-    log.debug("유저ID: {} 의 알림 목록을 불러옵니다.", userId);
     log.debug("유저ID {} 의 알림 {} 개를 불러옵니다.", userId, totalCount);
 
     return cursorMapper.fromSlice(
