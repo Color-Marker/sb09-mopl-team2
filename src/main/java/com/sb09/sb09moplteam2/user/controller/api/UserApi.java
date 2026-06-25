@@ -1,7 +1,8 @@
 package com.sb09.sb09moplteam2.user.controller.api;
 
+import com.sb09.sb09moplteam2.user.dto.data.UserDto;
 import com.sb09.sb09moplteam2.user.dto.request.UserCreateRequest;
-import com.sb09.sb09moplteam2.user.dto.response.UserDto;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

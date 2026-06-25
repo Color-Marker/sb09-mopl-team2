@@ -10,7 +10,7 @@ import com.sb09.sb09moplteam2.user.dto.UserSearchCondition;
 import com.sb09.sb09moplteam2.user.entity.QUser;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -99,7 +99,7 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
             : lockedAsNumber().lt(lockedCursor).or(lockedAsNumber().eq(lockedCursor).and(user.id.lt(condition.getIdAfter())));
       }
       default -> { // createdAt
-        OffsetDateTime createdAtCursor = OffsetDateTime.parse(cursor);
+        Instant createdAtCursor = Instant.parse(cursor);
         yield asc
             ? user.createdAt.gt(createdAtCursor).or(user.createdAt.eq(createdAtCursor).and(user.id.gt(condition.getIdAfter())))
             : user.createdAt.lt(createdAtCursor).or(user.createdAt.eq(createdAtCursor).and(user.id.lt(condition.getIdAfter())));

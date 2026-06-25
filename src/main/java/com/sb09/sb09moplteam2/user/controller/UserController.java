@@ -1,8 +1,9 @@
 package com.sb09.sb09moplteam2.user.controller;
 
 import com.sb09.sb09moplteam2.user.controller.api.UserApi;
+import com.sb09.sb09moplteam2.user.dto.data.UserDto;
 import com.sb09.sb09moplteam2.user.dto.request.UserCreateRequest;
-import com.sb09.sb09moplteam2.user.dto.response.UserDto;
+
 import com.sb09.sb09moplteam2.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

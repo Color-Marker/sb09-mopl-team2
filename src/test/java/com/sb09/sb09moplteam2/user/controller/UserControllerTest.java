@@ -8,12 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.sb09.sb09moplteam2.exception.GlobalExceptionHandler;
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
-import com.sb09.sb09moplteam2.user.dto.response.UserDto;
+import com.sb09.sb09moplteam2.user.dto.data.UserDto;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.service.UserService;
 import com.sb09.sb09moplteam2.config.QueryDslConfig;
 import com.sb09.sb09moplteam2.config.JpaAuditingConfig;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,14 +45,15 @@ class UserControllerTest {
 
   @Test
   void 회원가입_성공시_201과_사용자정보를_반환한다() throws Exception {
-    UserDto response = UserDto.builder()
-        .id(UUID.randomUUID())
-        .createdAt(OffsetDateTime.now())
-        .name("우디")
-        .email("woody@mopl.io")
-        .role(Role.USER)
-        .locked(false)
-        .build();
+    UserDto response = new UserDto(
+        UUID.randomUUID(),
+        Instant.now(),
+        "woody@mopl.io",
+        "우디",
+        null,
+        Role.USER,
+        false
+    );
 
     given(userService.createUser(any())).willReturn(response);
 

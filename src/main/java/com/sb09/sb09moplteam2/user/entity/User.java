@@ -9,7 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -56,11 +56,11 @@ public class User {
 
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
-  private OffsetDateTime createdAt;
+  private Instant createdAt;
 
   @LastModifiedDate
   @Column(name = "updated_at")
-  private OffsetDateTime updatedAt;
+  private Instant updatedAt;
 
   // 로컬 가입
   public User(String name, String email, String password) {
@@ -76,5 +76,9 @@ public class User {
     this.email = email;
     this.providerId = providerId;
     this.provider = provider;
+  }
+
+  public void changeRole(Role role) {
+    this.role = role;
   }
 }

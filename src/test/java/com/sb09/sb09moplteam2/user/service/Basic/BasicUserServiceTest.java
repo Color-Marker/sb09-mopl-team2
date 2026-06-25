@@ -7,8 +7,9 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
+import com.sb09.sb09moplteam2.user.dto.data.UserDto;
 import com.sb09.sb09moplteam2.user.dto.request.UserCreateRequest;
-import com.sb09.sb09moplteam2.user.dto.response.UserDto;
+import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
@@ -51,16 +52,13 @@ class BasicUserServiceTest {
     given(passwordEncoder.encode("mopl1!@#$")).willReturn("encodedPassword");
     given(userRepository.save(any(User.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-    UserDto expected = UserDto.builder()
-        .email("woody@mopl.io")
-        .name("우디")
-        .build();
+    UserDto expected = new UserDto(null, null, "woody@mopl.io", "우디", null, Role.USER, false);
     given(userMapper.toDto(any(User.class))).willReturn(expected);
 
     UserDto result = basicUserService.createUser(request);
 
-    assertThat(result.getEmail()).isEqualTo("woody@mopl.io");
-    assertThat(result.getName()).isEqualTo("우디");
+    assertThat(result.email()).isEqualTo("woody@mopl.io");
+    assertThat(result.name()).isEqualTo("우디");
     verify(passwordEncoder).encode("mopl1!@#$");
   }
 

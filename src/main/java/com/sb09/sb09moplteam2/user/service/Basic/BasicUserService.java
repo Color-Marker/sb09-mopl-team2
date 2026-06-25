@@ -2,7 +2,7 @@ package com.sb09.sb09moplteam2.user.service.Basic;
 
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
 import com.sb09.sb09moplteam2.user.dto.request.UserCreateRequest;
-import com.sb09.sb09moplteam2.user.dto.response.UserDto;
+import com.sb09.sb09moplteam2.user.dto.data.UserDto;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
@@ -23,12 +23,12 @@ public class BasicUserService implements UserService {
   @Override
   @Transactional
   public UserDto createUser(UserCreateRequest request) {
-    if (userRepository.existsByEmail(request.getEmail())) {
-      throw DuplicateEmailException.withEmail(request.getEmail());
+    if (userRepository.existsByEmail(request.email())) {
+      throw DuplicateEmailException.withEmail(request.email());
     }
 
-    String encodedPassword = passwordEncoder.encode(request.getPassword());
-    User user = new User(request.getName(), request.getEmail(), encodedPassword);
+    String encodedPassword = passwordEncoder.encode(request.password());
+    User user = new User(request.name(), request.email(), encodedPassword);
     User saved = userRepository.save(user);
 
     return userMapper.toDto(saved);
