@@ -12,6 +12,7 @@ COPY gradlew ./gradlew
 COPY build.gradle settings.gradle ./
 
 # 의존성 다운로드
+RUN chmod +x ./gradlew
 RUN ./gradlew dependencies
 
 # 소스 코드 복사 및 빌드
