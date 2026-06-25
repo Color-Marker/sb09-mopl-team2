@@ -12,7 +12,7 @@ public record CursorResponseNotificationDto<T>(
     UUID nextIdAfter,
     boolean hasNext,
     Long totalCount,
-    // createdAt 고정
+    // 알림은 createdAt 고정
     String sortBy,
     SortDirection sortDirection
 ) {

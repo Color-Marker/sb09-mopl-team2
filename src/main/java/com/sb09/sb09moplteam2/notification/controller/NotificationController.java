@@ -4,6 +4,7 @@ import com.sb09.sb09moplteam2.notification.controller.api.NotificationApi;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListdRequest;
 import com.sb09.sb09moplteam2.notification.dto.response.CursorResponseNotificationDto;
+import com.sb09.sb09moplteam2.notification.service.NotificationService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
