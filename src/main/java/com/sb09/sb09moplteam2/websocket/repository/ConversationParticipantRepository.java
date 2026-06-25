@@ -24,7 +24,7 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
   @org.springframework.data.jpa.repository.Query("""
         SELECT cp.conversation FROM ConversationParticipant cp
         WHERE cp.userId IN (:userIdA, :userIdB)
-          AND cp.conversation.type = com.sb09.sb09moplteam2.entity.websocket.ConversationType.DIRECT
+          AND cp.conversation.type = com.sb09.sb09moplteam2.websocket.entity.ConversationType.DIRECT
         GROUP BY cp.conversation
         HAVING COUNT(cp) = 2
         """)
