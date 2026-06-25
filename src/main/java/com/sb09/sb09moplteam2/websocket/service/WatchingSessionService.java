@@ -1,8 +1,11 @@
 package com.sb09.sb09moplteam2.websocket.service;
 
+import com.sb09.sb09moplteam2.dto.ContentSummary;
+import com.sb09.sb09moplteam2.dto.CursorResponse;
+import com.sb09.sb09moplteam2.dto.UserSummary;
+import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
-import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
-import com.sb09.sb09moplteam2.exception.websocket.WatchingSessionNotFoundException;
+
 import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,41 +21,66 @@ public class WatchingSessionService {
 
   private final WatchingSessionRepository watchingSessionRepository;
 
-  // 세션 생성
-  @Transactional
-  public WatchingSession create(UUID userId, UUID contentId) {
-    // 이미 활성 세션이 있으면 중복 생성 방지
-    if (watchingSessionRepository.existsByUserIdAndStatus(userId, WatchingSessionStatus.ACTIVE)) {
-      throw new IllegalStateException("이미 활성 상태의 시청 세션이 존재합니다. userId=" + userId);
-    }
-
-    WatchingSession session = WatchingSession.create(userId, contentId);
-    return watchingSessionRepository.save(session);
+  // GET /api/users/{watcherId}/watching-sessions
+  // 특정 유저의 활성 세션 단건 조회 (없으면 null 반환 - nullable)
+  public WatchingSessionDto findActiveByUserId(UUID watcherId) {
+    return watchingSessionRepository.findActiveByUserId(watcherId)
+        .map(this::toDto)
+        .orElse(null);
   }
 
-  // 단건 조회
-  public WatchingSession findById(UUID id) {
-    return watchingSessionRepository.findById(id)
-        .orElseThrow(() -> new WatchingSessionNotFoundException(id));
+  // GET /api/contents/{contentId}/watching-sessions
+  // 특정 콘텐츠의 시청 세션 목록 조회 (커서 페이지네이션)
+  public CursorResponse<WatchingSessionDto> findAllByContentId(
+      UUID contentId,
+      String cursor,
+      UUID idAfter,
+      int limit,
+      String sortBy,
+      String sortDirection
+  ) {
+    // TODO: 커서 페이지네이션 쿼리 구현 (QueryDSL 또는 JPQL)
+    List<WatchingSession> sessions = watchingSessionRepository.findByContentId(contentId);
+    List<WatchingSessionDto> data = sessions.stream()
+        .map(this::toDto)
+        .toList();
+
+    return new CursorResponse<>(
+        data,
+        null,       // TODO: nextCursor 계산
+        null,       // TODO: nextIdAfter 계산
+        false,      // TODO: hasNext 계산
+        data.size(),
+        sortBy,
+        sortDirection
+    );
   }
 
-  // 유저별 세션 목록 조회
-  public List<WatchingSession> findAllByUserId(UUID userId) {
-    return watchingSessionRepository.findByUserId(userId);
-  }
+  private WatchingSessionDto toDto(WatchingSession session) {
+    // TODO: 팀원 User 도메인 연동 후 실제 UserSummary로 교체
+    UserSummary watcher = new UserSummary(
+        session.getUserId(),
+        null,   // TODO: userName
+        null    // TODO: profileImageUrl
+    );
 
-  // 콘텐츠별 세션 목록 조회
-  public List<WatchingSession> findAllByContentId(UUID contentId) {
-    return watchingSessionRepository.findByContentId(contentId);
-  }
+    // TODO: 팀원 Content 도메인 연동 후 실제 ContentSummary로 교체
+    ContentSummary content = new ContentSummary(
+        session.getContentId(),
+        null,   // TODO: type
+        null,   // TODO: title
+        null,   // TODO: description
+        null,   // TODO: thumbnailUrl
+        null,   // TODO: tags
+        0.0,    // TODO: averageRating
+        0       // TODO: reviewCount
+    );
 
-  // 세션 종료
-  @Transactional
-  public WatchingSession end(UUID id) {
-    WatchingSession session = watchingSessionRepository.findById(id)
-        .orElseThrow(() -> new WatchingSessionNotFoundException(id));
-
-    session.end();
-    return session; // @Transactional 범위 안이라 dirty checking으로 자동 반영
+    return new WatchingSessionDto(
+        session.getId(),
+        session.getStartedAt(),
+        watcher,
+        content
+    );
   }
 }
