@@ -27,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContentService {
 
   private final ContentRepository contentRepository;
-  private final ContentRepositoryCustom contentRepositoryCustom;
   private final ContentTagRepository contentTagRepository;
   private final ContentMapper contentMapper;
 
