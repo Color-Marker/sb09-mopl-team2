@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.content.batch.Tmdb;
 
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,4 +32,9 @@ public class TmdbScheduler {
       log.error("TMDB 배치 작업 실패", e);
     }
   }
+
+//  @PostConstruct 테스트를 위 어플리케이션 시작할때 TMDB API 시작
+//  public void runOnStartup() {
+//    runTmdbBatch();
+//  }
 }
