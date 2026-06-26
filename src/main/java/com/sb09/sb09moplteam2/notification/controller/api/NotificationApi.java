@@ -1,7 +1,7 @@
 package com.sb09.sb09moplteam2.notification.controller.api;
 
+import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
-import com.sb09.sb09moplteam2.notification.dto.response.CursorResponseNotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,7 +20,7 @@ public interface NotificationApi {
       @ApiResponse(responseCode = "401", description = "인증되지 않은 요청"),
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
-  ResponseEntity<CursorResponseNotificationDto<NotificationDto>> list(
+  ResponseEntity<CursorResponse<NotificationDto>> list(
       @Parameter(hidden = true) MoplUserDetails principal,
       @Valid NotificationListRequest request
   );

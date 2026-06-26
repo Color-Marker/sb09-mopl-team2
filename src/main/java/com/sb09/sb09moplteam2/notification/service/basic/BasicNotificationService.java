@@ -1,16 +1,21 @@
 package com.sb09.sb09moplteam2.notification.service.basic;
 
+import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.exception.notification.NotificationForbiddenException;
 import com.sb09.sb09moplteam2.exception.notification.NotificationNotFoundException;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
-import com.sb09.sb09moplteam2.notification.dto.response.CursorResponseNotificationDto;
 import com.sb09.sb09moplteam2.notification.entity.Notification;
+import com.sb09.sb09moplteam2.notification.entity.NotificationLevel;
 import com.sb09.sb09moplteam2.notification.mapper.CursorResponseNotificationMapper;
 import com.sb09.sb09moplteam2.notification.mapper.NotificationMapper;
 import com.sb09.sb09moplteam2.notification.repository.NotificationRepository;
 import com.sb09.sb09moplteam2.notification.service.NotificationService;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.UUID;
@@ -27,14 +32,14 @@ public class BasicNotificationService implements NotificationService {
 
   private final NotificationRepository notificationRepository;
   private final UserRepository userRepository;
-  private final PlaylistRepository playlistRepository;
   private final CursorResponseNotificationMapper cursorMapper;
   private final NotificationMapper notificationMapper;
+  private final ApplicationEventPublisher eventPublisher;
 
   @PreAuthorize("principal.userDto.id == #userId")
   @Transactional(readOnly = true)
   @Override
-  public CursorResponseNotificationDto<NotificationDto> list(UUID userId,
+  public CursorResponse<NotificationDto> list(UUID userId,
       NotificationListRequest request) {
     log.debug("알림 목록 조회 시작: receiverId={}", userId);
 
@@ -70,31 +75,67 @@ public class BasicNotificationService implements NotificationService {
 
   @Override
   public void createFollowNotification(User user, User follower) {
-
+    String title = follower.getName() + "님이 나를 팔로우했어요.";
+    create(user, title, null, NotificationLevel.INFO);
   }
 
   @Override
-  public void createFollowWorkNotification(User user, User followed, Playlist playlist) {
-
+  public void createFollowWorkNotification(Set<User> users, User followed, Playlist playlist) {
+    String title = followed.getName() + "님이 플레이리스트를 만들었어요.";
+    String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
+    createMany(users, title, content, NotificationLevel.INFO);
   }
 
   @Override
   public void createSubsNotification(User user, User subscriber, Playlist playlist) {
-
+    String title = subscriber.getName() + "님이 나의 플레이리스트 [" + playlist.getTitle() + "]를 구독했어요.";
+    create(user, title, null, NotificationLevel.INFO);
   }
 
   @Override
-  public void createSubsWorkNotification(User user, Playlist playlist) {
-
+  public void createSubsWorkNotification(Set<User> users, Playlist playlist) {
+    String title = "구독 중인 플레이리스트 [" + playlist.getTitle() + "]가  업데이트됐어요.";
+    createMany(users, title, null, NotificationLevel.INFO);
   }
 
   @Override
   public void createRoleUpdateNotification(User user, Role previous, Role now) {
-
+    String title = "내 권한이 변경되었어요.";
+    String content = "내 권한이 [" + previous.toString() + "]에서 [" + now.toString() + "]로 변경되었어요.";
+    Notification notification = new Notification(user, title, content, NotificationLevel.WARNING);
+    notificationRepository.save(notification);
+    NotificationDto dto = notificationMapper.toDto(notification);
+    eventPublisher.publishEvent(new NotificationRoleEvent(List.of(dto), Instant.now()));
   }
 
   @Override
   public void createDmNotification(User user, DirectMessage message) {
-
+    User sender = userRepository.findById(message.getSenderId());
+    String title = "[DM] " + sender.getName();
+    String content = message.getContent();
+    Notification notification = new Notification(user, message, title, content);
+    notificationRepository.save(notification);
+    NotificationDto dto = notificationMapper.toDto(notification);
+    eventPublisher.publishEvent(new NotificationDmEvent(List.of(dto), Instant.now()));
   }
+
+  private void create(User receiver, String title, String content, NotificationLevel level) {
+    Notification notification = new Notification(receiver, title, content, level);
+    notificationRepository.save(notification);
+    NotificationDto dto = notificationMapper.toDto(notification);
+    eventPublisher.publishEvent(new NotificationCreatedEvent(List.of(dto), Instant.now()));
+  }
+
+  private void createMany(Set<User> receivers, String title, String content, NotificationLevel level) {
+    if (receivers.isEmpty()) return;
+    List<Notification> notifications = receivers.stream()
+        .map(receiver -> new Notification(receiver, title, content, level))
+        .toList();
+    notificationRepository.saveAll(notifications);
+    List<NotificationDto> dtos = notifications.stream()
+        .map(notificationMapper::toDto)
+        .toList();
+    eventPublisher.publishEvent(new NotificationCreatedEvent(dtos, Instant.now()));
+  }
+
 }

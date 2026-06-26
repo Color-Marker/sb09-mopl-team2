@@ -1,9 +1,9 @@
 package com.sb09.sb09moplteam2.notification.controller;
 
+import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.notification.controller.api.NotificationApi;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
-import com.sb09.sb09moplteam2.notification.dto.response.CursorResponseNotificationDto;
 import com.sb09.sb09moplteam2.notification.service.NotificationService;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -27,13 +27,13 @@ public class NotificationController implements NotificationApi {
 
   @GetMapping
   @Override
-  public ResponseEntity<CursorResponseNotificationDto<NotificationDto>> list(
+  public ResponseEntity<CursorResponse<NotificationDto>> list(
       @AuthenticationPrincipal MoplUserDetails principal,
       @Valid NotificationListRequest request
   ) {
     UUID userId = principal.getUserDto().id();
     log.info("알림 목록 조회 요청: userId={}", userId);
-    CursorResponseNotificationDto<NotificationDto> result = notificationService.list(userId, request);
+    CursorResponse<NotificationDto> result = notificationService.list(userId, request);
     log.debug("알림 목록 조회 응답: count={}", result.totalCount());
     return ResponseEntity.ok(result);
   }
