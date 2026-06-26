@@ -4,9 +4,9 @@ CREATE TABLE users
     id uuid PRIMARY KEY,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone,
-    name varchar(30) UNIQUE NOT NULL,
+    name varchar(30) NOT NULL,
     email varchar(50) UNIQUE NOT NULL,
-    password varchar(100) NOT NULL,
+    password varchar(100),
     profile_image_url varchar(255),
     role varchar(20) default 'USER' NOT NULL,
     is_locked boolean default false NOT NULL,
@@ -73,6 +73,7 @@ CREATE TABLE password_reset_tokens
 (
     id uuid PRIMARY KEY,
     user_id uuid NOT NULL,
+    temp_password varchar(255) NOT NULL,
     expiry_date timestamp with time zone NOT NULL,
     used boolean default false NOT NULL,
     created_at timestamp with time zone NOT NULL
