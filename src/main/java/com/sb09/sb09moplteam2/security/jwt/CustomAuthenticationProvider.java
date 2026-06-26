@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.security;
+package com.sb09.sb09moplteam2.security.jwt;
 
 import com.sb09.sb09moplteam2.auth.entity.PasswordResetToken;
 import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;

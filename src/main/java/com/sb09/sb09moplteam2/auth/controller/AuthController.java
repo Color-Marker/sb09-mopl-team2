@@ -7,7 +7,7 @@ import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.auth.service.AuthService;
 import com.sb09.sb09moplteam2.exception.auth.InvalidTokenException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
-import com.sb09.sb09moplteam2.security.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
 import com.sb09.sb09moplteam2.user.dto.response.JwtDto;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;

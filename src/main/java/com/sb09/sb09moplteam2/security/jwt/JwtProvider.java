@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.security;
+package com.sb09.sb09moplteam2.security.jwt;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -7,7 +7,7 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.sb09.sb09moplteam2.config.JwtProperties;
+import com.sb09.sb09moplteam2.config.jwt.JwtProperties;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import java.text.ParseException;
 import java.time.Instant;

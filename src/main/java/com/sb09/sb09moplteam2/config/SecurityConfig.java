@@ -1,10 +1,13 @@
 package com.sb09.sb09moplteam2.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sb09.sb09moplteam2.security.JwtAuthenticationFilter;
-import com.sb09.sb09moplteam2.security.JwtProvider;
-import com.sb09.sb09moplteam2.security.JwtSignInFilter;
-import com.sb09.sb09moplteam2.security.JwtSignOutHandler;
+import com.sb09.sb09moplteam2.security.oauth.CustomOAuth2UserService;
+import com.sb09.sb09moplteam2.security.jwt.JwtAuthenticationFilter;
+import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.JwtSignInFilter;
+import com.sb09.sb09moplteam2.security.jwt.JwtSignOutHandler;
+import com.sb09.sb09moplteam2.security.oauth.OAuth2SignInFailureHandler;
+import com.sb09.sb09moplteam2.security.oauth.OAuth2SignInSuccessHandler;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
@@ -34,6 +37,9 @@ public class SecurityConfig {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
   private final ObjectMapper objectMapper;
+  private final CustomOAuth2UserService customOAuth2UserService;
+  private final OAuth2SignInSuccessHandler oAuth2SignInSuccessHandler;
+  private final OAuth2SignInFailureHandler oAuth2SignInFailureHandler;
 
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -67,6 +73,11 @@ public class SecurityConfig {
             .logoutSuccessHandler((request, response, authentication) ->
                 response.setStatus(org.springframework.http.HttpStatus.NO_CONTENT.value()))
             .deleteCookies("REFRESH_TOKEN")
+        )
+        .oauth2Login(oauth2 -> oauth2
+            .userInfoEndpoint(info -> info.userService(customOAuth2UserService))
+            .successHandler(oAuth2SignInSuccessHandler)
+            .failureHandler(oAuth2SignInFailureHandler)
         )
         .addFilterAt(jwtSignInFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
