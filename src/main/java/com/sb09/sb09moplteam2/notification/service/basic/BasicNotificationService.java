@@ -7,6 +7,7 @@ import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
 import com.sb09.sb09moplteam2.exception.notification.NotificationForbiddenException;
 import com.sb09.sb09moplteam2.exception.notification.NotificationNotFoundException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
+import com.sb09.sb09moplteam2.exception.websocket.DirectMessageNotFoundException;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.notification.entity.Notification;
@@ -19,6 +20,7 @@ import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
+import com.sb09.sb09moplteam2.websocket.repository.DirectMessageRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +40,8 @@ public class BasicNotificationService implements NotificationService {
 
   private final NotificationRepository notificationRepository;
   private final UserRepository userRepository;
+  private final PlaylistRepository playlistRepository;
+  private final DirectMessageRepository messageRepository;
   private final CursorResponseNotificationMapper cursorMapper;
   private final NotificationMapper notificationMapper;
   private final ApplicationEventPublisher eventPublisher;
@@ -82,61 +86,92 @@ public class BasicNotificationService implements NotificationService {
   }
 
   @Override
-  public void createFollowNotification(User user, User follower) {
+  public void createFollowNotification(UUID userId, UUID followerId) {
+
+    User follower = userRepository.findById(followerId).orElseThrow(() -> UserNotFoundException.withId(followerId));
+
     String title = follower.getName() + "님이 나를 팔로우했어요.";
-    create(user, title, null, NotificationLevel.INFO);
+
+    create(userId, title, null, NotificationLevel.INFO);
   }
 
   @Override
-  public void createFollowWorkNotification(Set<User> users, User followed, Playlist playlist) {
+  public void createFollowWorkNotification(Set<UUID> userIds, UUID followedId, UUID playlistId) {
+
+    User followed = userRepository.findById(followedId).orElseThrow(() -> UserNotFoundException.withId(followedId));
+    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+
     String title = followed.getName() + "님이 플레이리스트를 만들었어요.";
     String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
-    createMany(users, title, content, NotificationLevel.INFO);
+
+    createMany(userIds, title, content, NotificationLevel.INFO);
   }
 
   @Override
-  public void createSubsNotification(User user, User subscriber, Playlist playlist) {
+  public void createSubsNotification(UUID userId, UUID subscriberId, UUID playlistId) {
+
+    User subscriber = userRepository.findById(subscriberId).orElseThrow(() -> UserNotFoundException.withId(subscriberId));
+    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+
     String title = subscriber.getName() + "님이 나의 플레이리스트 [" + playlist.getTitle() + "]를 구독했어요.";
-    create(user, title, null, NotificationLevel.INFO);
+
+    create(userId, title, null, NotificationLevel.INFO);
   }
 
   @Override
-  public void createSubsWorkNotification(Set<User> users, Playlist playlist) {
+  public void createSubsWorkNotification(Set<UUID> userIds, UUID playlistId) {
+
+    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+
     String title = "구독 중인 플레이리스트 [" + playlist.getTitle() + "]가  업데이트됐어요.";
-    createMany(users, title, null, NotificationLevel.INFO);
+
+    createMany(userIds, title, null, NotificationLevel.INFO);
   }
 
   @Override
-  public void createRoleUpdateNotification(User user, Role previous, Role now) {
+  public void createRoleUpdateNotification(UUID userId, Role previous, Role now) {
+    User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
+
     String title = "내 권한이 변경되었어요.";
     String content = "내 권한이 [" + previous.toString() + "]에서 [" + now.toString() + "]로 변경되었어요.";
+
     Notification notification = new Notification(user, title, content, NotificationLevel.WARNING);
+
     notificationRepository.save(notification);
+
     NotificationDto dto = notificationMapper.toDto(notification);
     eventPublisher.publishEvent(new NotificationRoleEvent(dto, Instant.now()));
   }
 
   @Override
-  public void createDmNotification(User user, DirectMessage message) {
+  public void createDmNotification(UUID userId, UUID messageId) {
+    User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
+    DirectMessage message = messageRepository.findById(messageId).orElseThrow(() -> new DirectMessageNotFoundException(messageId));
+
     UUID senderId = message.getSenderId();
     User sender = userRepository.findById(senderId).orElseThrow(() -> UserNotFoundException.withId(senderId));
+
     String title = "[DM] " + sender.getName();
     String content = message.getContent();
+
     Notification notification = new Notification(user, message, title, content);
     notificationRepository.save(notification);
+
     NotificationDto dto = notificationMapper.toDto(notification);
     eventPublisher.publishEvent(new NotificationDmEvent(dto, Instant.now()));
   }
 
-  private void create(User receiver, String title, String content, NotificationLevel level) {
+  private void create(UUID receiverId, String title, String content, NotificationLevel level) {
+    User receiver = userRepository.findById(receiverId).orElseThrow(() -> UserNotFoundException.withId(receiverId));
     Notification notification = new Notification(receiver, title, content, level);
     notificationRepository.save(notification);
     NotificationDto dto = notificationMapper.toDto(notification);
     eventPublisher.publishEvent(new NotificationCreatedEvent(List.of(dto), Instant.now()));
   }
 
-  private void createMany(Set<User> receivers, String title, String content, NotificationLevel level) {
-    if (receivers.isEmpty()) return;
+  private void createMany(Set<UUID> receiverIds, String title, String content, NotificationLevel level) {
+    if (receiverIds.isEmpty()) return;
+    List<User> receivers = userRepository.findAllById(receiverIds);
     List<Notification> notifications = receivers.stream()
         .map(receiver -> new Notification(receiver, title, content, level))
         .toList();

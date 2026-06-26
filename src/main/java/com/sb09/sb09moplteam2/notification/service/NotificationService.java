@@ -14,12 +14,12 @@ public interface NotificationService {
 
   void delete(UUID notificationId, UUID userId);
 
-  void createFollowNotification(User user, User follower);
-  void createFollowWorkNotification(Set<User> users, User followed, Playlist playlist);
-  void createSubsNotification(User user,User subscriber, Playlist playlist);
-  void createSubsWorkNotification(Set<User> users, Playlist playlist);
+  void createFollowNotification(UUID userId, UUID followerId);
+  void createFollowWorkNotification(Set<UUID> userIds, UUID followedId, UUID playlistId);
+  void createSubsNotification(UUID userId,UUID subscriberId, UUID playlistId);
+  void createSubsWorkNotification(Set<UUID> userIds, UUID playlistId);
 
-  void createRoleUpdateNotification(User user, Role previous, Role now);
+  void createRoleUpdateNotification(UUID userId, Role previous, Role now);
 
-  void createDmNotification(User user, DirectMessage message);
+  void createDmNotification(UUID userId, UUID messageId);
 }
