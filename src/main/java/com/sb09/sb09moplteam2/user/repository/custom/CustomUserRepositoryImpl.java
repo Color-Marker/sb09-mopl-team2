@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.user.repository.Custom;
+package com.sb09.sb09moplteam2.user.repository.custom;
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
