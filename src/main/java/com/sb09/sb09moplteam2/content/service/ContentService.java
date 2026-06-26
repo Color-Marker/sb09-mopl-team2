@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.content.service;
 
 
 import com.sb09.sb09moplteam2.content.dto.data.ContentDto;
+import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
 import com.sb09.sb09moplteam2.content.dto.request.ContentCreateRequest;
 import com.sb09.sb09moplteam2.content.dto.request.ContentUpdateRequest;
 import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
@@ -9,7 +10,6 @@ import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.mapper.ContentMapper;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
-import com.sb09.sb09moplteam2.content.repository.ContentRepositoryCustom;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -115,5 +115,13 @@ public class ContentService {
         });
     contentRepository.delete(content);
     log.info("콘텐츠 삭제 완료 - contentId: {}", contentId);
+  }
+
+  @Transactional(readOnly = true)
+  public ContentSummary getContentSummary(UUID contentId) {
+    Content content = contentRepository.findById(contentId)
+        .orElseThrow(() -> new NoSuchElementException("콘텐츠를 찾을 수 없습니다: " + contentId));
+    List<ContentTag> tags = contentTagRepository.findByContentId(contentId);
+    return contentMapper.toContentSummary(content, tags);
   }
 }
