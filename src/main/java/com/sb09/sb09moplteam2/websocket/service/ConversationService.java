@@ -48,7 +48,8 @@ public class ConversationService {
           return newConversation;
         });
 
-    return toDto(conversation, myUserId);
+    List<ConversationParticipant> participants = conversationParticipantRepository.findByConversation(conversation);
+    return toDto(conversation, myUserId, participants);
   }
 
   // GET /api/conversations/{conversationId}
@@ -57,7 +58,8 @@ public class ConversationService {
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> new ConversationNotFoundException(conversationId));
 
-    return toDto(conversation, myUserId);
+    List<ConversationParticipant> participants = conversationParticipantRepository.findByConversation(conversation);
+    return toDto(conversation, myUserId, participants);
   }
 
   // GET /api/conversations/with?userId=
@@ -67,7 +69,8 @@ public class ConversationService {
         .findExistingDirectConversation(myUserId, withUserId)
         .orElseThrow(() -> new ConversationNotFoundException(null));
 
-    return toDto(conversation, myUserId);
+    List<ConversationParticipant> participants = conversationParticipantRepository.findByConversation(conversation);
+    return toDto(conversation, myUserId, participants);
   }
 
   // GET /api/conversations
