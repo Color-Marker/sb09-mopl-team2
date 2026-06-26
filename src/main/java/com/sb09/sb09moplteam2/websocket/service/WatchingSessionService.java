@@ -3,9 +3,11 @@ package com.sb09.sb09moplteam2.websocket.service;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
+import com.sb09.sb09moplteam2.user.service.UserService;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
 
+import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
 import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,11 +22,13 @@ import java.util.UUID;
 public class WatchingSessionService {
 
   private final WatchingSessionRepository watchingSessionRepository;
+  private final UserService userService;
 
   // GET /api/users/{watcherId}/watching-sessions
   // 특정 유저의 활성 세션 단건 조회 (없으면 null 반환 - nullable)
   public WatchingSessionDto findActiveByUserId(UUID watcherId) {
-    return watchingSessionRepository.findActiveByUserId(watcherId)
+    return watchingSessionRepository
+        .findByUserIdAndStatus(watcherId, WatchingSessionStatus.ACTIVE)
         .map(this::toDto)
         .orElse(null);
   }
@@ -39,7 +43,7 @@ public class WatchingSessionService {
       String sortBy,
       String sortDirection
   ) {
-    // TODO: 커서 페이지네이션 쿼리 구현 (QueryDSL 또는 JPQL)
+    // TODO: 커서 페이지네이션 쿼리 구현
     List<WatchingSession> sessions = watchingSessionRepository.findByContentId(contentId);
     List<WatchingSessionDto> data = sessions.stream()
         .map(this::toDto)
@@ -57,14 +61,9 @@ public class WatchingSessionService {
   }
 
   private WatchingSessionDto toDto(WatchingSession session) {
-    // TODO: 팀원 User 도메인 연동 후 실제 UserSummary로 교체
-    UserSummary watcher = new UserSummary(
-        session.getUserId(),
-        null,   // TODO: userName
-        null    // TODO: profileImageUrl
-    );
+    UserSummary watcher = userService.getUserSummary(session.getUserId());
 
-    // TODO: 팀원 Content 도메인 연동 후 실제 ContentSummary로 교체
+    // TODO: Content 도메인 연동 후 실제 ContentSummary로 교체
     ContentSummary content = new ContentSummary(
         session.getContentId(),
         null,   // TODO: type

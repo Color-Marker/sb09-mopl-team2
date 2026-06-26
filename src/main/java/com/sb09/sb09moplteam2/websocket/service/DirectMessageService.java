@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.websocket.service;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
+import com.sb09.sb09moplteam2.user.service.UserService;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
@@ -29,6 +30,7 @@ public class DirectMessageService {
   private final DirectMessageRepository directMessageRepository;
   private final ConversationRepository conversationRepository;
   private final ConversationParticipantRepository conversationParticipantRepository;
+  private final UserService userService;
 
   // GET /api/conversations/{conversationId}/direct-messages
   // DM 목록 조회 (커서 페이지네이션) - 참여자만 조회 가능
@@ -67,7 +69,6 @@ public class DirectMessageService {
     boolean hasNext = messages.size() > limit;
     List<DirectMessage> content = hasNext ? messages.subList(0, limit) : messages;
 
-    // participants 재사용해서 toDto에 넘김
     List<DirectMessageDto> data = content.stream()
         .map(dm -> toDto(dm, conversation, participants))
         .toList();
@@ -107,11 +108,8 @@ public class DirectMessageService {
   private DirectMessageDto toDto(DirectMessage dm, Conversation conversation,
       List<ConversationParticipant> participants) {
 
-    UserSummary sender = new UserSummary(
-        dm.getSenderId(),
-        null,   // TODO: senderName
-        null    // TODO: senderProfileImageUrl
-    );
+    // UserService로 발신자/수신자 정보 조회
+    UserSummary sender = userService.getUserSummary(dm.getSenderId());
 
     UUID receiverId = participants.stream()
         .map(ConversationParticipant::getUserId)
@@ -119,11 +117,9 @@ public class DirectMessageService {
         .findFirst()
         .orElse(null);
 
-    UserSummary receiver = new UserSummary(
-        receiverId,
-        null,   // TODO: receiverName
-        null    // TODO: receiverProfileImageUrl
-    );
+    UserSummary receiver = receiverId != null
+        ? userService.getUserSummary(receiverId)
+        : null;
 
     return new DirectMessageDto(
         dm.getId(),

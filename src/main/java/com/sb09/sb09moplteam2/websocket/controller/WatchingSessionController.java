@@ -28,24 +28,23 @@ public class WatchingSessionController {
       @PathVariable UUID watcherId
   ) {
     log.info("GET /api/users/{}/watching-sessions", watcherId);
-    WatchingSessionDto result = watchingSessionService.findActiveByUserId(watcherId);
-    return ResponseEntity.ok(result);
+    return ResponseEntity.ok(watchingSessionService.findActiveByUserId(watcherId));
   }
+
 
   // GET /api/contents/{contentId}/watching-sessions
   // 특정 콘텐츠의 시청 세션 목록 조회 (커서 페이지네이션)
   @GetMapping("/contents/{contentId}/watching-sessions")
   public ResponseEntity<CursorResponse<WatchingSessionDto>> findByContent(
       @PathVariable UUID contentId,
-      @RequestParam String cursor,
-      @RequestParam UUID idAfter,
-      @RequestParam int limit,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) UUID idAfter,
+      @RequestParam Integer limit,
       @RequestParam String sortBy,
       @RequestParam String sortDirection
   ) {
     log.info("GET /api/contents/{}/watching-sessions", contentId);
     return ResponseEntity.ok(watchingSessionService.findAllByContentId(
-        contentId, cursor, idAfter, limit, sortBy, sortDirection
-    ));
+        contentId, cursor, idAfter, limit, sortBy, sortDirection));
   }
 }

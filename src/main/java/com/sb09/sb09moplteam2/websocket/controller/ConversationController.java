@@ -9,6 +9,7 @@ import com.sb09.sb09moplteam2.websocket.service.DirectMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,11 +33,10 @@ public class ConversationController {
   // 대화 생성 (이미 있으면 기존 대화 반환)
   @PostMapping
   public ResponseEntity<ConversationDto> create(
-      @RequestBody ConversationCreateRequest request
+      @RequestBody ConversationCreateRequest request,
+      @AuthenticationPrincipal UUID myUserId
   ) {
     log.info("POST /api/conversations - withUserId: {}", request.withUserId());
-    // TODO: @AuthenticationPrincipal로 myUserId 가져오기
-    UUID myUserId = null; // TODO: 유저 인증 연동 후 교체
     return ResponseEntity.ok(conversationService.createDirect(myUserId, request.withUserId()));
   }
 
@@ -49,11 +49,10 @@ public class ConversationController {
       @RequestParam(required = false) UUID idAfter,
       @RequestParam Integer limit,
       @RequestParam String sortBy,
-      @RequestParam String sortDirection
+      @RequestParam String sortDirection,
+      @AuthenticationPrincipal UUID myUserId
   ) {
-    log.info("GET /api/conversations");
-    // TODO: @AuthenticationPrincipal로 myUserId 가져오기
-    UUID myUserId = null; // TODO: 유저 인증 연동 후 교체
+    log.info("GET /api/conversations - myUserId: {}", myUserId);
     return ResponseEntity.ok(conversationService.findAll(
         myUserId, cursor, idAfter, limit, sortBy, sortDirection));
   }
@@ -62,11 +61,10 @@ public class ConversationController {
   // 대화 단건 조회
   @GetMapping("/{conversationId}")
   public ResponseEntity<ConversationDto> findById(
-      @PathVariable UUID conversationId
+      @PathVariable UUID conversationId,
+      @AuthenticationPrincipal UUID myUserId
   ) {
     log.info("GET /api/conversations/{}", conversationId);
-    // TODO: @AuthenticationPrincipal로 myUserId 가져오기
-    UUID myUserId = null; // TODO: 유저 인증 연동 후 교체
     return ResponseEntity.ok(conversationService.findById(conversationId, myUserId));
   }
 
@@ -74,11 +72,10 @@ public class ConversationController {
   // 특정 유저와의 대화 조회
   @GetMapping("/with")
   public ResponseEntity<ConversationDto> findWithUser(
-      @RequestParam UUID userId
+      @RequestParam UUID userId,
+      @AuthenticationPrincipal UUID myUserId
   ) {
     log.info("GET /api/conversations/with - userId: {}", userId);
-    // TODO: @AuthenticationPrincipal로 myUserId 가져오기
-    UUID myUserId = null; // TODO: 유저 인증 연동 후 교체
     return ResponseEntity.ok(conversationService.findWithUser(myUserId, userId));
   }
 
@@ -91,11 +88,10 @@ public class ConversationController {
       @RequestParam(required = false) UUID idAfter,
       @RequestParam Integer limit,
       @RequestParam String sortBy,
-      @RequestParam String sortDirection
+      @RequestParam String sortDirection,
+      @AuthenticationPrincipal UUID myUserId
   ) {
     log.info("GET /api/conversations/{}/direct-messages", conversationId);
-    // TODO: @AuthenticationPrincipal로 myUserId 가져오기
-    UUID myUserId = null; // TODO: 유저 인증 연동 후 교체
     return ResponseEntity.ok(directMessageService.findAll(
         conversationId, myUserId, cursor, idAfter, limit, sortBy, sortDirection));
   }
@@ -105,11 +101,10 @@ public class ConversationController {
   @PostMapping("/{conversationId}/direct-messages/{directMessageId}/read")
   public ResponseEntity<Void> read(
       @PathVariable UUID conversationId,
-      @PathVariable UUID directMessageId
+      @PathVariable UUID directMessageId,
+      @AuthenticationPrincipal UUID myUserId
   ) {
     log.info("POST /api/conversations/{}/direct-messages/{}/read", conversationId, directMessageId);
-    // TODO: @AuthenticationPrincipal로 myUserId 가져오기
-    UUID myUserId = null; // TODO: 유저 인증 연동 후 교체
     directMessageService.read(conversationId, myUserId);
     return ResponseEntity.ok().build();
   }
