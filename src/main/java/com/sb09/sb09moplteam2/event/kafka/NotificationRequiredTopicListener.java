@@ -75,7 +75,7 @@ public class NotificationRequiredTopicListener {
   public void onMessageCreatedEvent(String kafkaEvent){ // DM 메시지가 옴
     try {
       MessageCreatedEvent event = objectMapper.readValue(kafkaEvent, MessageCreatedEvent.class);
-      notificationService.createDmNotification(event.userId(), event.messageId());
+      notificationService.createDmNotification(event.userId(), event.messageDto());
     } catch (JsonProcessingException e){
       throw new RuntimeException(e);
     }

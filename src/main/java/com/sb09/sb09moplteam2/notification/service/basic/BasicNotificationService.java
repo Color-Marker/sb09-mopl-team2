@@ -19,6 +19,7 @@ import com.sb09.sb09moplteam2.notification.service.NotificationService;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
+import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import com.sb09.sb09moplteam2.websocket.repository.DirectMessageRepository;
 import java.time.Instant;
@@ -92,7 +93,7 @@ public class BasicNotificationService implements NotificationService {
 
     String title = follower.getName() + "님이 나를 팔로우했어요.";
 
-    create(userId, title, null, NotificationLevel.INFO);
+    create(userId, title);
   }
 
   @Override
@@ -104,7 +105,7 @@ public class BasicNotificationService implements NotificationService {
     String title = followed.getName() + "님이 플레이리스트를 만들었어요.";
     String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
 
-    createMany(userIds, title, content, NotificationLevel.INFO);
+    createMany(userIds, title, content);
   }
 
   @Override
@@ -115,7 +116,7 @@ public class BasicNotificationService implements NotificationService {
 
     String title = subscriber.getName() + "님이 나의 플레이리스트 [" + playlist.getTitle() + "]를 구독했어요.";
 
-    create(userId, title, null, NotificationLevel.INFO);
+    create(userId, title);
   }
 
   @Override
@@ -125,7 +126,7 @@ public class BasicNotificationService implements NotificationService {
 
     String title = "구독 중인 플레이리스트 [" + playlist.getTitle() + "]가  업데이트됐어요.";
 
-    createMany(userIds, title, null, NotificationLevel.INFO);
+    createMany(userIds, title, null);
   }
 
   @Override
@@ -144,15 +145,12 @@ public class BasicNotificationService implements NotificationService {
   }
 
   @Override
-  public void createDmNotification(UUID userId, UUID messageId) {
+  public void createDmNotification(UUID userId, DirectMessageDto messageDto) {
     User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
-    DirectMessage message = messageRepository.findById(messageId).orElseThrow(() -> new DirectMessageNotFoundException(messageId));
+    DirectMessage message = messageRepository.findById(messageDto.id()).orElseThrow(() -> new DirectMessageNotFoundException(messageDto.id()));
 
-    UUID senderId = message.getSenderId();
-    User sender = userRepository.findById(senderId).orElseThrow(() -> UserNotFoundException.withId(senderId));
-
-    String title = "[DM] " + sender.getName();
-    String content = message.getContent();
+    String title = "[DM] " + messageDto.sender().name();
+    String content = messageDto.content();
 
     Notification notification = new Notification(user, message, title, content);
     notificationRepository.save(notification);
@@ -161,19 +159,19 @@ public class BasicNotificationService implements NotificationService {
     eventPublisher.publishEvent(new NotificationDmEvent(dto, Instant.now()));
   }
 
-  private void create(UUID receiverId, String title, String content, NotificationLevel level) {
+  private void create(UUID receiverId, String title) {
     User receiver = userRepository.findById(receiverId).orElseThrow(() -> UserNotFoundException.withId(receiverId));
-    Notification notification = new Notification(receiver, title, content, level);
+    Notification notification = new Notification(receiver, title, null, NotificationLevel.INFO);
     notificationRepository.save(notification);
     NotificationDto dto = notificationMapper.toDto(notification);
     eventPublisher.publishEvent(new NotificationCreatedEvent(List.of(dto), Instant.now()));
   }
 
-  private void createMany(Set<UUID> receiverIds, String title, String content, NotificationLevel level) {
+  private void createMany(Set<UUID> receiverIds, String title, String content) {
     if (receiverIds.isEmpty()) return;
     List<User> receivers = userRepository.findAllById(receiverIds);
     List<Notification> notifications = receivers.stream()
-        .map(receiver -> new Notification(receiver, title, content, level))
+        .map(receiver -> new Notification(receiver, title, content, NotificationLevel.INFO))
         .toList();
     notificationRepository.saveAll(notifications);
     List<NotificationDto> dtos = notifications.stream()

@@ -5,6 +5,7 @@ import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
+import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import java.util.Set;
 import java.util.UUID;
@@ -21,5 +22,5 @@ public interface NotificationService {
 
   void createRoleUpdateNotification(UUID userId, Role previous, Role now);
 
-  void createDmNotification(UUID userId, UUID messageId);
+  void createDmNotification(UUID userId, DirectMessageDto messageDto);
 }
