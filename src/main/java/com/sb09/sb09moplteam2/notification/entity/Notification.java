@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.notification.entity;
 
+import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

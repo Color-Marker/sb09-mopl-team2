@@ -3,6 +3,8 @@ package com.sb09.sb09moplteam2.notification.service;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
+import com.sb09.sb09moplteam2.user.entity.Role;
+import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import java.util.Set;
 import java.util.UUID;

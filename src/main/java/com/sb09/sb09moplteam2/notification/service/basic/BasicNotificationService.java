@@ -3,6 +3,7 @@ package com.sb09.sb09moplteam2.notification.service.basic;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.exception.notification.NotificationForbiddenException;
 import com.sb09.sb09moplteam2.exception.notification.NotificationNotFoundException;
+import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.notification.entity.Notification;
@@ -11,6 +12,9 @@ import com.sb09.sb09moplteam2.notification.mapper.CursorResponseNotificationMapp
 import com.sb09.sb09moplteam2.notification.mapper.NotificationMapper;
 import com.sb09.sb09moplteam2.notification.repository.NotificationRepository;
 import com.sb09.sb09moplteam2.notification.service.NotificationService;
+import com.sb09.sb09moplteam2.user.entity.Role;
+import com.sb09.sb09moplteam2.user.entity.User;
+import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import java.time.Instant;
 import java.util.List;
@@ -36,12 +40,15 @@ public class BasicNotificationService implements NotificationService {
   private final NotificationMapper notificationMapper;
   private final ApplicationEventPublisher eventPublisher;
 
-  @PreAuthorize("principal.userDto.id == #userId")
   @Transactional(readOnly = true)
   @Override
   public CursorResponse<NotificationDto> list(UUID userId,
       NotificationListRequest request) {
     log.debug("알림 목록 조회 시작: receiverId={}", userId);
+
+    if(!userRepository.existsById(userId)){
+      throw UserNotFoundException.withId(userId);
+    }
 
     Slice<Notification> slice = notificationRepository.searchNotification(userId, request);
     Long totalCount = notificationRepository.countByReceiver_Id(userId);
@@ -58,7 +65,6 @@ public class BasicNotificationService implements NotificationService {
     );
   }
 
-  @PreAuthorize("principal.userDto.id == #userId")
   @Override
   public void delete(UUID notificationId, UUID userId) {
     log.debug("알림 삭제 시작: id={}, userId={}", notificationId, userId);
@@ -110,7 +116,8 @@ public class BasicNotificationService implements NotificationService {
 
   @Override
   public void createDmNotification(User user, DirectMessage message) {
-    User sender = userRepository.findById(message.getSenderId());
+    UUID senderId = message.getSenderId();
+    User sender = userRepository.findById(senderId).orElseThrow(() -> UserNotFoundException.withId(senderId));
     String title = "[DM] " + sender.getName();
     String content = message.getContent();
     Notification notification = new Notification(user, message, title, content);

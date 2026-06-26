@@ -3,6 +3,7 @@ package com.sb09.sb09moplteam2.notification.controller.api;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
+import com.sb09.sb09moplteam2.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,7 +22,7 @@ public interface NotificationApi {
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   ResponseEntity<CursorResponse<NotificationDto>> list(
-      @Parameter(hidden = true) MoplUserDetails principal,
+      @Parameter(hidden = true) CustomUserDetails principal,
       @Valid NotificationListRequest request
   );
 
@@ -32,7 +33,7 @@ public interface NotificationApi {
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   ResponseEntity<Void> delete(
-      @Parameter(hidden = true) MoplUserDetails principal,
+      @Parameter(hidden = true) CustomUserDetails principal,
       @PathVariable @NotNull(message = "알림 ID는 필수입니다") UUID notificationId
   );
 

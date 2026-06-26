@@ -5,6 +5,7 @@ import com.sb09.sb09moplteam2.notification.controller.api.NotificationApi;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.notification.service.NotificationService;
+import com.sb09.sb09moplteam2.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +29,10 @@ public class NotificationController implements NotificationApi {
   @GetMapping
   @Override
   public ResponseEntity<CursorResponse<NotificationDto>> list(
-      @AuthenticationPrincipal MoplUserDetails principal,
+      @AuthenticationPrincipal CustomUserDetails principal,
       @Valid NotificationListRequest request
   ) {
-    UUID userId = principal.getUserDto().id();
+    UUID userId = principal.getId();
     log.info("알림 목록 조회 요청: userId={}", userId);
     CursorResponse<NotificationDto> result = notificationService.list(userId, request);
     log.debug("알림 목록 조회 응답: count={}", result.totalCount());
@@ -41,10 +42,10 @@ public class NotificationController implements NotificationApi {
   @DeleteMapping("/{notificationId}")
   @Override
   public ResponseEntity<Void> delete(
-      @AuthenticationPrincipal MoplUserDetails principal,
+      @AuthenticationPrincipal CustomUserDetails principal,
       @PathVariable UUID notificationId
   ) {
-    UUID userId = principal.getUserDto().id();
+    UUID userId = principal.getId();
     log.info("알림 삭제 요청: id={}, userId={}", notificationId, userId);
     notificationService.delete(notificationId, userId);
     log.debug("알림 삭제 응답: id={}", notificationId);
