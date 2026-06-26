@@ -16,7 +16,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-//현재는 인증 필터에 필요한 액세스 토큰 처리만
 @Component
 @RequiredArgsConstructor
 public class JwtProvider {
@@ -24,47 +23,71 @@ public class JwtProvider {
   private final JwtProperties jwtProperties;
 
   public String generateAccessToken(UUID userId, Role role) {
-    try {
-      JWTClaimsSet claims = new JWTClaimsSet.Builder()
-          .subject(userId.toString())
-          .claim("role", role.name())
-          .issueTime(Date.from(Instant.now()))
-          .expirationTime(Date.from(Instant.now().plusMillis(jwtProperties.getAccessToken().getExpirationMs())))
-          .build();
+    return generateToken(userId, role, jwtProperties.getAccessToken().getSecret(), jwtProperties.getAccessToken().getExpirationMs());
+  }
 
-      SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
-      signedJWT.sign(new MACSigner(jwtProperties.getAccessToken().getSecret().getBytes()));
+  public String generateRefreshToken(UUID userId) {
+    return generateToken(userId, null, jwtProperties.getRefreshToken().getSecret(), jwtProperties.getRefreshToken().getExpirationMs());
+  }
+
+  public UUID getUserId(String accessToken) {
+    return UUID.fromString(getClaims(accessToken, jwtProperties.getAccessToken().getSecret()).getSubject());
+  }
+
+  public Role getRole(String accessToken) {
+    try {
+      return Role.valueOf(getClaims(accessToken, jwtProperties.getAccessToken().getSecret()).getStringClaim("role"));
+    } catch (ParseException e) {
+      throw new IllegalStateException("토큰 파싱에 실패했습니다.", e);
+    }
+  }
+
+  public boolean isValid(String accessToken) {
+    return isValidToken(accessToken, jwtProperties.getAccessToken().getSecret());
+  }
+
+  public UUID getUserIdFromRefreshToken(String refreshToken) {
+    return UUID.fromString(getClaims(refreshToken, jwtProperties.getRefreshToken().getSecret()).getSubject());
+  }
+
+  public boolean isValidRefreshToken(String refreshToken) {
+    return isValidToken(refreshToken, jwtProperties.getRefreshToken().getSecret());
+  }
+
+  public long getRefreshTokenExpirationMs() {
+    return jwtProperties.getRefreshToken().getExpirationMs();
+  }
+
+  private String generateToken(UUID userId, Role role, String secret, long expirationMs) {
+    try {
+      JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
+          .subject(userId.toString())
+          .issueTime(Date.from(Instant.now()))
+          .expirationTime(Date.from(Instant.now().plusMillis(expirationMs)));
+      if (role != null) {
+        claimsBuilder.claim("role", role.name());
+      }
+      SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsBuilder.build());
+      signedJWT.sign(new MACSigner(secret.getBytes()));
       return signedJWT.serialize();
     } catch (JOSEException e) {
       throw new IllegalStateException("토큰 생성에 실패했습니다.", e);
     }
   }
 
-  public UUID getUserId(String token) {
-    return UUID.fromString(getClaims(token).getSubject());
-  }
-
-  public Role getRole(String token) {
+  private boolean isValidToken(String token, String secret) {
     try {
-      return Role.valueOf(getClaims(token).getStringClaim("role"));
-    } catch (ParseException e) {
-      throw new IllegalStateException("토큰 파싱에 실패했습니다.", e);
-    }
-  }
-
-  public boolean isValid(String token) {
-    try {
-      JWTClaimsSet claims = getClaims(token);
+      JWTClaimsSet claims = getClaims(token, secret);
       return claims.getExpirationTime() != null && claims.getExpirationTime().after(new Date());
     } catch (Exception e) {
       return false;
     }
   }
 
-  private JWTClaimsSet getClaims(String token) {
+  private JWTClaimsSet getClaims(String token, String secret) {
     try {
       SignedJWT signedJWT = SignedJWT.parse(token);
-      MACVerifier verifier = new MACVerifier(jwtProperties.getAccessToken().getSecret().getBytes());
+      MACVerifier verifier = new MACVerifier(secret.getBytes());
       if (!signedJWT.verify(verifier)) {
         throw new IllegalStateException("토큰 서명이 유효하지 않습니다.");
       }
