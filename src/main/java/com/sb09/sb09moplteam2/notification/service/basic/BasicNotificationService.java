@@ -1,6 +1,9 @@
 package com.sb09.sb09moplteam2.notification.service.basic;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
+import com.sb09.sb09moplteam2.event.message.NotificationCreatedEvent;
+import com.sb09.sb09moplteam2.event.message.NotificationDmEvent;
+import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
 import com.sb09.sb09moplteam2.exception.notification.NotificationForbiddenException;
 import com.sb09.sb09moplteam2.exception.notification.NotificationNotFoundException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
@@ -21,7 +24,6 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
-import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -111,7 +113,7 @@ public class BasicNotificationService implements NotificationService {
     Notification notification = new Notification(user, title, content, NotificationLevel.WARNING);
     notificationRepository.save(notification);
     NotificationDto dto = notificationMapper.toDto(notification);
-    eventPublisher.publishEvent(new NotificationRoleEvent(List.of(dto), Instant.now()));
+    eventPublisher.publishEvent(new NotificationRoleEvent(dto, Instant.now()));
   }
 
   @Override
@@ -123,7 +125,7 @@ public class BasicNotificationService implements NotificationService {
     Notification notification = new Notification(user, message, title, content);
     notificationRepository.save(notification);
     NotificationDto dto = notificationMapper.toDto(notification);
-    eventPublisher.publishEvent(new NotificationDmEvent(List.of(dto), Instant.now()));
+    eventPublisher.publishEvent(new NotificationDmEvent(dto, Instant.now()));
   }
 
   private void create(User receiver, String title, String content, NotificationLevel level) {
