@@ -1,5 +1,7 @@
 package com.sb09.sb09moplteam2.profile.entity;
 
+import com.sb09.sb09moplteam2.user.entity.User;
+import com.sb09.sb09moplteam2.content.entity.Content;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -10,9 +12,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-// import com.sb09.sb09moplteam2.user.entity.User;
-// import com.sb09.sb09moplteam2.content.entity.Content;
 
 @Entity
 @Table(name = "watching_sessions")

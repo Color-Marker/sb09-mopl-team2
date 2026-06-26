@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.entity;
+package com.sb09.sb09moplteam2.websocket.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

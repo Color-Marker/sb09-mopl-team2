@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// import com.sb09.sb09moplteam2.user.entity.User;
+import com.sb09.sb09moplteam2.user.entity.User;
 
 @Entity
 @Table(
