@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.websocket.repository;
 
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
+import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +19,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
         ORDER BY c.createdAt DESC
         """)
   List<Conversation> findAllByParticipantUserId(@Param("userId") UUID userId);
+
+  // conversation ID 목록으로 참여자 한 번에 조회
+  List<ConversationParticipant> findByConversationIdIn(List<UUID> conversationIds);
 }
