@@ -29,7 +29,7 @@ public class TmdbMovieProcessor implements ItemProcessor<TmdbMovieResponse, Cont
     return Content.builder()
         .type(contentType)
         .externalId(String.valueOf(item.id()))
-        .title(contentType == ContentType.MOVIE ? item.title() : item.title())
+        .title(contentType == ContentType.MOVIE ? item.title() : item.name())
         .description(item.overview())
         .thumbnailUrl(item.posterPath() != null
             ? "https://image.tmdb.org/t/p/w500" + item.posterPath()
