@@ -1,5 +1,7 @@
 package com.sb09.sb09moplteam2.user.service.Basic;
 
+import com.sb09.sb09moplteam2.auth.entity.PasswordResetToken;
+import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
@@ -9,6 +11,7 @@ import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import com.sb09.sb09moplteam2.user.service.UserService;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +25,7 @@ public class BasicUserService implements UserService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
+  private final PasswordResetTokenRepository passwordResetTokenRepository;
 
   @Override
   @Transactional
@@ -43,5 +47,17 @@ public class BasicUserService implements UserService {
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
     return userMapper.toSummary(user);
+  }
+
+  @Override
+  @Transactional
+  public void changePassword(UUID userId, String newPassword) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    user.changePassword(passwordEncoder.encode(newPassword));
+
+    passwordResetTokenRepository.findByUserIdAndUsedFalseAndExpiryDateAfter(userId, Instant.now())
+        .ifPresent(PasswordResetToken::markUsed);
   }
 }

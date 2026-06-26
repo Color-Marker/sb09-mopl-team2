@@ -10,4 +10,6 @@ public interface UserService {
   UserDto createUser(UserCreateRequest request);
 
   UserSummary getUserSummary(UUID userId);
+
+  void changePassword(UUID userId, String newPassword);
 }

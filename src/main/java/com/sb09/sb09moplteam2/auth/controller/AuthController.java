@@ -1,8 +1,10 @@
 package com.sb09.sb09moplteam2.auth.controller;
 
 import com.sb09.sb09moplteam2.auth.controller.api.AuthApi;
+import com.sb09.sb09moplteam2.auth.dto.request.ResetPasswordRequest;
 import com.sb09.sb09moplteam2.auth.entity.JwtSession;
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
+import com.sb09.sb09moplteam2.auth.service.AuthService;
 import com.sb09.sb09moplteam2.exception.auth.InvalidTokenException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.security.JwtProvider;
@@ -12,6 +14,7 @@ import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,6 +36,7 @@ public class AuthController implements AuthApi {
   private final JwtSessionRepository jwtSessionRepository;
   private final UserRepository userRepository;
   private final UserMapper userMapper;
+  private final AuthService authService;
 
   @Override
   @PostMapping("/refresh")
@@ -74,7 +79,14 @@ public class AuthController implements AuthApi {
   @Override
   @GetMapping("/csrf-token")
   public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
-    csrfToken.getToken(); // 토큰을 실제로 읽어야 쿠키(XSRF-TOKEN)에 저장됨
+    csrfToken.getToken();
+    return ResponseEntity.noContent().build();
+  }
+
+  @Override
+  @PostMapping("/reset-password")
+  public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    authService.resetPassword(request.email());
     return ResponseEntity.noContent().build();
   }
 }
