@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sb09.sb09moplteam2.security.jwt.CsrfCookieFilter;
 import com.sb09.sb09moplteam2.security.oauth.CustomOAuth2UserService;
 import com.sb09.sb09moplteam2.security.jwt.JwtAuthenticationFilter;
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -24,6 +26,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
@@ -62,6 +65,7 @@ public class SecurityConfig {
             .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/", "/index.html", "/favicon.svg", "/assets/**", "/error").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -71,7 +75,7 @@ public class SecurityConfig {
             .logoutUrl("/api/auth/sign-out")
             .addLogoutHandler(new JwtSignOutHandler(jwtSessionRepository))
             .logoutSuccessHandler((request, response, authentication) ->
-                response.setStatus(org.springframework.http.HttpStatus.NO_CONTENT.value()))
+                response.setStatus(HttpStatus.NO_CONTENT.value()))
             .deleteCookies("REFRESH_TOKEN")
         )
         .oauth2Login(oauth2 -> oauth2
@@ -80,6 +84,7 @@ public class SecurityConfig {
             .failureHandler(oAuth2SignInFailureHandler)
         )
         .addFilterAt(jwtSignInFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
         .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }
