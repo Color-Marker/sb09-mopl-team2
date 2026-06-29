@@ -8,6 +8,7 @@ import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
 
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
+import com.sb09.sb09moplteam2.websocket.mapper.WatchingSessionMapper;
 import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,14 +23,14 @@ import java.util.UUID;
 public class WatchingSessionService {
 
   private final WatchingSessionRepository watchingSessionRepository;
-  private final UserService userService;
+  private final WatchingSessionMapper watchingSessionMapper;
 
   // GET /api/users/{watcherId}/watching-sessions
   // 특정 유저의 활성 세션 단건 조회 (없으면 null 반환 - nullable)
   public WatchingSessionDto findActiveByUserId(UUID watcherId) {
     return watchingSessionRepository
         .findByUserIdAndStatus(watcherId, WatchingSessionStatus.ACTIVE)
-        .map(this::toDto)
+        .map(watchingSessionMapper::toDto)
         .orElse(null);
   }
 
@@ -46,7 +47,7 @@ public class WatchingSessionService {
     // TODO: 커서 페이지네이션 쿼리 구현
     List<WatchingSession> sessions = watchingSessionRepository.findByContentId(contentId);
     List<WatchingSessionDto> data = sessions.stream()
-        .map(this::toDto)
+        .map(watchingSessionMapper::toDto)
         .toList();
 
     return new CursorResponse<>(
@@ -60,26 +61,5 @@ public class WatchingSessionService {
     );
   }
 
-  private WatchingSessionDto toDto(WatchingSession session) {
-    UserSummary watcher = userService.getUserSummary(session.getUserId());
 
-    // TODO: Content 도메인 연동 후 실제 ContentSummary로 교체
-    ContentSummary content = new ContentSummary(
-        session.getContentId(),
-        null,   // TODO: type
-        null,   // TODO: title
-        null,   // TODO: description
-        null,   // TODO: thumbnailUrl
-        null,   // TODO: tags
-        0.0,    // TODO: averageRating
-        0       // TODO: reviewCount
-    );
-
-    return new WatchingSessionDto(
-        session.getId(),
-        session.getStartedAt(),
-        watcher,
-        content
-    );
-  }
 }
