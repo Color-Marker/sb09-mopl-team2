@@ -1,6 +1,6 @@
 package com.sb09.sb09moplteam2.content.batch.Tmdb;
 
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbMovieResponse;
+import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbEventResponse;
 import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbPageResponse;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import java.util.ArrayList;
@@ -9,13 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemReader;
 
 @Slf4j
-public class TmdbMovieReader implements ItemReader<TmdbMovieResponse> {
+public class TmdbMovieReader implements ItemReader<TmdbEventResponse> {
 
   private final TmdbClient tmdbClient;
   private final ContentType contentType;
   private int currentPage = 1;
   private int totalPages = 1;
-  private List<TmdbMovieResponse> buffer = new ArrayList<>();
+  private List<TmdbEventResponse> buffer = new ArrayList<>();
   private int bufferIndex = 0;
 
   public TmdbMovieReader(TmdbClient tmdbClient, ContentType contentType) {
@@ -24,7 +24,7 @@ public class TmdbMovieReader implements ItemReader<TmdbMovieResponse> {
   }
 
   @Override
-  public TmdbMovieResponse read() {
+  public TmdbEventResponse read() {
     if (bufferIndex >= buffer.size()) {
       if (currentPage > totalPages) {
         return null;
@@ -36,9 +36,9 @@ public class TmdbMovieReader implements ItemReader<TmdbMovieResponse> {
   }
 
   private void fetchNextPage() {
-    TmdbPageResponse<TmdbMovieResponse> response = contentType == ContentType.movie
+    TmdbPageResponse<TmdbEventResponse> response = contentType == ContentType.movie
         ? tmdbClient.fetchMovies(currentPage)
-        : tmdbClient.fetchDramas(currentPage);
+        : tmdbClient.fetchTvSeries(currentPage);
 
     totalPages = Math.min(response.totalPages(), 5); // 최대 5페이지
     buffer = response.results();

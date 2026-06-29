@@ -1,6 +1,6 @@
 package com.sb09.sb09moplteam2.content.batch.Tmdb;
 
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbMovieResponse;
+import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbEventResponse;
 import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbPageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ public class TmdbClient {
   private final TmdbProperties tmdbProperties;
   private final RestClient restClient;
 
-  public TmdbPageResponse<TmdbMovieResponse> fetchMovies(int page) {
+  public TmdbPageResponse<TmdbEventResponse> fetchMovies(int page) {
     log.info("TMDB 영화 데이터 호출 - page: {}", page);
     return restClient.get()
         .uri(tmdbProperties.baseUrl() + "/3/movie/popular?api_key={key}&page={page}&language=ko-KR",
@@ -25,8 +25,8 @@ public class TmdbClient {
         .body(new ParameterizedTypeReference<>() {});
   }
 
-  public TmdbPageResponse<TmdbMovieResponse> fetchDramas(int page) {
-    log.info("TMDB 드라마 데이터 호출 - page: {}", page);
+  public TmdbPageResponse<TmdbEventResponse> fetchTvSeries(int page) {
+    log.info("TMDB TV시리즈 데이터 호출 - page: {}", page);
     return restClient.get()
         .uri(tmdbProperties.baseUrl() + "/3/tv/popular?api_key={key}&page={page}&language=ko-KR",
             tmdbProperties.key(), page)
