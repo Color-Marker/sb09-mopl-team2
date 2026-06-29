@@ -20,6 +20,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
         """)
   List<Conversation> findAllByParticipantUserId(@Param("userId") UUID userId);
 
-  // conversation ID 목록으로 참여자 한 번에 조회
-  List<ConversationParticipant> findByConversationIdIn(List<UUID> conversationIds);
+//  // conversation ID 목록으로 참여자 한 번에 조회
+//  List<ConversationParticipant> findByConversationIdIn(List<UUID> conversationIds);
 }
