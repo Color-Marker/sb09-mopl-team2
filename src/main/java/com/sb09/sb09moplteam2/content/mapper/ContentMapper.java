@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.content.mapper;
 
 import com.sb09.sb09moplteam2.content.dto.data.ContentDto;
+import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import java.util.List;
@@ -22,6 +23,22 @@ public class ContentMapper {
         content.getAverageRating(),
         content.getReviewCount(),
         content.getWatcherCount()
+    );
+  }
+
+  public ContentSummary toContentSummary(Content content, List<ContentTag> tags) {
+    List<String> tagNames = tags.stream()
+        .map(ContentTag::getTag)
+        .toList();
+    return new ContentSummary(
+        content.getId(),
+        content.getType(),
+        content.getTitle(),
+        content.getDescription(),
+        content.getThumbnailUrl(),
+        tagNames,
+        content.getAverageRating(),
+        content.getReviewCount()
     );
   }
 }
