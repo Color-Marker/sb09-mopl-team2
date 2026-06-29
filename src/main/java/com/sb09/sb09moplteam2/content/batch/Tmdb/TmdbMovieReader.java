@@ -36,7 +36,7 @@ public class TmdbMovieReader implements ItemReader<TmdbMovieResponse> {
   }
 
   private void fetchNextPage() {
-    TmdbPageResponse<TmdbMovieResponse> response = contentType == ContentType.MOVIE
+    TmdbPageResponse<TmdbMovieResponse> response = contentType == ContentType.movie
         ? tmdbClient.fetchMovies(currentPage)
         : tmdbClient.fetchDramas(currentPage);
 

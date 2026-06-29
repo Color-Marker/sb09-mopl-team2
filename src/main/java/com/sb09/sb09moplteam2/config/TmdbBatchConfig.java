@@ -41,8 +41,8 @@ public class TmdbBatchConfig {
   public Step tmdbMovieStep() {
     return new StepBuilder("tmdbMovieStep", jobRepository)
         .<TmdbMovieResponse, Content>chunk(10, transactionManager)
-        .reader(new TmdbMovieReader(tmdbClient, ContentType.MOVIE))
-        .processor(new TmdbMovieProcessor(contentRepository, ContentType.MOVIE))
+        .reader(new TmdbMovieReader(tmdbClient, ContentType.movie))
+        .processor(new TmdbMovieProcessor(contentRepository, ContentType.movie))
         .writer(new TmdbMovieWriter(contentRepository))
         .build();
   }

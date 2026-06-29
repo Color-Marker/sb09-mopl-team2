@@ -18,7 +18,7 @@ public class SportsProcessor implements ItemProcessor<SportsEventResponse, Conte
   @Override
   public Content process(SportsEventResponse item) {
     if (contentRepository.findByTypeAndExternalId(
-        ContentType.SPORTS.name(), item.idEvent()).isPresent()) {
+        ContentType.sports, item.idEvent()).isPresent()) {
       log.info("이미 존재하는 스포츠 콘텐츠 skip - externalId: {}", item.idEvent());
       return null;
     }
@@ -37,7 +37,7 @@ public class SportsProcessor implements ItemProcessor<SportsEventResponse, Conte
         ? "UPCOMING" : "RELEASE";
 
     return Content.builder()
-        .type(ContentType.SPORTS)
+        .type(ContentType.sports)
         .externalId(item.idEvent())
         .title(item.strEvent())
         .description(item.description())

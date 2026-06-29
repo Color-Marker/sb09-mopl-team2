@@ -21,7 +21,7 @@ public class TmdbMovieProcessor implements ItemProcessor<TmdbMovieResponse, Cont
   @Override
   public Content process(TmdbMovieResponse item) {
     if (contentRepository.findByTypeAndExternalId(
-        contentType.name(), String.valueOf(item.id())).isPresent()) {
+        contentType, String.valueOf(item.id())).isPresent()) {
       log.info("이미 존재하는 콘텐츠 skip - externalId: {}", item.id());
       return null;
     }
@@ -29,7 +29,7 @@ public class TmdbMovieProcessor implements ItemProcessor<TmdbMovieResponse, Cont
     return Content.builder()
         .type(contentType)
         .externalId(String.valueOf(item.id()))
-        .title(contentType == ContentType.MOVIE ? item.title() : item.name())
+        .title(contentType == ContentType.movie ? item.title() : item.name())
         .description(item.overview())
         .thumbnailUrl(item.posterPath() != null
             ? "https://image.tmdb.org/t/p/w500" + item.posterPath()
