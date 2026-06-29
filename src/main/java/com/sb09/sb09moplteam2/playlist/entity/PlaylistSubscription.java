@@ -18,11 +18,11 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(name = "playlistSubscriptions")
+@Table(name = "playlist_subscriptions")
 public class PlaylistSubscription {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
   @Column(name = "created_at", nullable = false)

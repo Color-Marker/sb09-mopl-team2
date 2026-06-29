@@ -17,12 +17,12 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "playlistItems")
+@Table(name = "playlist_items")
 @NoArgsConstructor
 public class PlaylistItem {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
   @Column(name = "order_index", nullable = false)
