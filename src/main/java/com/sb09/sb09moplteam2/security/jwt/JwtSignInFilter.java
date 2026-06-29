@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -59,8 +60,9 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
         .orElseThrow(() -> new IllegalStateException("인증된 사용자를 찾을 수 없습니다."));
 
     // 기존에 로그인된 세션이 있으면 강제 로그아웃 처리
-    jwtSessionRepository.findAllByUserIdAndRevokedFalse(user.getId())
-        .forEach(JwtSession::revoke);
+    List<JwtSession> activeSessions = jwtSessionRepository.findAllByUserIdAndRevokedFalse(user.getId());
+    activeSessions.forEach(JwtSession::revoke);
+    jwtSessionRepository.saveAll(activeSessions);
 
     String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole());
     String refreshToken = jwtProvider.generateRefreshToken(user.getId());

@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "인증 관리")
@@ -17,7 +16,7 @@ public interface AuthApi {
   ResponseEntity<JwtDto> refresh(String refreshToken, HttpServletResponse response);
 
   @Operation(summary = "CSRF 토큰 조회")
-  ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken);
+  ResponseEntity<Void> getCsrfToken();
 
   @Operation(summary = "비밀번호 초기화")
   ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request);

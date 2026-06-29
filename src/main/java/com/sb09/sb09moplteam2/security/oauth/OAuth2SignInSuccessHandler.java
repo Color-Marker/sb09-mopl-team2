@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -32,8 +33,9 @@ public class OAuth2SignInSuccessHandler implements AuthenticationSuccessHandler 
   ) throws IOException {
     CustomOAuth2User principal = (CustomOAuth2User) authentication.getPrincipal();
 
-    jwtSessionRepository.findAllByUserIdAndRevokedFalse(principal.getUserId())
-        .forEach(JwtSession::revoke);
+    List<JwtSession> activeSessions = jwtSessionRepository.findAllByUserIdAndRevokedFalse(principal.getUserId());
+    activeSessions.forEach(JwtSession::revoke);
+    jwtSessionRepository.saveAll(activeSessions);
 
     String refreshToken = jwtProvider.generateRefreshToken(principal.getUserId());
     JwtSession session = new JwtSession(

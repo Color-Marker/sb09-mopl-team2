@@ -1,15 +1,23 @@
 package com.sb09.sb09moplteam2.auth.service.basic;
 
+import com.sb09.sb09moplteam2.auth.dto.response.TokenRefreshResult;
+import com.sb09.sb09moplteam2.auth.entity.JwtSession;
 import com.sb09.sb09moplteam2.auth.entity.PasswordResetToken;
+import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;
 import com.sb09.sb09moplteam2.auth.service.AuthService;
 import com.sb09.sb09moplteam2.auth.service.MailService;
+import com.sb09.sb09moplteam2.exception.auth.InvalidTokenException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
+import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.user.dto.response.JwtDto;
 import com.sb09.sb09moplteam2.user.entity.User;
+import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +36,9 @@ public class BasicAuthService implements AuthService {
   private final PasswordResetTokenRepository passwordResetTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final MailService mailService;
+  private final JwtProvider jwtProvider;
+  private final JwtSessionRepository jwtSessionRepository;
+  private final UserMapper userMapper;
 
   @Override
   @Transactional
@@ -35,7 +46,6 @@ public class BasicAuthService implements AuthService {
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> UserNotFoundException.withEmail(email));
 
-    // 기존 미사용 토큰은 무효화 (최신 1개만 유효하게)
     passwordResetTokenRepository.findAllByUserIdAndUsedFalse(user.getId())
         .forEach(PasswordResetToken::markUsed);
 
@@ -48,6 +58,36 @@ public class BasicAuthService implements AuthService {
     passwordResetTokenRepository.save(token);
 
     mailService.sendTemporaryPassword(user.getEmail(), temporaryPassword);
+  }
+
+  @Override
+  @Transactional
+  public TokenRefreshResult refresh(String refreshToken) {
+    if (!jwtProvider.isValidRefreshToken(refreshToken)) {
+      throw new InvalidTokenException();
+    }
+
+    JwtSession session = jwtSessionRepository.findByRefreshTokenAndRevokedFalse(refreshToken)
+        .orElseThrow(InvalidTokenException::new);
+    session.revoke();
+    jwtSessionRepository.save(session);
+
+    UUID userId = jwtProvider.getUserIdFromRefreshToken(refreshToken);
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    String newAccessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole());
+    String newRefreshToken = jwtProvider.generateRefreshToken(user.getId());
+
+    JwtSession newSession = new JwtSession(
+        user.getId(),
+        newRefreshToken,
+        Instant.now().plusMillis(jwtProvider.getRefreshTokenExpirationMs())
+    );
+    jwtSessionRepository.save(newSession);
+
+    JwtDto jwtDto = new JwtDto(userMapper.toDto(user), newAccessToken);
+    return new TokenRefreshResult(jwtDto, newRefreshToken);
   }
 
   private String generateTemporaryPassword() {
