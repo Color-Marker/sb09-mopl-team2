@@ -1,16 +1,16 @@
-package com.sb09.sb09moplteam2.profile.dto.data;
+package com.sb09.sb09moplteam2.dto;
 
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import java.util.List;
 import java.util.UUID;
 
-public record ContentSummary (
+public record ContentSummary(
     UUID id,
     ContentType type,
     String title,
     String description,
     String thumbnailUrl,
     List<String> tags,
-    Double averageRating,
-    Integer reviewCount
-){}
+    double averageRating,
+    int reviewCount
+) {}

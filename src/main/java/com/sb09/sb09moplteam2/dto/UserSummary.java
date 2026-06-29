@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.profile.dto.data;
+package com.sb09.sb09moplteam2.dto;
 
 import java.util.UUID;
 

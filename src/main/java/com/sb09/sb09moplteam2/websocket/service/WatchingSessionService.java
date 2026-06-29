@@ -1,7 +1,9 @@
 package com.sb09.sb09moplteam2.websocket.service;
 
-import com.sb09.sb09moplteam2.dto.ContentSummary;
+
+import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
+
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
