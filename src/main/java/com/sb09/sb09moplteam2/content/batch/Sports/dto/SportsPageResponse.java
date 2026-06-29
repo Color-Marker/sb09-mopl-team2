@@ -6,5 +6,5 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SportsPageResponse(
-    @JsonProperty("events") List<SportsResponse> events
+    @JsonProperty("events") List<SportsEventResponse> events
 ) {}
