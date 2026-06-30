@@ -1,16 +1,22 @@
 package com.sb09.sb09moplteam2.websocket.controller;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
-import com.sb09.sb09moplteam2.security.CustomUserDetails;
+import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import com.sb09.sb09moplteam2.websocket.dto.ConversationDto;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.dto.request.ConversationCreateRequest;
 import com.sb09.sb09moplteam2.websocket.service.ConversationService;
 import com.sb09.sb09moplteam2.websocket.service.DirectMessageService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,9 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/api/conversations")
 @RequiredArgsConstructor
@@ -32,7 +37,7 @@ public class ConversationController {
 
   @PostMapping
   public ResponseEntity<ConversationDto> create(
-      @RequestBody ConversationCreateRequest request,
+      @RequestBody @Valid ConversationCreateRequest request,
       @AuthenticationPrincipal CustomUserDetails userDetails
   ) {
     UUID myUserId = userDetails.getId();
@@ -45,9 +50,9 @@ public class ConversationController {
       @RequestParam(required = false) String keywordLike,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) UUID idAfter,
-      @RequestParam Integer limit,
-      @RequestParam String sortBy,
-      @RequestParam String sortDirection,
+      @RequestParam @Min(1) @Max(100) Integer limit,
+      @RequestParam @NotBlank String sortBy,
+      @RequestParam @NotBlank String sortDirection,
       @AuthenticationPrincipal CustomUserDetails userDetails
   ) {
     UUID myUserId = userDetails.getId();
@@ -81,9 +86,9 @@ public class ConversationController {
       @PathVariable UUID conversationId,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) UUID idAfter,
-      @RequestParam Integer limit,
-      @RequestParam String sortBy,
-      @RequestParam String sortDirection,
+      @RequestParam @Min(1) @Max(100) Integer limit,
+      @RequestParam @NotBlank String sortBy,
+      @RequestParam @NotBlank String sortDirection,
       @AuthenticationPrincipal CustomUserDetails userDetails
   ) {
     UUID myUserId = userDetails.getId();
