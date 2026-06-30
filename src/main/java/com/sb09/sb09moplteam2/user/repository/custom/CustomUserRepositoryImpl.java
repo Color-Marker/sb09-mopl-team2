@@ -71,6 +71,10 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
     return "ASCENDING".equalsIgnoreCase(condition.getSortDirection());
   }
 
+  private String resolveSortBy(UserSearchCondition condition) {
+    return condition.getSortBy() != null ? condition.getSortBy() : "createdAt";
+  }
+
   private BooleanExpression cursorCondition(UserSearchCondition condition) {
     String cursor = condition.getCursor();
     if (!StringUtils.hasText(cursor)) {
@@ -79,7 +83,7 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
 
     boolean asc = isAscending(condition);
 
-    return switch (condition.getSortBy()) {
+    return switch (resolveSortBy(condition)) {
       case "email" -> asc
           ? user.email.gt(cursor).or(user.email.eq(cursor).and(user.id.gt(condition.getIdAfter())))
           : user.email.lt(cursor).or(user.email.eq(cursor).and(user.id.lt(condition.getIdAfter())));
@@ -110,7 +114,7 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
   private OrderSpecifier<?>[] orderSpecifiers(UserSearchCondition condition) {
     Order order = isAscending(condition) ? Order.ASC : Order.DESC;
 
-    OrderSpecifier<?> primary = switch (condition.getSortBy()) {
+    OrderSpecifier<?> primary = switch (resolveSortBy(condition)) {
       case "email" -> new OrderSpecifier<>(order, user.email);
       case "name" -> new OrderSpecifier<>(order, user.name);
       case "role" -> new OrderSpecifier<>(order, user.role);

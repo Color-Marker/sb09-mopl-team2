@@ -4,7 +4,7 @@ import com.sb09.sb09moplteam2.content.batch.Tmdb.TmdbClient;
 import com.sb09.sb09moplteam2.content.batch.Tmdb.TmdbMovieProcessor;
 import com.sb09.sb09moplteam2.content.batch.Tmdb.TmdbMovieReader;
 import com.sb09.sb09moplteam2.content.batch.Tmdb.TmdbMovieWriter;
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbMovieResponse;
+import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbEventResponse;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
@@ -30,27 +30,27 @@ public class TmdbBatchConfig {
   private final ContentRepository contentRepository;
 
   @Bean
-  public Job tmdbMovieJob() {
-    return new JobBuilder("tmdbMovieJob", jobRepository)
+  public Job tmdbEventJob() {
+    return new JobBuilder("tmdbEventJob", jobRepository)
         .start(tmdbMovieStep())
-        .next(tmdbDramaStep())
+        .next(tmdbTvSeriesStep())
         .build();
   }
 
   @Bean
   public Step tmdbMovieStep() {
     return new StepBuilder("tmdbMovieStep", jobRepository)
-        .<TmdbMovieResponse, Content>chunk(10, transactionManager)
-        .reader(new TmdbMovieReader(tmdbClient, ContentType.MOVIE))
-        .processor(new TmdbMovieProcessor(contentRepository, ContentType.MOVIE))
+        .<TmdbEventResponse, Content>chunk(10, transactionManager)
+        .reader(new TmdbMovieReader(tmdbClient, ContentType.movie))
+        .processor(new TmdbMovieProcessor(contentRepository, ContentType.movie))
         .writer(new TmdbMovieWriter(contentRepository))
         .build();
   }
 
   @Bean
-  public Step tmdbDramaStep() {
-    return new StepBuilder("tmdbDramaStep", jobRepository)
-        .<TmdbMovieResponse, Content>chunk(10, transactionManager)
+  public Step tmdbTvSeriesStep() {
+    return new StepBuilder("tmdbTvSeriesStep", jobRepository)
+        .<TmdbEventResponse, Content>chunk(10, transactionManager)
         .reader(new TmdbMovieReader(tmdbClient, ContentType.tvSeries))
         .processor(new TmdbMovieProcessor(contentRepository, ContentType.tvSeries))
         .writer(new TmdbMovieWriter(contentRepository))
