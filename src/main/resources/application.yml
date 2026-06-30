@@ -106,3 +106,4 @@ logging:
 
 sse:
   timeout: 300_000
+  event-queue-capacity: 500
