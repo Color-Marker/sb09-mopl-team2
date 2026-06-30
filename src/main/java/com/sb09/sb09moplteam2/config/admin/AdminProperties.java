@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.config;
+package com.sb09.sb09moplteam2.config.admin;
 
 import lombok.Getter;
 import lombok.Setter;
