@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +63,26 @@ public class GlobalExceptionHandler {
     );
     return ResponseEntity
         .status(HttpStatus.FORBIDDEN)
+        .body(response);
+  }
+
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException ex) {
+    log.error("요청 파라미터 유효성 검사 실패: {}", ex.getMessage());
+    Map<String, Object> validationErrors = new HashMap<>();
+    ex.getConstraintViolations().forEach(violation -> {
+      // "findByContent.limit" 같은 형태에서 파라미터명만 추출
+      String field = violation.getPropertyPath().toString();
+      field = field.contains(".") ? field.substring(field.lastIndexOf('.') + 1) : field;
+      validationErrors.put(field, violation.getMessage());
+    });
+    ErrorResponse response = new ErrorResponse(
+        ex.getClass().getSimpleName(),
+        "요청 파라미터 유효성 검사에 실패했습니다",
+        validationErrors
+    );
+    return ResponseEntity
+        .status(HttpStatus.BAD_REQUEST)
         .body(response);
   }
 

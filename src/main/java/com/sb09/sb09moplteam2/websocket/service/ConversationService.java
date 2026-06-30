@@ -1,24 +1,27 @@
 package com.sb09.sb09moplteam2.websocket.service;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
-import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.websocket.dto.ConversationDto;
-import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
-import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
+import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
+import com.sb09.sb09moplteam2.websocket.mapper.ConversationMapper;
 import com.sb09.sb09moplteam2.websocket.repository.ConversationParticipantRepository;
 import com.sb09.sb09moplteam2.websocket.repository.ConversationRepository;
-import com.sb09.sb09moplteam2.websocket.repository.DirectMessageRepository;
-import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,118 +29,115 @@ public class ConversationService {
 
   private final ConversationRepository conversationRepository;
   private final ConversationParticipantRepository conversationParticipantRepository;
-  private final DirectMessageRepository directMessageRepository;
+  private final ConversationMapper conversationMapper;
 
-  // POST /api/conversations
-  // 1:1 대화 생성 (이미 있으면 기존 대화 반환)
   @Transactional
   public ConversationDto createDirect(UUID myUserId, UUID withUserId) {
+    log.debug("DM 대화방 생성 요청: myUserId={}, withUserId={}", myUserId, withUserId);
+
     Conversation conversation = conversationParticipantRepository
         .findExistingDirectConversation(myUserId, withUserId)
         .orElseGet(() -> {
           Conversation newConversation = Conversation.createDirect();
           conversationRepository.save(newConversation);
-
           conversationParticipantRepository.save(
-              com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant
-                  .of(newConversation, myUserId));
+              ConversationParticipant.of(newConversation, myUserId));
           conversationParticipantRepository.save(
-              com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant
-                  .of(newConversation, withUserId));
-
+              ConversationParticipant.of(newConversation, withUserId));
+          log.info("DM 대화방 신규 생성 완료: conversationId={}, myUserId={}, withUserId={}",
+              newConversation.getId(), myUserId, withUserId);
           return newConversation;
         });
 
-    List<ConversationParticipant> participants = conversationParticipantRepository.findByConversation(conversation);
-    return toDto(conversation, myUserId, participants);
+    return conversationMapper.toDto(conversation, myUserId);
   }
 
-  // GET /api/conversations/{conversationId}
-  // 대화 단건 조회
   public ConversationDto findById(UUID conversationId, UUID myUserId) {
-    Conversation conversation = conversationRepository.findById(conversationId)
-        .orElseThrow(() -> new ConversationNotFoundException(conversationId));
+    log.debug("대화방 단건 조회: conversationId={}, myUserId={}", conversationId, myUserId);
 
-    List<ConversationParticipant> participants = conversationParticipantRepository.findByConversation(conversation);
-    return toDto(conversation, myUserId, participants);
+    Conversation conversation = conversationRepository.findById(conversationId)
+        .orElseThrow(() -> {
+          log.warn("대화방 조회 실패 - 존재하지 않음: conversationId={}", conversationId);
+          return new ConversationNotFoundException(conversationId);
+        });
+    return conversationMapper.toDto(conversation, myUserId);
   }
 
-  // GET /api/conversations/with?userId=
-  // 특정 유저와의 대화 조회
   public ConversationDto findWithUser(UUID myUserId, UUID withUserId) {
+    log.debug("상대방 기준 DM 대화방 조회: myUserId={}, withUserId={}", myUserId, withUserId);
+
     Conversation conversation = conversationParticipantRepository
         .findExistingDirectConversation(myUserId, withUserId)
-        .orElseThrow(() -> new ConversationNotFoundException(null));
-
-    List<ConversationParticipant> participants = conversationParticipantRepository.findByConversation(conversation);
-    return toDto(conversation, myUserId, participants);
+        .orElseThrow(() -> {
+          log.warn("DM 대화방 조회 실패 - 존재하지 않음: myUserId={}, withUserId={}",
+              myUserId, withUserId);
+          return new ConversationNotFoundException(null);
+        });
+    return conversationMapper.toDto(conversation, myUserId);
   }
 
-  // GET /api/conversations
-  // 내 대화 목록 조회 (커서 페이지네이션)
   public CursorResponse<ConversationDto> findAll(
       UUID myUserId,
+      String keywordLike,
       String cursor,
       UUID idAfter,
       int limit,
       String sortBy,
       String sortDirection
   ) {
-    // TODO: 커서 페이지네이션 쿼리 구현
-    List<Conversation> conversations = conversationRepository
-        .findAllByParticipantUserId(myUserId);
+    log.debug("대화방 목록 조회: myUserId={}, keywordLike={}, cursor={}, idAfter={}, limit={}",
+        myUserId, keywordLike, cursor, idAfter, limit);
 
-    // conversation ID 목록 추출
-    List<UUID> conversationIds = conversations.stream()
+    Pageable pageable = PageRequest.of(0, limit + 1);
+    List<Conversation> conversations;
+
+    if (cursor != null && idAfter != null) {
+      Instant cursorLastMessageAt = Instant.parse(cursor);
+      conversations = conversationRepository.findAllByParticipantUserIdWithCursor(
+          myUserId, cursorLastMessageAt, idAfter, pageable);
+    } else {
+      conversations = conversationRepository.findAllByParticipantUserId(myUserId, pageable);
+    }
+
+    boolean hasNext = conversations.size() > limit;
+    List<Conversation> content = hasNext ? conversations.subList(0, limit) : conversations;
+
+    List<UUID> conversationIds = content.stream()
         .map(Conversation::getId)
         .toList();
 
     // IN 쿼리로 참여자 한 번에 조회 (N+1 방지)
-    List<ConversationParticipant> allParticipants = conversationParticipantRepository
-        .findByConversationIdIn(conversationIds);
+    Map<UUID, List<ConversationParticipant>> participantMap =
+        conversationParticipantRepository.findByConversationIdIn(conversationIds)
+            .stream()
+            .collect(Collectors.groupingBy(cp -> cp.getConversation().getId()));
 
-    // conversationId 기준으로 그룹핑
-    Map<UUID, List<ConversationParticipant>> participantMap = allParticipants.stream()
-        .collect(Collectors.groupingBy(cp -> cp.getConversation().getId()));
-
-    List<ConversationDto> data = conversations.stream()
-        .map(c -> toDto(c, myUserId, participantMap.getOrDefault(c.getId(), List.of())))
+    List<ConversationDto> data = content.stream()
+        .map(c -> conversationMapper.toDto(
+            c, myUserId, participantMap.getOrDefault(c.getId(), List.of())))
+        .filter(dto -> keywordLike == null || keywordLike.isBlank()
+            || (dto.with() != null && dto.with().name().contains(keywordLike)))
         .toList();
+
+    String nextCursor = null;
+    UUID nextIdAfter = null;
+    if (hasNext && !content.isEmpty()) {
+      Conversation last = content.get(content.size() - 1);
+      nextCursor = last.getLastMessageAt().toString();
+      nextIdAfter = last.getId();
+    }
+
+    log.debug("대화방 목록 조회 결과: myUserId={}, resultSize={}, hasNext={}",
+        myUserId, data.size(), hasNext);
 
     return new CursorResponse<>(
         data,
-        null,
-        null,
-        false,
+        nextCursor,
+        nextIdAfter,
+        hasNext,
         data.size(),
         sortBy,
         sortDirection
-    );
-  }
-
-  private ConversationDto toDto(Conversation conversation, UUID myUserId,
-      List<ConversationParticipant> participants) {
-
-    UUID withUserId = participants.stream()
-        .map(ConversationParticipant::getUserId)
-        .filter(id -> !id.equals(myUserId))
-        .findFirst()
-        .orElse(null);
-
-    UserSummary with = new UserSummary(
-        withUserId,
-        null,   // TODO: userName
-        null    // TODO: profileImageUrl
-    );
-
-    DirectMessageDto latestMessage = null; // TODO: 마지막 메시지 조회
-    boolean hasUnread = false;             // TODO: lastReadAt 기준 계산
-
-    return new ConversationDto(
-        conversation.getId(),
-        with,
-        latestMessage,
-        hasUnread
     );
   }
 }
