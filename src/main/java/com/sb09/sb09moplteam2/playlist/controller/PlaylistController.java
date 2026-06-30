@@ -3,9 +3,9 @@ package com.sb09.sb09moplteam2.playlist.controller;
 import com.sb09.sb09moplteam2.playlist.dto.data.PlaylistDto;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistCreatedRequest;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistUpdateRequest;
+import com.sb09.sb09moplteam2.playlist.dto.response.CursorResponsePlaylistDto;
 import com.sb09.sb09moplteam2.playlist.service.PlaylistService;
 import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
-import com.sb09.sb09moplteam2.user.entity.User;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -34,6 +35,26 @@ public class PlaylistController {
       @AuthenticationPrincipal CustomUserDetails userDetails) {
     PlaylistDto dto = playlistService.create(request, userDetails.getId());
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+  }
+
+  @GetMapping
+  public ResponseEntity<CursorResponsePlaylistDto> findAll(
+      @RequestParam(required = false) String keywordLike,
+      @RequestParam(required = false) UUID ownerIdEqual,
+      @RequestParam(required = false) UUID subscriberIdEqual,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) UUID idAfter,
+      @RequestParam int limit,
+      @RequestParam String sortDirection,
+      @RequestParam String sortBy,
+      @AuthenticationPrincipal CustomUserDetails userDetails
+  ) {
+    UUID currentUserId = userDetails != null ? userDetails.getId() : null;
+    CursorResponsePlaylistDto response = playlistService.findAll(
+        keywordLike, ownerIdEqual, subscriberIdEqual, cursor, idAfter,
+        limit, sortDirection, sortBy, currentUserId
+    );
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping("/{playlistId}")

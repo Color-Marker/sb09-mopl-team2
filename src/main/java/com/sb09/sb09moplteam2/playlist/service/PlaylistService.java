@@ -6,6 +6,7 @@ import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.playlist.dto.data.PlaylistDto;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistCreatedRequest;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistUpdateRequest;
+import com.sb09.sb09moplteam2.playlist.dto.response.CursorResponsePlaylistDto;
 import com.sb09.sb09moplteam2.playlist.entity.Playlist;
 import com.sb09.sb09moplteam2.playlist.entity.PlaylistItem;
 import com.sb09.sb09moplteam2.playlist.entity.PlaylistSubscription;
@@ -46,6 +47,55 @@ public class PlaylistService {
     playlistRepository.save(playlist);
     List<PlaylistItem> items = playlistItemRepository.findByPlaylistIdOrderByOrderIndex(playlist.getId());
     return playlistMapper.toDto(playlist, items, false);
+  }
+
+  @Transactional(readOnly = true)
+  public CursorResponsePlaylistDto findAll(
+      String keywordLike,
+      UUID ownerIdEqual,
+      UUID subscriberIdEqual,
+      String cursor,
+      UUID idAfter,
+      int limit,
+      String sortDirection,
+      String sortBy,
+      UUID currentUserId
+  ) {
+    List<Playlist> playlists = playlistRepository.findPlaylistsWithCursor(
+        keywordLike, ownerIdEqual, subscriberIdEqual, cursor, idAfter, limit, sortDirection, sortBy
+    );
+
+    boolean hasNext = playlists.size() > limit;
+    List<Playlist> content = hasNext ? playlists.subList(0, limit) : playlists;
+
+    List<PlaylistDto> data = content.stream()
+        .map(playlist -> {
+          List<PlaylistItem> items = playlistItemRepository.findByPlaylistIdOrderByOrderIndex(playlist.getId());
+          boolean subscribedByMe = currentUserId != null &&
+              playlistSubscriptionRepository.existsByPlaylistIdAndSubscriberId(playlist.getId(), currentUserId);
+          return playlistMapper.toDto(playlist, items, subscribedByMe);
+        })
+        .toList();
+
+    String nextCursor = null;
+    UUID nextIdAfter = null;
+    if (hasNext && !content.isEmpty()) {
+      Playlist last = content.get(content.size() - 1);
+      nextCursor = "updatedAt".equals(sortBy)
+          ? last.getUpdatedAt().toString()
+          : String.valueOf(last.getSubscriberCount());
+      nextIdAfter = last.getId();
+    }
+
+    return new CursorResponsePlaylistDto(
+        data,
+        nextCursor,
+        nextIdAfter,
+        hasNext,
+        (long) data.size(),
+        sortBy,
+        sortDirection
+    );
   }
 
   public PlaylistDto findById(UUID playlistId, UUID currentUserId) {
