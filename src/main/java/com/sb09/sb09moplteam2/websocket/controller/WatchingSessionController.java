@@ -23,7 +23,7 @@ public class WatchingSessionController {
 
   // GET /api/users/{watcherId}/watching-sessions
   // 특정 유저의 활성 시청 세션 단건 조회 (nullable)
-  @GetMapping("/users/{watcherId}/watching-sessions")
+  @GetMapping("/api/users/{watcherId}/watching-sessions")
   public ResponseEntity<WatchingSessionDto> findByWatcher(
       @PathVariable UUID watcherId
   ) {
@@ -34,7 +34,7 @@ public class WatchingSessionController {
 
   // GET /api/contents/{contentId}/watching-sessions
   // 특정 콘텐츠의 시청 세션 목록 조회 (커서 페이지네이션)
-  @GetMapping("/contents/{contentId}/watching-sessions")
+  @GetMapping("/api/contents/{contentId}/watching-sessions")
   public ResponseEntity<CursorResponse<WatchingSessionDto>> findByContent(
       @PathVariable UUID contentId,
       @RequestParam(required = false) String cursor,

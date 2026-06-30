@@ -1,14 +1,13 @@
 package com.sb09.sb09moplteam2.websocket.service;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
-import com.sb09.sb09moplteam2.dto.UserSummary;
-import com.sb09.sb09moplteam2.user.service.UserService;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
+import com.sb09.sb09moplteam2.websocket.mapper.DirectMessageMapper;
 import com.sb09.sb09moplteam2.websocket.repository.ConversationParticipantRepository;
 import com.sb09.sb09moplteam2.websocket.repository.ConversationRepository;
 import com.sb09.sb09moplteam2.websocket.repository.DirectMessageRepository;
@@ -30,7 +29,7 @@ public class DirectMessageService {
   private final DirectMessageRepository directMessageRepository;
   private final ConversationRepository conversationRepository;
   private final ConversationParticipantRepository conversationParticipantRepository;
-  private final UserService userService;
+  private final DirectMessageMapper directMessageMapper;
 
   // GET /api/conversations/{conversationId}/direct-messages
   // DM 목록 조회 (커서 페이지네이션) - 참여자만 조회 가능
@@ -46,13 +45,15 @@ public class DirectMessageService {
     Conversation conversation = conversationRepository.findById(conversationId)
         .orElseThrow(() -> new ConversationNotFoundException(conversationId));
 
-    if (!conversationParticipantRepository.existsByConversationAndUserId(conversation, myUserId)) {
-      throw new ConversationParticipantNotFoundException(conversationId, myUserId);
-    }
-
-    // 참여자 한 번만 조회 (N+1 방지)
+    // 참여자 확인 겸 배치 조회 (N+1 방지)
     List<ConversationParticipant> participants =
         conversationParticipantRepository.findByConversation(conversation);
+
+    boolean isParticipant = participants.stream()
+        .anyMatch(p -> p.getUserId().equals(myUserId));
+    if (!isParticipant) {
+      throw new ConversationParticipantNotFoundException(conversationId, myUserId);
+    }
 
     Pageable pageable = PageRequest.of(0, limit + 1);
     List<DirectMessage> messages;
@@ -70,7 +71,7 @@ public class DirectMessageService {
     List<DirectMessage> content = hasNext ? messages.subList(0, limit) : messages;
 
     List<DirectMessageDto> data = content.stream()
-        .map(dm -> toDto(dm, conversation, participants))
+        .map(dm -> directMessageMapper.toDto(dm, participants))
         .toList();
 
     String nextCursor = null;
@@ -103,31 +104,5 @@ public class DirectMessageService {
         .findByConversationAndUserId(conversation, myUserId)
         .orElseThrow(() -> new ConversationParticipantNotFoundException(conversationId, myUserId))
         .updateLastReadAt();
-  }
-
-  private DirectMessageDto toDto(DirectMessage dm, Conversation conversation,
-      List<ConversationParticipant> participants) {
-
-    // UserService로 발신자/수신자 정보 조회
-    UserSummary sender = userService.getUserSummary(dm.getSenderId());
-
-    UUID receiverId = participants.stream()
-        .map(ConversationParticipant::getUserId)
-        .filter(id -> !id.equals(dm.getSenderId()))
-        .findFirst()
-        .orElse(null);
-
-    UserSummary receiver = receiverId != null
-        ? userService.getUserSummary(receiverId)
-        : null;
-
-    return new DirectMessageDto(
-        dm.getId(),
-        conversation.getId(),
-        dm.getSentAt(),
-        sender,
-        receiver,
-        dm.getContent()
-    );
   }
 }
