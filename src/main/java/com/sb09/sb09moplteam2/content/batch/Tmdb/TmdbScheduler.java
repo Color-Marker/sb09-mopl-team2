@@ -33,8 +33,8 @@ public class TmdbScheduler {
     }
   }
 
-//  @PostConstruct 테스트를 위 어플리케이션 시작할때 TMDB API 시작
-//  public void runOnStartup() {
-//    runTmdbBatch();
-//  }
+  @PostConstruct //테스트를 위 어플리케이션 시작할때 TMDB API 시작
+  public void runOnStartup() {
+    runTmdbBatch();
+  }
 }
