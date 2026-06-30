@@ -1,6 +1,5 @@
 package com.sb09.sb09moplteam2.websocket.service;
 
-
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
@@ -10,9 +9,12 @@ import com.sb09.sb09moplteam2.websocket.mapper.WatchingSessionMapper;
 import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,20 +57,40 @@ public class WatchingSessionService {
     log.debug("콘텐츠별 시청 세션 목록 조회 요청: contentId={}, cursor={}, idAfter={}, limit={}",
         contentId, cursor, idAfter, limit);
 
-    // TODO: 커서 페이지네이션 쿼리 구현
-    List<WatchingSession> sessions = watchingSessionRepository.findByContentId(contentId);
-    List<WatchingSessionDto> data = sessions.stream()
+    Pageable pageable = PageRequest.of(0, limit + 1);
+    List<WatchingSession> sessions;
+
+    if (cursor != null && idAfter != null) {
+      Instant cursorStartedAt = Instant.parse(cursor);
+      sessions = watchingSessionRepository.findByContentIdWithCursor(
+          contentId, cursorStartedAt, idAfter, pageable);
+    } else {
+      sessions = watchingSessionRepository.findByContentId(contentId, pageable);
+    }
+
+    boolean hasNext = sessions.size() > limit;
+    List<WatchingSession> content = hasNext ? sessions.subList(0, limit) : sessions;
+
+    List<WatchingSessionDto> data = content.stream()
         .map(watchingSessionMapper::toDto)
         .toList();
 
-    log.debug("콘텐츠별 시청 세션 목록 조회 결과: contentId={}, resultSize={}",
-        contentId, data.size());
+    String nextCursor = null;
+    UUID nextIdAfter = null;
+    if (hasNext && !content.isEmpty()) {
+      WatchingSession last = content.get(content.size() - 1);
+      nextCursor = last.getStartedAt().toString();
+      nextIdAfter = last.getId();
+    }
+
+    log.debug("콘텐츠별 시청 세션 목록 조회 결과: contentId={}, resultSize={}, hasNext={}",
+        contentId, data.size(), hasNext);
 
     return new CursorResponse<>(
         data,
-        null,       // TODO: nextCursor 계산
-        null,       // TODO: nextIdAfter 계산
-        false,      // TODO: hasNext 계산
+        nextCursor,
+        nextIdAfter,
+        hasNext,
         data.size(),
         sortBy,
         sortDirection

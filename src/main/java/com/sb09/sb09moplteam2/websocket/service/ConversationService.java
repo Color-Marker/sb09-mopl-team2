@@ -10,9 +10,12 @@ import com.sb09.sb09moplteam2.websocket.repository.ConversationParticipantReposi
 import com.sb09.sb09moplteam2.websocket.repository.ConversationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -85,11 +88,21 @@ public class ConversationService {
     log.debug("대화방 목록 조회: myUserId={}, keywordLike={}, cursor={}, idAfter={}, limit={}",
         myUserId, keywordLike, cursor, idAfter, limit);
 
-    // TODO: 커서 페이지네이션 쿼리 구현
-    List<Conversation> conversations = conversationRepository
-        .findAllByParticipantUserId(myUserId);
+    Pageable pageable = PageRequest.of(0, limit + 1);
+    List<Conversation> conversations;
 
-    List<UUID> conversationIds = conversations.stream()
+    if (cursor != null && idAfter != null) {
+      Instant cursorLastMessageAt = Instant.parse(cursor);
+      conversations = conversationRepository.findAllByParticipantUserIdWithCursor(
+          myUserId, cursorLastMessageAt, idAfter, pageable);
+    } else {
+      conversations = conversationRepository.findAllByParticipantUserId(myUserId, pageable);
+    }
+
+    boolean hasNext = conversations.size() > limit;
+    List<Conversation> content = hasNext ? conversations.subList(0, limit) : conversations;
+
+    List<UUID> conversationIds = content.stream()
         .map(Conversation::getId)
         .toList();
 
@@ -99,20 +112,29 @@ public class ConversationService {
             .stream()
             .collect(Collectors.groupingBy(cp -> cp.getConversation().getId()));
 
-    List<ConversationDto> data = conversations.stream()
+    List<ConversationDto> data = content.stream()
         .map(c -> conversationMapper.toDto(
             c, myUserId, participantMap.getOrDefault(c.getId(), List.of())))
         .filter(dto -> keywordLike == null || keywordLike.isBlank()
             || (dto.with() != null && dto.with().name().contains(keywordLike)))
         .toList();
 
-    log.debug("대화방 목록 조회 결과: myUserId={}, resultSize={}", myUserId, data.size());
+    String nextCursor = null;
+    UUID nextIdAfter = null;
+    if (hasNext && !content.isEmpty()) {
+      Conversation last = content.get(content.size() - 1);
+      nextCursor = last.getLastMessageAt().toString();
+      nextIdAfter = last.getId();
+    }
+
+    log.debug("대화방 목록 조회 결과: myUserId={}, resultSize={}, hasNext={}",
+        myUserId, data.size(), hasNext);
 
     return new CursorResponse<>(
         data,
-        null,       // TODO: nextCursor 계산
-        null,       // TODO: nextIdAfter 계산
-        false,      // TODO: hasNext 계산
+        nextCursor,
+        nextIdAfter,
+        hasNext,
         data.size(),
         sortBy,
         sortDirection
