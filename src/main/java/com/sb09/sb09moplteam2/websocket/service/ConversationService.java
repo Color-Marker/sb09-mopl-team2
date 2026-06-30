@@ -9,6 +9,7 @@ import com.sb09.sb09moplteam2.websocket.mapper.ConversationMapper;
 import com.sb09.sb09moplteam2.websocket.repository.ConversationParticipantRepository;
 import com.sb09.sb09moplteam2.websocket.repository.ConversationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,6 +30,8 @@ public class ConversationService {
 
   @Transactional
   public ConversationDto createDirect(UUID myUserId, UUID withUserId) {
+    log.debug("DM 대화방 생성 요청: myUserId={}, withUserId={}", myUserId, withUserId);
+
     Conversation conversation = conversationParticipantRepository
         .findExistingDirectConversation(myUserId, withUserId)
         .orElseGet(() -> {
@@ -37,6 +41,8 @@ public class ConversationService {
               ConversationParticipant.of(newConversation, myUserId));
           conversationParticipantRepository.save(
               ConversationParticipant.of(newConversation, withUserId));
+          log.info("DM 대화방 신규 생성 완료: conversationId={}, myUserId={}, withUserId={}",
+              newConversation.getId(), myUserId, withUserId);
           return newConversation;
         });
 
@@ -44,15 +50,26 @@ public class ConversationService {
   }
 
   public ConversationDto findById(UUID conversationId, UUID myUserId) {
+    log.debug("대화방 단건 조회: conversationId={}, myUserId={}", conversationId, myUserId);
+
     Conversation conversation = conversationRepository.findById(conversationId)
-        .orElseThrow(() -> new ConversationNotFoundException(conversationId));
+        .orElseThrow(() -> {
+          log.warn("대화방 조회 실패 - 존재하지 않음: conversationId={}", conversationId);
+          return new ConversationNotFoundException(conversationId);
+        });
     return conversationMapper.toDto(conversation, myUserId);
   }
 
   public ConversationDto findWithUser(UUID myUserId, UUID withUserId) {
+    log.debug("상대방 기준 DM 대화방 조회: myUserId={}, withUserId={}", myUserId, withUserId);
+
     Conversation conversation = conversationParticipantRepository
         .findExistingDirectConversation(myUserId, withUserId)
-        .orElseThrow(() -> new ConversationNotFoundException(null));
+        .orElseThrow(() -> {
+          log.warn("DM 대화방 조회 실패 - 존재하지 않음: myUserId={}, withUserId={}",
+              myUserId, withUserId);
+          return new ConversationNotFoundException(null);
+        });
     return conversationMapper.toDto(conversation, myUserId);
   }
 
@@ -65,6 +82,9 @@ public class ConversationService {
       String sortBy,
       String sortDirection
   ) {
+    log.debug("대화방 목록 조회: myUserId={}, keywordLike={}, cursor={}, idAfter={}, limit={}",
+        myUserId, keywordLike, cursor, idAfter, limit);
+
     // TODO: 커서 페이지네이션 쿼리 구현
     List<Conversation> conversations = conversationRepository
         .findAllByParticipantUserId(myUserId);
@@ -85,6 +105,8 @@ public class ConversationService {
         .filter(dto -> keywordLike == null || keywordLike.isBlank()
             || (dto.with() != null && dto.with().name().contains(keywordLike)))
         .toList();
+
+    log.debug("대화방 목록 조회 결과: myUserId={}, resultSize={}", myUserId, data.size());
 
     return new CursorResponse<>(
         data,

@@ -12,6 +12,7 @@ import com.sb09.sb09moplteam2.websocket.repository.ConversationParticipantReposi
 import com.sb09.sb09moplteam2.websocket.repository.ConversationRepository;
 import com.sb09.sb09moplteam2.websocket.repository.DirectMessageRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -42,8 +44,14 @@ public class DirectMessageService {
       String sortBy,
       String sortDirection
   ) {
+    log.debug("DM 목록 조회 요청: conversationId={}, myUserId={}, cursor={}, idAfter={}, limit={}",
+        conversationId, myUserId, cursor, idAfter, limit);
+
     Conversation conversation = conversationRepository.findById(conversationId)
-        .orElseThrow(() -> new ConversationNotFoundException(conversationId));
+        .orElseThrow(() -> {
+          log.warn("DM 목록 조회 실패 - 대화방 없음: conversationId={}", conversationId);
+          return new ConversationNotFoundException(conversationId);
+        });
 
     // 참여자 확인 겸 배치 조회 (N+1 방지)
     List<ConversationParticipant> participants =
@@ -52,6 +60,8 @@ public class DirectMessageService {
     boolean isParticipant = participants.stream()
         .anyMatch(p -> p.getUserId().equals(myUserId));
     if (!isParticipant) {
+      log.warn("DM 목록 조회 실패 - 참여자 아님: conversationId={}, myUserId={}",
+          conversationId, myUserId);
       throw new ConversationParticipantNotFoundException(conversationId, myUserId);
     }
 
@@ -82,6 +92,9 @@ public class DirectMessageService {
       nextIdAfter = last.getId();
     }
 
+    log.debug("DM 목록 조회 결과: conversationId={}, resultSize={}, hasNext={}",
+        conversationId, data.size(), hasNext);
+
     return new CursorResponse<>(
         data,
         nextCursor,
@@ -97,12 +110,23 @@ public class DirectMessageService {
   // DM 읽음 처리 → lastReadAt 업데이트
   @Transactional
   public void read(UUID conversationId, UUID myUserId) {
+    log.debug("DM 읽음 처리 요청: conversationId={}, myUserId={}", conversationId, myUserId);
+
     Conversation conversation = conversationRepository.findById(conversationId)
-        .orElseThrow(() -> new ConversationNotFoundException(conversationId));
+        .orElseThrow(() -> {
+          log.warn("DM 읽음 처리 실패 - 대화방 없음: conversationId={}", conversationId);
+          return new ConversationNotFoundException(conversationId);
+        });
 
     conversationParticipantRepository
         .findByConversationAndUserId(conversation, myUserId)
-        .orElseThrow(() -> new ConversationParticipantNotFoundException(conversationId, myUserId))
+        .orElseThrow(() -> {
+          log.warn("DM 읽음 처리 실패 - 참여자 아님: conversationId={}, myUserId={}",
+              conversationId, myUserId);
+          return new ConversationParticipantNotFoundException(conversationId, myUserId);
+        })
         .updateLastReadAt();
+
+    log.info("DM 읽음 처리 완료: conversationId={}, myUserId={}", conversationId, myUserId);
   }
 }
