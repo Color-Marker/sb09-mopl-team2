@@ -2,7 +2,7 @@ package com.sb09.sb09moplteam2.content.batch.Tmdb.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record TmdbMovieResponse(
+public record TmdbEventResponse(
     Long id,
     String title,
     String name,
