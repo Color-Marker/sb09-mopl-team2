@@ -32,3 +32,8 @@ tmdb:
   api:
     key: d7385e5ab4d0b92709739f77fccd7612
     base-url: https://api.themoviedb.org
+
+Sports:
+  api:
+    key: 123
+    base-url: https://www.thesportsdb.com/api/v1/json

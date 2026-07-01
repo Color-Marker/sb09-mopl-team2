@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.websocket.repository;
 
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
+import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -31,4 +32,8 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, UU
       @Param("idAfter") UUID idAfter,
       Pageable pageable
   );
+
+  Optional<DirectMessage> findTopByConversationIdOrderBySentAtDesc(UUID conversationId);
+  boolean existsByConversationId(UUID conversationId);
+  boolean existsByConversationIdAndSenderIdNotAndSentAtAfter(UUID conversationId, UUID senderId, Instant sentAt);
 }

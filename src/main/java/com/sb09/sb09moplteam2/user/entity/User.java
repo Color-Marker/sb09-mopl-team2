@@ -81,4 +81,21 @@ public class User {
   public void changeRole(Role role) {
     this.role = role;
   }
+
+  public void changePassword(String encodedPassword) {
+    this.password = encodedPassword;
+  }
+
+  public void updateProfile(String name, String profileImageUrl) {
+    if (name != null) {
+      this.name = name;
+    }
+    if (profileImageUrl != null) {
+      this.profileImageUrl = profileImageUrl;
+    }
+  }
+
+  public void changeLocked(boolean locked) {
+    this.locked = locked;
+  }
 }
