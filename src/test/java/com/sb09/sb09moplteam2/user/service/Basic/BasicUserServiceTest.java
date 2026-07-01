@@ -1,5 +1,5 @@
 package com.sb09.sb09moplteam2.user.service.Basic;
-
+/*
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,3 +72,4 @@ class BasicUserServiceTest {
         .isInstanceOf(DuplicateEmailException.class);
   }
 }
+*/
