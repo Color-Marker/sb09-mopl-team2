@@ -33,7 +33,7 @@ public class WatchingSessionMapper {
         session.getId(),
         session.getStartedAt(),
         watcher,
-        content
+        null //content
     );
   }
 }

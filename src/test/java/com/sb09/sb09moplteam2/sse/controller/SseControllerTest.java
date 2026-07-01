@@ -1,8 +1,7 @@
 package com.sb09.sb09moplteam2.sse.controller;
 
-
 import com.sb09.sb09moplteam2.exception.GlobalExceptionHandler;
-import com.sb09.sb09moplteam2.security.CustomUserDetails;
+import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import com.sb09.sb09moplteam2.sse.SseController;
 import com.sb09.sb09moplteam2.sse.SseService;
 import java.util.UUID;
@@ -45,7 +44,7 @@ class SseControllerTest {
   }
 
   @Test
-  void subscribe_LastEventId_없음_성공() throws Exception {
+  void subscribe_lastEventId없이_구독_성공() throws Exception {
     SseEmitter emitter = new SseEmitter();
     given(sseService.connect(eq(userId), eq(null))).willReturn(emitter);
 
@@ -58,14 +57,14 @@ class SseControllerTest {
   }
 
   @Test
-  void subscribe_LastEventId_있음_성공() throws Exception {
+  void subscribe_lastEventId과_함께_구독_성공() throws Exception {
     UUID lastEventId = UUID.randomUUID();
     SseEmitter emitter = new SseEmitter();
     given(sseService.connect(eq(userId), eq(lastEventId))).willReturn(emitter);
 
     mockMvc.perform(get("/api/sse")
             .with(user(principal))
-            .param("LastEventId", lastEventId.toString()))
+            .param("lastEventId", lastEventId.toString()))
         .andExpect(request().asyncStarted())
         .andExpect(status().isOk());
 
@@ -73,16 +72,16 @@ class SseControllerTest {
   }
 
   @Test
-  void subscribe_LastEventId_형식이상_400() throws Exception {
+  void subscribe_lastEventId형식이_잘못되면_400() throws Exception {
     mockMvc.perform(get("/api/sse")
             .with(user(principal))
-            .param("LastEventId", "not-a-uuid"))
+            .param("lastEventId", "not-a-uuid"))
         .andExpect(status().isBadRequest());
   }
 
   @Test
-  void subscribe_인증없음_401() throws Exception {
+  void subscribe_인증없음_로그인페이지로_리다이렉트() throws Exception {
     mockMvc.perform(get("/api/sse"))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().is3xxRedirection());
   }
 }

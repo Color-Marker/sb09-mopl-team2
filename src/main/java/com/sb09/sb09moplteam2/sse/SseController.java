@@ -1,6 +1,6 @@
 package com.sb09.sb09moplteam2.sse;
 
-import com.sb09.sb09moplteam2.security.CustomUserDetails;
+import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
