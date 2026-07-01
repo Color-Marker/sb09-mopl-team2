@@ -2,7 +2,6 @@ package com.sb09.sb09moplteam2.content.service;
 
 
 import com.sb09.sb09moplteam2.content.dto.data.ContentDto;
-import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
 import com.sb09.sb09moplteam2.content.dto.request.ContentCreateRequest;
 import com.sb09.sb09moplteam2.content.dto.request.ContentUpdateRequest;
 import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
@@ -11,6 +10,7 @@ import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.mapper.ContentMapper;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
+import com.sb09.sb09moplteam2.dto.ContentSummary;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
