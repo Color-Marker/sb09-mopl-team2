@@ -1,7 +1,6 @@
 package com.sb09.sb09moplteam2.sse;
 
 import com.sb09.sb09moplteam2.config.RedisConfig;
-import com.sb09.sb09moplteam2.redis.RedisPubSubMessage;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
@@ -54,9 +53,9 @@ public class SseService {
         .ifPresentOrElse(
             id -> {
               sseMessageRepository.findAllByEventIdAfterAndReceiverId(id, receiverId)
-                  .forEach(sseMessage -> {
+                  .forEach(missedMessage -> {
                     try {
-                      sseEmitter.send(sseMessage.toEvent());
+                      sseEmitter.send(missedMessage.toEvent());
                     } catch (IOException e) {
                       log.error(e.getMessage(), e);
                     }
@@ -72,21 +71,15 @@ public class SseService {
 
   // 메시지 레포에 저장하고 redis에 publish
   public void publishToRedis(Collection<UUID> receiverIds, String eventName, Object data) {
-    SseMessage message = sseMessageRepository.save(SseMessage.create(receiverIds, eventName, data));
-
-    redisTemplate.convertAndSend(
-        RedisConfig.SSE_CHANNEL,
-        RedisPubSubMessage.from(message)
+    SseMessage message = sseMessageRepository.save(
+        new SseMessage(UUID.randomUUID(), Set.copyOf(receiverIds), eventName, data)
     );
+    redisTemplate.convertAndSend(RedisConfig.SSE_CHANNEL, message);
   }
 
   // redis 구독자가 받은 메시지 보고 emitter 찾아서 send 처리
-  public void send(RedisPubSubMessage payload){
-    Set<DataWithMediaType> event = SseEmitter.event()
-        .id(payload.eventId().toString())
-        .name(payload.eventName())
-        .data(payload.eventData())
-        .build();
+  public void send(SseMessage payload){
+    Set<DataWithMediaType> event = payload.toEvent();
 
     sseEmitterRepository.findAllByReceiverIdsIn(payload.receiverIds())
         .forEach(sseEmitter -> {

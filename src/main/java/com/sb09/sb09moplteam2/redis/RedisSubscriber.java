@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sb09.sb09moplteam2.sse.SseMessage;
 import com.sb09.sb09moplteam2.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,8 @@ public class RedisSubscriber implements MessageListener {
   @Override
   public void onMessage(Message message, byte[] pattern) {
     try {
-      RedisPubSubMessage payload = objectMapper.readValue(
-          message.getBody(), RedisPubSubMessage.class);
+      SseMessage payload = objectMapper.readValue(
+          message.getBody(), SseMessage.class);
       sseService.send(payload);
     } catch (Exception e) {
       log.error("Redis SSE 메시지 처리 실패", e);

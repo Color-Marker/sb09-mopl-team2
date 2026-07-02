@@ -3,6 +3,7 @@ package com.sb09.sb09moplteam2.sse.service.basic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -12,8 +13,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import com.sb09.sb09moplteam2.sse.SseEmitterRepository;
+import com.sb09.sb09moplteam2.config.RedisConfig;
 import com.sb09.sb09moplteam2.sse.SseMessage;
+import com.sb09.sb09moplteam2.sse.SseEmitterRepository;
 import com.sb09.sb09moplteam2.sse.SseMessageRepository;
 import com.sb09.sb09moplteam2.sse.SseService;
 import java.io.IOException;
@@ -27,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.DataWithMediaType;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -40,13 +43,16 @@ class SseServiceTest {
   @Mock
   private SseMessageRepository sseMessageRepository;
 
+  @Mock
+  private RedisTemplate<String, Object> redisTemplate;
+
   private SseService sseService;
 
   private static final long TIMEOUT = 30_000L;
 
   @BeforeEach
   void setUp() {
-    sseService = new SseService(sseEmitterRepository, sseMessageRepository);
+    sseService = new SseService(sseEmitterRepository, sseMessageRepository, redisTemplate);
     ReflectionTestUtils.setField(sseService, "timeout", TIMEOUT);
   }
 
@@ -100,34 +106,65 @@ class SseServiceTest {
   }
 
   @Test
-  void send_메시지_저장_수신자_emitter_전송() throws IOException {
+  void send_메시지_저장_redis_발행() throws IOException {
     UUID receiverId1 = UUID.randomUUID();
     UUID receiverId2 = UUID.randomUUID();
     List<UUID> receiverIds = List.of(receiverId1, receiverId2);
-    String eventName = "notification";
+    String eventName = "notifications";
     String data = "hello";
 
+    UUID eventId = UUID.randomUUID();
     SseMessage savedMessage = mock(SseMessage.class);
-    Set<DataWithMediaType> event = Set.of();
-    given(savedMessage.toEvent()).willReturn(event);
+    given(savedMessage.eventId()).willReturn(eventId);
+    given(savedMessage.receiverIds()).willReturn(Set.copyOf(receiverIds));
+    given(savedMessage.eventName()).willReturn(eventName);
+    given(savedMessage.eventData()).willReturn(data);
     given(sseMessageRepository.save(any(SseMessage.class))).willReturn(savedMessage);
+
+    sseService.publishToRedis(receiverIds, eventName, data);
+
+    ArgumentCaptor<SseMessage> messageCaptor = ArgumentCaptor.forClass(SseMessage.class);
+    verify(sseMessageRepository).save(messageCaptor.capture());
+    SseMessage createdMessage = messageCaptor.getValue();
+    assertThat(createdMessage.receiverIds()).containsExactlyInAnyOrder(receiverId1, receiverId2);
+    assertThat(createdMessage.eventName()).isEqualTo(eventName);
+    assertThat(createdMessage.eventData()).isEqualTo(data);
+
+    ArgumentCaptor<SseMessage> payloadCaptor = ArgumentCaptor.forClass(SseMessage.class);
+    verify(redisTemplate).convertAndSend(eq(RedisConfig.SSE_CHANNEL), payloadCaptor.capture());
+    SseMessage payload = payloadCaptor.getValue();
+    assertThat(payload.eventId()).isEqualTo(eventId);
+    assertThat(payload.receiverIds()).containsExactlyInAnyOrder(receiverId1, receiverId2);
+    assertThat(payload.eventName()).isEqualTo(eventName);
+    assertThat(payload.eventData()).isEqualTo(data);
+  }
+
+  @Test
+  void send_redis_페이로드_수신자_emitter_전송() throws IOException {
+    UUID eventId = UUID.randomUUID();
+    UUID receiverId1 = UUID.randomUUID();
+    UUID receiverId2 = UUID.randomUUID();
+    Set<UUID> receiverIds = Set.of(receiverId1, receiverId2);
+    String eventName = "notifications";
+    String data = "hello";
+
+    SseMessage payload = new SseMessage(eventId, receiverIds, eventName, data);
 
     SseEmitter emitter1 = mock(SseEmitter.class);
     SseEmitter emitter2 = mock(SseEmitter.class);
     given(sseEmitterRepository.findAllByReceiverIdsIn(receiverIds))
         .willReturn(List.of(emitter1, emitter2));
 
-    sseService.send(receiverIds, eventName, data);
+    sseService.send(payload);
 
-    ArgumentCaptor<SseMessage> messageCaptor = ArgumentCaptor.forClass(SseMessage.class);
-    verify(sseMessageRepository).save(messageCaptor.capture());
-    SseMessage createdMessage = messageCaptor.getValue();
-    assertThat(createdMessage.getReceiverIds()).containsExactlyInAnyOrder(receiverId1, receiverId2);
-    assertThat(createdMessage.getEventName()).isEqualTo(eventName);
-    assertThat(createdMessage.getEventData()).isEqualTo(data);
+    ArgumentCaptor<Set<DataWithMediaType>> eventCaptor = ArgumentCaptor.forClass(Set.class);
+    verify(emitter1).send(eventCaptor.capture());
+    verify(emitter2).send(eventCaptor.capture());
 
-    verify(emitter1).send(event);
-    verify(emitter2).send(event);
+    List<Set<DataWithMediaType>> captured = eventCaptor.getAllValues();
+    assertThat(captured.get(0)).isEqualTo(captured.get(1));
+
+    verifyNoInteractions(sseMessageRepository);
   }
 
   @Test
