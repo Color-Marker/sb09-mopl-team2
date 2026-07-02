@@ -89,4 +89,9 @@ public class Content {
     if (title != null) this.title = title;
     if (description != null) this.description = description;
   }
+
+  public void updateReviewStats(double averageRating, int reviewCount) {
+    this.averageRating = averageRating;
+    this.reviewCount = reviewCount;
+  }
 }

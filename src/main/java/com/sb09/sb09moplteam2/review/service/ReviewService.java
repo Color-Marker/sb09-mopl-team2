@@ -54,6 +54,7 @@ public class ReviewService {
         .user(user)
         .build();
     reviewRepository.save(review);
+    updateContentReviewStats(request.contentId());
     log.info("리뷰 생성 완료 - reviewId: {}", review.getId());
     return reviewMapper.toDto(review);
   }
@@ -70,6 +71,7 @@ public class ReviewService {
       throw new ReviewForbiddenException();
     }
     review.update(request.rating(), request.text());
+    updateContentReviewStats(review.getContent().getId());
     log.info("리뷰 수정 완료 - reviewId: {}", reviewId);
     return reviewMapper.toDto(review);
   }
@@ -86,6 +88,7 @@ public class ReviewService {
       throw new ReviewForbiddenException();
     }
     reviewRepository.delete(review);
+    updateContentReviewStats(review.getContent().getId());
     log.info("리뷰 삭제 완료 - reviewId: {}", reviewId);
   }
 
@@ -118,10 +121,23 @@ public class ReviewService {
           : String.valueOf(last.getRating());
       nextIdAfter = last.getId();
     }
+    long totalCount = reviewRepository.countByContentId(contentId);
 
-    log.info("리뷰 목록 조회 완료 - 총 {}개", data.size());
+    log.info("리뷰 목록 조회 완료 - 총 {}개", totalCount);
     return new CursorResponseReviewDto(
         data, nextCursor, nextIdAfter, hasNext, (long) data.size(), sortBy, sortDirection
     );
+  }
+  //TODO 테스트 코드 작성
+  private void updateContentReviewStats(UUID contentId) {
+    List<Review> reviews = reviewRepository.findByContentId(contentId);
+    int reviewCount = reviews.size();
+    double averageRating = reviews.stream()
+        .mapToDouble(Review::getRating)
+        .average()
+        .orElse(0.0);
+    Content content = contentRepository.findById(contentId)
+        .orElseThrow(() -> new NoSuchElementException("콘텐츠를 찾을 수 없습니다."));
+    content.updateReviewStats(averageRating, reviewCount);
   }
 }
