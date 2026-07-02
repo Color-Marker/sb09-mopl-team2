@@ -24,11 +24,16 @@ public enum ErrorCode {
   NOTIFICATION_NOT_FOUND("알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   NOTIFICATION_FORBIDDEN("알림을 삭제할 권한이 없습니다.", HttpStatus.FORBIDDEN),
 
+  // Follow 에러 코드
+  FOLLOW_NOT_FOUND("존재하지 않는 팔로우 내역입니다.", HttpStatus.NOT_FOUND),
+  ALREADY_FOLLOWING("이미 팔로우 중인 사용자입니다.", HttpStatus.CONFLICT),
+  SELF_FOLLOW_NOT_ALLOWED("자기 자신을 팔로우할 수 없습니다.", HttpStatus.BAD_REQUEST),
+  FOLLOW_FORBIDDEN("해당 팔로우 내역에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
+
   // review 에러 코드
   REVIEW_NOT_FOUND("리뷰를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   REVIEW_FORBIDDEN("리뷰에 대해 권한이 없습니다", HttpStatus.FORBIDDEN),
-  DUPLICATE_REVIEW("이미 리뷰를 작성했습니다.", HttpStatus.CONFLICT),;
-
+  DUPLICATE_REVIEW("이미 리뷰를 작성했습니다.", HttpStatus.CONFLICT);
 
   private final String message;
   private final HttpStatus httpStatus;
