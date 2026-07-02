@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class TmdbScheduler {
 
   private final JobLauncher jobLauncher;
-  private final Job tmdbMovieJob;
+  private final Job tmdbEventJob;
 
   @Scheduled(cron = "0 0 0 * * *")
   public void runTmdbBatch() {
@@ -26,7 +26,7 @@ public class TmdbScheduler {
       JobParameters params = new JobParametersBuilder()
           .addLocalDateTime("runTime", LocalDateTime.now())
           .toJobParameters();
-      jobLauncher.run(tmdbMovieJob, params);
+      jobLauncher.run(tmdbEventJob, params);
       log.info("TMDB 배치 작업 완료");
     } catch (Exception e) {
       log.error("TMDB 배치 작업 실패", e);

@@ -152,13 +152,13 @@ ALTER TABLE reviews
 -- playlists
 CREATE TABLE playlists
 (
-    id uuid primary key,
-    title varchar(100) not null,
-    description text not null,
-    subscriber_count int not null,
-    created_at timestamp with time zone not null,
-    updated_at timestamp with time zone,
-    owner_id uuid not null
+    id               uuid PRIMARY KEY,
+    title            varchar(100)             not null,
+    description      text                     not null,
+    subscriber_count bigint                   not null,
+    created_at       timestamp with time zone not null,
+    updated_at       timestamp with time zone,
+    owner_id         uuid                     not null
 );
 
 -- playlists -> users
@@ -243,11 +243,12 @@ ALTER TABLE watching_sessions
 -- conversations
 CREATE TABLE conversations
 (
-    id         uuid PRIMARY KEY,
-    type       varchar(10),
-    name       varchar(100),
-    created_at timestamp with time zone NOT NULL,
-    version    bigint                   NOT NULL DEFAULT 0
+    id              uuid PRIMARY KEY,
+    type            varchar(10),
+    name            varchar(100),
+    created_at      timestamp with time zone NOT NULL,
+    last_message_at timestamp with time zone NOT NULL,
+    version         bigint                   NOT NULL DEFAULT 0
 );
 
 -- conversations_participants
