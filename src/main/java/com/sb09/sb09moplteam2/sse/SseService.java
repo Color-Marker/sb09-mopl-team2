@@ -99,6 +99,11 @@ public class SseService {
             sseEmitter -> sseEmitter.completeWithError(new RuntimeException("sse ping failed")));
   }
 
+  @Scheduled(fixedDelay = 30_000)
+  public void connectionCheck(){
+    sseEmitterRepository.findAll().forEach(this::ping);
+  }
+
   private boolean ping(SseEmitter sseEmitter) {
     try {
       sseEmitter.send(SseEmitter.event()

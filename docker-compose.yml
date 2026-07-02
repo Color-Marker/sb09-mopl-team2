@@ -20,16 +20,13 @@ services:
       - db
       - redis
       - broker
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mopl
-      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - STORAGE_TYPE=local
       - STORAGE_LOCAL_ROOT_PATH=.mopl/storage
-      - MOPL_ADMIN_USERNAME=${MOPL_ADMIN_USERNAME}
-      - MOPL_ADMIN_EMAIL=${MOPL_ADMIN_EMAIL}
-      - MOPL_ADMIN_PASSWORD=${MOPL_ADMIN_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=broker:29092
       - REDIS_HOST=redis
       - REDIS_PORT=6379
