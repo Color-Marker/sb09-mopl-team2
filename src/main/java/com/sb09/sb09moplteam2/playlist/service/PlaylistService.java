@@ -173,6 +173,7 @@ public class PlaylistService {
         .playlist(playlist)
         .subscriber(subscriber)
         .build());
+    playlist.incrementSubscriberCount();
   }
 
   @Transactional
@@ -181,6 +182,10 @@ public class PlaylistService {
       throw new IllegalArgumentException("구독 중이 아닙니다.");
     }
     playlistSubscriptionRepository.deleteByPlaylistIdAndSubscriberId(playlistId, currentUserId);
+
+    Playlist playlist = playlistRepository.findById(playlistId)
+        .orElseThrow(() -> new NoSuchElementException("플레이리스트를 찾을 수 없습니다."));
+    playlist.decrementSubscriberCount();
   }
 }
 
