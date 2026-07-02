@@ -2,7 +2,7 @@ package com.sb09.sb09moplteam2.content.service;
 
 
 import com.sb09.sb09moplteam2.content.dto.data.ContentDto;
-import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
+import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.content.dto.request.ContentCreateRequest;
 import com.sb09.sb09moplteam2.content.dto.request.ContentUpdateRequest;
 import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
