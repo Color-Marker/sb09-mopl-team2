@@ -7,7 +7,7 @@ import com.sb09.sb09moplteam2.exception.notification.NotificationNotFoundExcepti
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.notification.service.NotificationService;
-import com.sb09.sb09moplteam2.security.CustomUserDetails;
+import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

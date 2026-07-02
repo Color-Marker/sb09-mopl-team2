@@ -16,6 +16,7 @@ import com.sb09.sb09moplteam2.notification.mapper.CursorResponseNotificationMapp
 import com.sb09.sb09moplteam2.notification.mapper.NotificationMapper;
 import com.sb09.sb09moplteam2.notification.repository.NotificationRepository;
 import com.sb09.sb09moplteam2.notification.service.NotificationService;
+import com.sb09.sb09moplteam2.playlist.entity.Playlist;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;

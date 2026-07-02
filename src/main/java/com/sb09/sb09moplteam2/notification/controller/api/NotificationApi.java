@@ -3,7 +3,7 @@ package com.sb09.sb09moplteam2.notification.controller.api;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
-import com.sb09.sb09moplteam2.security.CustomUserDetails;
+import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

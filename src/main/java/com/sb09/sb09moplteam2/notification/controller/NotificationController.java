@@ -5,7 +5,7 @@ import com.sb09.sb09moplteam2.notification.controller.api.NotificationApi;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.notification.service.NotificationService;
-import com.sb09.sb09moplteam2.security.CustomUserDetails;
+import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
