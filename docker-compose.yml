@@ -21,7 +21,7 @@ services:
       - redis
       - broker
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mopl
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
@@ -34,13 +34,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     expose:
-      - 8080
+      - 8080f
     networks:
       - mopl-network
     volumes:
       - binary-content-storage:/app/.mopl/storage
     deploy:
-      replicas: 3
+      replicas: 2
 
   db:
     image: postgres:16-alpine
