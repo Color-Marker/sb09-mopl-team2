@@ -3,7 +3,6 @@ package com.sb09.sb09moplteam2.follow.controller;
 import com.sb09.sb09moplteam2.follow.dto.data.FollowDto;
 import com.sb09.sb09moplteam2.follow.dto.request.FollowRequest;
 import com.sb09.sb09moplteam2.follow.service.FollowService;
-
 import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +25,6 @@ public class FollowController {
   public ResponseEntity<FollowDto> follow(
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @Valid @RequestBody FollowRequest request) {
-
     FollowDto response = followService.follow(userDetails.getId(), request);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
@@ -36,27 +34,24 @@ public class FollowController {
   public ResponseEntity<Void> unfollow(
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @PathVariable UUID followId) {
-
     followService.unfollow(userDetails.getId(), followId);
     return ResponseEntity.noContent().build();
   }
 
-  // 3. 팔로우 여부 조회 (GET /api/follows/status?followeeId=...)
-  @GetMapping("/status")
-  public ResponseEntity<Boolean> checkFollowingStatus(
+  // 3. 팔로우 여부 조회 (GET /api/follows/followed-by-me?followeeId={uuid})
+  @GetMapping("/followed-by-me")
+  public ResponseEntity<FollowDto> checkFollowingStatus(
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @RequestParam UUID followeeId) {
-
-    boolean isFollowing = followService.isFollowing(userDetails.getId(), followeeId);
-    return ResponseEntity.ok(isFollowing);
+    FollowDto response = followService.getFollowDetails(userDetails.getId(), followeeId);
+    return ResponseEntity.ok(response);
   }
 
-  // 4. 특정 유저의 팔로워 수 조회 (GET /api/follows/{userId}/count)
-  @GetMapping("/{userId}/count")
+  // 4. 특정 유저의 팔로워 수 조회 (GET /api/follows/count?followeeId={uuid})
+  @GetMapping("/count")
   public ResponseEntity<Long> getFollowerCount(
-      @PathVariable UUID userId) {
-
-    long count = followService.getFollowerCount(userId);
+      @RequestParam UUID followeeId) {
+    long count = followService.getFollowerCount(followeeId);
     return ResponseEntity.ok(count);
   }
 }

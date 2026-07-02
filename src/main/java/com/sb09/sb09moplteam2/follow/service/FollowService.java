@@ -60,9 +60,18 @@ public class FollowService {
     followRepository.delete(follow);
   }
 
-  // 3. 특정 유저를 내가 팔로우하는지 여부 조회
-  public boolean isFollowing(UUID followerId, UUID followeeId) {
-    return followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId);
+  // 3. 특정 유저를 내가 팔로우하는지 상세 조회 (명세서 규격 반영)
+  public FollowDto getFollowDetails(UUID followerId, UUID followeeId) {
+    // 팔로우 상태가 아니면 404 Not Found (미리 만들어두신 예외 사용)
+    Follow follow = followRepository.findByFollowerIdAndFolloweeId(followerId, followeeId)
+        .orElseThrow(FollowNotFoundException::new);
+
+    // 찾은 엔티티를 DTO로 변환하여 반환
+    return new FollowDto(
+        follow.getId(),
+        follow.getFollowee().getId(),
+        follow.getFollower().getId()
+    );
   }
 
   // 4. 특정 유저의 팔로워 수 조회
