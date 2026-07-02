@@ -2,6 +2,10 @@ package com.sb09.sb09moplteam2.review.service;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.exception.review.DuplicateReviewException;
+import com.sb09.sb09moplteam2.exception.review.ReviewForbiddenException;
+import com.sb09.sb09moplteam2.exception.review.ReviewNotFoundException;
+import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.review.dto.data.ReviewDto;
 import com.sb09.sb09moplteam2.review.dto.request.ReviewCreateRequest;
 import com.sb09.sb09moplteam2.review.dto.request.ReviewUpdateRequest;
@@ -15,9 +19,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -30,13 +36,17 @@ public class ReviewService {
 
   @Transactional
   public ReviewDto create(ReviewCreateRequest request, UUID currentUserId) {
+    log.info("리뷰 생성 요청 - contentId: {}, userId: {}", request.contentId(), currentUserId);
     if (reviewRepository.existsByContentIdAndUserId(request.contentId(), currentUserId)) {
-      throw new IllegalArgumentException("이미 리뷰를 작성했습니다.");
+      throw new DuplicateReviewException();
     }
     Content content = contentRepository.findById(request.contentId())
-        .orElseThrow(() -> new NoSuchElementException("콘텐츠를 찾을 수 없습니다."));
+        .orElseThrow(() -> {
+          log.warn("콘텐츠 없음 - contentId: {}", request.contentId());
+          return new NoSuchElementException("콘텐츠를 찾을 수 없습니다.");
+        });
     User user = userRepository.findById(currentUserId)
-        .orElseThrow(() -> new NoSuchElementException("유저를 찾을 수 없습니다."));
+        .orElseThrow(() -> UserNotFoundException.withId(currentUserId));
     Review review = Review.builder()
         .rating(request.rating())
         .text(request.text())
@@ -44,28 +54,39 @@ public class ReviewService {
         .user(user)
         .build();
     reviewRepository.save(review);
+    log.info("리뷰 생성 완료 - reviewId: {}", review.getId());
     return reviewMapper.toDto(review);
   }
 
   @Transactional
   public ReviewDto update(UUID reviewId, ReviewUpdateRequest request, UUID currentUserId) {
+    log.info("리뷰 수정 요청 - reviewId: {}", reviewId);
     Review review = reviewRepository.findById(reviewId)
-        .orElseThrow(() -> new NoSuchElementException("리뷰를 찾을 수 없습니다."));
+        .orElseThrow(() -> {
+          log.warn("리뷰 없음 - reviewId: {}", reviewId);
+          return new ReviewNotFoundException();
+        });
     if (!review.getUser().getId().equals(currentUserId)) {
-      throw new IllegalArgumentException("리뷰 수정 권한이 없습니다.");
+      throw new ReviewForbiddenException();
     }
     review.update(request.rating(), request.text());
+    log.info("리뷰 수정 완료 - reviewId: {}", reviewId);
     return reviewMapper.toDto(review);
   }
 
   @Transactional
   public void delete(UUID reviewId, UUID currentUserId) {
+    log.info("리뷰 삭제 요청 - reviewId: {}", reviewId);
     Review review = reviewRepository.findById(reviewId)
-        .orElseThrow(() -> new NoSuchElementException("리뷰를 찾을 수 없습니다."));
+        .orElseThrow(() -> {
+          log.warn("리뷰 없음 - reviewId: {}", reviewId);
+          return new ReviewNotFoundException();
+        });
     if (!review.getUser().getId().equals(currentUserId)) {
-      throw new IllegalArgumentException("리뷰 삭제 권한이 없습니다.");
+      throw new ReviewForbiddenException();
     }
     reviewRepository.delete(review);
+    log.info("리뷰 삭제 완료 - reviewId: {}", reviewId);
   }
 
   public CursorResponseReviewDto findAll(
@@ -76,6 +97,7 @@ public class ReviewService {
       String sortDirection,
       String sortBy
   ) {
+    log.info("리뷰 목록 조회 - contentId: {}, sortBy: {}, sortDirection: {}, limit: {}", contentId, sortBy, sortDirection, limit);
     List<Review> reviews = reviewRepository.findReviewsWithCursor(
         contentId, cursor, idAfter, limit, sortDirection, sortBy
     );
@@ -97,14 +119,9 @@ public class ReviewService {
       nextIdAfter = last.getId();
     }
 
+    log.info("리뷰 목록 조회 완료 - 총 {}개", data.size());
     return new CursorResponseReviewDto(
-        data,
-        nextCursor,
-        nextIdAfter,
-        hasNext,
-        (long) data.size(),
-        sortBy,
-        sortDirection
+        data, nextCursor, nextIdAfter, hasNext, (long) data.size(), sortBy, sortDirection
     );
   }
 }

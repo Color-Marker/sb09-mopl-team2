@@ -22,7 +22,13 @@ public enum ErrorCode {
 
   // notification 에러 코드
   NOTIFICATION_NOT_FOUND("알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-  NOTIFICATION_FORBIDDEN("알림을 삭제할 권한이 없습니다.", HttpStatus.FORBIDDEN);
+  NOTIFICATION_FORBIDDEN("알림을 삭제할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+
+  // review 에러 코드
+  REVIEW_NOT_FOUND("리뷰를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  REVIEW_FORBIDDEN("리뷰에 대해 권한이 없습니다", HttpStatus.FORBIDDEN),
+  DUPLICATE_REVIEW("이미 리뷰를 작성했습니다.", HttpStatus.CONFLICT),;
+
 
   private final String message;
   private final HttpStatus httpStatus;
