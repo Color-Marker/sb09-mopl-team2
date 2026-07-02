@@ -155,7 +155,7 @@ CREATE TABLE playlists
     id uuid primary key,
     title varchar(100) not null,
     description text not null,
-    subscriber_count int not null,
+    subscriber_count bigint not null,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone,
     owner_id uuid not null
