@@ -1,5 +1,7 @@
 package com.sb09.sb09moplteam2.sse;
 
+import com.sb09.sb09moplteam2.config.RedisConfig;
+import com.sb09.sb09moplteam2.redis.RedisPubSubMessage;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
@@ -8,6 +10,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter.DataWithMediaType;
@@ -23,6 +26,7 @@ public class SseService {
 
   private final SseEmitterRepository sseEmitterRepository;
   private final SseMessageRepository sseMessageRepository;
+  private final RedisTemplate<String, Object> redisTemplate;
 
   public SseEmitter connect(UUID receiverId, UUID lastEventId){
     SseEmitter sseEmitter = new SseEmitter(timeout);
@@ -66,10 +70,25 @@ public class SseService {
     return sseEmitter;
   }
 
-  public void send(Collection<UUID> receiverIds, String eventName, Object data) {
+  // 메시지 레포에 저장하고 redis에 publish
+  public void publishToRedis(Collection<UUID> receiverIds, String eventName, Object data) {
     SseMessage message = sseMessageRepository.save(SseMessage.create(receiverIds, eventName, data));
-    Set<DataWithMediaType> event = message.toEvent();
-    sseEmitterRepository.findAllByReceiverIdsIn(receiverIds)
+
+    redisTemplate.convertAndSend(
+        RedisConfig.SSE_CHANNEL,
+        RedisPubSubMessage.from(message)
+    );
+  }
+
+  // redis 구독자가 받은 메시지 보고 emitter 찾아서 send 처리
+  public void send(RedisPubSubMessage payload){
+    Set<DataWithMediaType> event = SseEmitter.event()
+        .id(payload.eventId().toString())
+        .name(payload.eventName())
+        .data(payload.eventData())
+        .build();
+
+    sseEmitterRepository.findAllByReceiverIdsIn(payload.receiverIds())
         .forEach(sseEmitter -> {
           try {
             sseEmitter.send(event);
