@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.security;
+package com.sb09.sb09moplteam2.security.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

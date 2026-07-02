@@ -16,6 +16,9 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
 
   boolean existsByConversationAndUserId(Conversation conversation, UUID userId);
 
+  Optional<ConversationParticipant> findByConversationIdAndUserIdNot(UUID conversationId, UUID userId);
+  Optional<ConversationParticipant> findByConversationIdAndUserId(UUID conversationId, UUID userId);
+
   Optional<ConversationParticipant> findByConversationAndUserId(Conversation conversation, UUID userId);
 
   @Query("""
