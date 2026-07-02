@@ -20,11 +20,6 @@ spring:
     type: redis
     cache-names:
       # - 쓸 캐시 이름들
-    caffeine:
-      spec: >
-        maximumSize=100,
-        expireAfterAccess=600s,
-        recordStats
     redis:
       enable-statistics: true
   data:
