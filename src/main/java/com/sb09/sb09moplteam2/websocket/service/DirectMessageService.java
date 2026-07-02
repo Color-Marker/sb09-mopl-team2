@@ -1,9 +1,8 @@
 package com.sb09.sb09moplteam2.websocket.service;
 
-
-
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
+import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
@@ -105,6 +104,46 @@ public class DirectMessageService {
         data.size(),
         sortBy,
         sortDirection
+    );
+  }
+
+  // STOMP /app/dm/{conversationId}
+  // DM 전송 → DB 저장 + conversation.lastMessageAt 갱신 → 브로드캐스트용 response 반환
+  @Transactional
+  public DirectMessageResponse send(UUID conversationId, UUID senderId, String content) {
+    log.debug("DM 전송 요청: conversationId={}, senderId={}", conversationId, senderId);
+
+    Conversation conversation = conversationRepository.findById(conversationId)
+        .orElseThrow(() -> {
+          log.warn("DM 전송 실패 - 대화방 없음: conversationId={}", conversationId);
+          return new ConversationNotFoundException(conversationId);
+        });
+
+    // 참여자 검증
+    boolean isParticipant = conversationParticipantRepository
+        .existsByConversationAndUserId(conversation, senderId);
+    if (!isParticipant) {
+      log.warn("DM 전송 실패 - 참여자 아님: conversationId={}, senderId={}",
+          conversationId, senderId);
+      throw new ConversationParticipantNotFoundException(conversationId, senderId);
+    }
+
+    // 메시지 저장
+    DirectMessage dm = DirectMessage.of(conversation, senderId, content);
+    directMessageRepository.save(dm);
+
+    // conversation의 lastMessageAt 갱신 (커서 페이지네이션 정렬 기준)
+    conversation.updateLastMessageAt(dm.getSentAt());
+
+    log.info("DM 전송 완료: conversationId={}, messageId={}, senderId={}",
+        conversationId, dm.getId(), senderId);
+
+    return new DirectMessageResponse(
+        dm.getId(),
+        conversationId,
+        senderId,
+        dm.getContent(),
+        dm.getSentAt()
     );
   }
 
