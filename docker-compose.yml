@@ -31,7 +31,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     expose:
-      - 8080f
+      - 8080
     networks:
       - mopl-network
     volumes:
