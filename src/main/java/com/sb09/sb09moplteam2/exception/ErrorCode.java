@@ -29,6 +29,7 @@ public enum ErrorCode {
   FOLLOW_NOT_FOUND("존재하지 않는 팔로우 내역입니다.", HttpStatus.NOT_FOUND),
   ALREADY_FOLLOWING("이미 팔로우 중인 사용자입니다.", HttpStatus.CONFLICT),
   SELF_FOLLOW_NOT_ALLOWED("자기 자신을 팔로우할 수 없습니다.", HttpStatus.BAD_REQUEST),
+  CANNOT_FOLLOW_SELF("자기 자신을 팔로우할 수 없습니다.",HttpStatus.BAD_REQUEST),
   FOLLOW_FORBIDDEN("해당 팔로우 내역에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN);
 
   private final String message;
