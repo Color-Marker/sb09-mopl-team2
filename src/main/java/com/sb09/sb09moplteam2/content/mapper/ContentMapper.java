@@ -1,7 +1,7 @@
 package com.sb09.sb09moplteam2.content.mapper;
 
 import com.sb09.sb09moplteam2.content.dto.data.ContentDto;
-import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
+import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import java.util.List;
