@@ -37,11 +37,7 @@ class BasicUserServiceTest {
   private BasicUserService basicUserService;
 
   private UserCreateRequest createRequest(String name, String email, String password) {
-    UserCreateRequest request = new UserCreateRequest();
-    ReflectionTestUtils.setField(request, "name", name);
-    ReflectionTestUtils.setField(request, "email", email);
-    ReflectionTestUtils.setField(request, "password", password);
-    return request;
+    return new UserCreateRequest(name, email, password);
   }
 
   @Test

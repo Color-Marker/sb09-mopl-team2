@@ -6,31 +6,31 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.sb09.sb09moplteam2.config.JpaAuditingConfig;
+import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import com.sb09.sb09moplteam2.exception.GlobalExceptionHandler;
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
 import com.sb09.sb09moplteam2.user.dto.data.UserDto;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.service.UserService;
-import com.sb09.sb09moplteam2.config.QueryDslConfig;
-import com.sb09.sb09moplteam2.config.JpaAuditingConfig;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(
     controllers = UserController.class,
     excludeFilters = @Filter(
         type = FilterType.ASSIGNABLE_TYPE,
-        classes = {QueryDslConfig.class, JpaAuditingConfig.class}
+        classes = {QuerydslConfig.class, JpaAuditingConfig.class}
     )
 )
 @Import(GlobalExceptionHandler.class)
@@ -40,7 +40,7 @@ class UserControllerTest {
   @Autowired
   private MockMvc mockMvc;
 
-  @MockBean
+  @MockitoBean
   private UserService userService;
 
   @Test
