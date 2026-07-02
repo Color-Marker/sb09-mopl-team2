@@ -29,7 +29,7 @@ public class FollowService {
     UUID followeeId = request.getFolloweeId();
 
     if (followerId.equals(followeeId)) {
-      throw new CannotFollowSelfException();
+      throw new SelfFollowNotAllowedException();
     }
 
     User followee = userRepository.findById(followeeId)
