@@ -30,24 +30,6 @@ public class KafkaProduceRequiredEventListener {
 
   @Async("eventTaskExecutor")
   @TransactionalEventListener
-  public void on(NotificationCreatedEvent event) {
-    sendToKafka(event);
-  }
-
-  @Async("eventTaskExecutor")
-  @TransactionalEventListener
-  public void on(NotificationDmEvent event) {
-    sendToKafka(event);
-  }
-
-  @Async("eventTaskExecutor")
-  @TransactionalEventListener
-  public void on(NotificationRoleEvent event) {
-    sendToKafka(event);
-  }
-
-  @Async("eventTaskExecutor")
-  @TransactionalEventListener
   public void on(RoleUpdatedEvent event) {
     sendToKafka(event);
   }
