@@ -4,6 +4,7 @@ import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -20,11 +21,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Getter
 @Table(name = "notifications")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public class Notification {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -75,7 +78,7 @@ public class Notification {
     this.message = null;
     this.title = title;
     this.content = content;
-    this.type = NotificationType.EVENT;
+    this.type = NotificationType.NOTIFICATION;
     this.level = level;
   }
 }

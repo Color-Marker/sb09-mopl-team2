@@ -17,7 +17,7 @@ public interface NotificationService {
 
   void createFollowNotification(UUID userId, UUID followerId);
   void createFollowWorkNotification(Set<UUID> userIds, UUID followedId, UUID playlistId);
-  void createSubsNotification(UUID userId,UUID subscriberId, UUID playlistId);
+  void createSubsNotification(UUID subscriberId, UUID playlistId);
   void createSubsWorkNotification(Set<UUID> userIds, UUID playlistId);
 
   void createRoleUpdateNotification(UUID userId, Role previous, Role now);

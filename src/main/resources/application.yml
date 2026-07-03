@@ -40,7 +40,7 @@ spring:
     jdbc:
       initialize-schema: always
     job:
-      enabled: false
+      enabled: true # false
   security:
     oauth2:
       client:

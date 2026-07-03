@@ -24,9 +24,11 @@ public class NotificationRequiredTopicListener {
   @KafkaListener(topics = "mopl.RoleUpdatedEvent")
   public void onRoleUpdatedEvent(String kafkaEvent){ // 권한 변경
     try {
+      log.info("RoleUpdatedEvent 수신함: {}", kafkaEvent);
       RoleUpdatedEvent event = objectMapper.readValue(kafkaEvent, RoleUpdatedEvent.class);
       notificationService.createRoleUpdateNotification(event.userId(), event.previous(), event.now());
     } catch (JsonProcessingException e){
+      log.error("이벤트 역직렬화 실패: {}", kafkaEvent, e);
       throw new RuntimeException(e);
     }
   }
@@ -34,9 +36,11 @@ public class NotificationRequiredTopicListener {
   @KafkaListener(topics = "mopl.SubscribedPlaylistEvent")
   public void onSubscribedPlaylistEvent(String kafkaEvent){ // 내 플리가 구독됌
     try {
+      log.info("SubscribedPlaylistEvent 수신함: {}", kafkaEvent);
       SubscribedPlaylistEvent event = objectMapper.readValue(kafkaEvent, SubscribedPlaylistEvent.class);
-      notificationService.createSubsNotification(event.userId(),event.subscriberId(), event.playlistId());;
+      notificationService.createSubsNotification(event.subscriberId(), event.playlistId());;
     } catch (JsonProcessingException e){
+      log.error("이벤트 역직렬화 실패: {}", kafkaEvent, e);
       throw new RuntimeException(e);
     }
   }
@@ -44,9 +48,11 @@ public class NotificationRequiredTopicListener {
   @KafkaListener(topics = "mopl.SubsPlaylistWorkEvent")
   public void onSubsPlaylistWorkEvent(String kafkaEvent){ // 구독한 플리에 컨텐츠 추가됌
     try {
+      log.info("SubsPlaylistWorkEvent 수신함: {}", kafkaEvent);
       SubsPlaylistWorkEvent event = objectMapper.readValue(kafkaEvent, SubsPlaylistWorkEvent.class);
       notificationService.createSubsWorkNotification(event.userIds(), event.playlistId());
     } catch (JsonProcessingException e){
+      log.error("이벤트 역직렬화 실패: {}", kafkaEvent, e);
       throw new RuntimeException(e);
     }
   }
@@ -54,9 +60,11 @@ public class NotificationRequiredTopicListener {
   @KafkaListener(topics = "mopl.FollowUserWorkEvent")
   public void onFollowUserWorkEvent(String kafkaEvent){ // 내가 팔로우해둔 사람이 새로운 플레이리스트 만듦
     try {
+      log.info("FollowUserWorkEvent 수신함: {}", kafkaEvent);
       FollowUserWorkEvent event = objectMapper.readValue(kafkaEvent, FollowUserWorkEvent.class);
       notificationService.createFollowWorkNotification(event.userIds(), event.followedId(), event.playlistId());
     } catch (JsonProcessingException e){
+      log.error("이벤트 역직렬화 실패: {}", kafkaEvent, e);
       throw new RuntimeException(e);
     }
   }
@@ -64,9 +72,11 @@ public class NotificationRequiredTopicListener {
   @KafkaListener(topics = "mopl.FollowedEvent")
   public void onFollowedEvent(String kafkaEvent){ // 날 누군가가 팔로우함
     try {
+      log.info("FollowedEvent 수신함: {}", kafkaEvent);
       FollowedEvent event = objectMapper.readValue(kafkaEvent, FollowedEvent.class);
       notificationService.createFollowNotification(event.userId(), event.followerId());
     } catch (JsonProcessingException e){
+      log.error("이벤트 역직렬화 실패: {}", kafkaEvent, e);
       throw new RuntimeException(e);
     }
   }
@@ -74,9 +84,11 @@ public class NotificationRequiredTopicListener {
   @KafkaListener(topics = "mopl.MessageCreatedEvent")
   public void onMessageCreatedEvent(String kafkaEvent){ // DM 메시지가 옴
     try {
+      log.info("MessageCreatedEvent 수신함: {}", kafkaEvent);
       MessageCreatedEvent event = objectMapper.readValue(kafkaEvent, MessageCreatedEvent.class);
       notificationService.createDmNotification(event.userId(), event.messageDto());
     } catch (JsonProcessingException e){
+      log.error("이벤트 역직렬화 실패: {}", kafkaEvent, e);
       throw new RuntimeException(e);
     }
   }

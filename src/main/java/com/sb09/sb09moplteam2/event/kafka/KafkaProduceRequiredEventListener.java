@@ -31,36 +31,42 @@ public class KafkaProduceRequiredEventListener {
   @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void on(RoleUpdatedEvent event) {
+    log.info(">>> RoleUpdatedEvent 리스너 진입: {}", event);
     sendToKafka(event);
   }
 
   @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void on(SubscribedPlaylistEvent event) {
+    log.info(">>> SubscribedPlaylistEvent 리스너 진입: {}", event);
     sendToKafka(event);
   }
 
   @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void on(SubsPlaylistWorkEvent event) {
+    log.info(">>> SubsPlaylistWorkEvent  리스너 진입: {}", event);
     sendToKafka(event);
   }
 
   @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void on(FollowUserWorkEvent event) {
+    log.info(">>> FollowUserWorkEvent 리스너 진입: {}", event);
     sendToKafka(event);
   }
 
   @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void on(FollowedEvent event) {
+    log.info(">>> FollowedEvent 리스너 진입: {}", event);
     sendToKafka(event);
   }
 
   @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void on(MessageCreatedEvent event) { // 웹소켓이랑 같이 봐야 함.
+    log.info(">>> MessageCreatedEvent 리스너 진입: {}", event);
     sendToKafka(event);
   }
 
@@ -68,9 +74,16 @@ public class KafkaProduceRequiredEventListener {
   private <T> void sendToKafka(T event) {
     try {
       String payload = objectMapper.writeValueAsString(event);
-      kafkaTemplate.send("mopl.".concat(event.getClass().getSimpleName()), payload);
+      String topic = "mopl.".concat(event.getClass().getSimpleName());
+      kafkaTemplate.send(topic, payload).whenComplete((result, ex) -> {
+        if (ex != null) {
+          log.error("Kafka 전송 실패: topic={}", topic, ex);
+        } else {
+          log.info("Kafka 전송 성공: topic={}, offset={}", topic, result.getRecordMetadata().offset());
+        }
+      });
     } catch (JsonProcessingException e) {
-      log.error("Kafka에 이벤트를 보내는데 실패하였습니다.", e);
+      log.error("직렬화 실패", e);
       throw new RuntimeException(e);
     }
   }

@@ -16,6 +16,7 @@ import com.sb09.sb09moplteam2.notification.entity.Notification;
 import com.sb09.sb09moplteam2.notification.mapper.CursorResponseNotificationMapper;
 import com.sb09.sb09moplteam2.notification.mapper.NotificationMapper;
 import com.sb09.sb09moplteam2.notification.repository.NotificationRepository;
+import com.sb09.sb09moplteam2.notification.service.Basic.BasicNotificationService;
 import com.sb09.sb09moplteam2.playlist.entity.Playlist;
 import com.sb09.sb09moplteam2.playlist.repository.PlaylistRepository;
 import com.sb09.sb09moplteam2.user.entity.Role;
@@ -85,8 +86,9 @@ public class BasicNotificationServiceTest {
     given(userRepository.existsById(userId)).willReturn(true);
     given(notificationRepository.searchNotification(userId, request)).willReturn(slice);
     given(notificationRepository.countByReceiver_Id(userId)).willReturn(5L);
-    willReturn(expected).given(cursorMapper)
-        .fromSlice(eq(slice), any(), any(), any(), eq(5L), any());
+    given(cursorMapper.<Notification, NotificationDto>fromSlice(
+        eq(slice), any(), any(), any(), eq(5L), any()))
+        .willReturn(expected);
     CursorResponse<NotificationDto> result = notificationService.list(userId, request);
 
     assertThat(result).isEqualTo(expected);
@@ -162,7 +164,6 @@ public class BasicNotificationServiceTest {
     UUID followerId = UUID.randomUUID();
 
     User follower = mock(User.class);
-    given(follower.getName()).willReturn("철수");
     given(userRepository.findById(followerId)).willReturn(Optional.of(follower));
 
     User receiver = mock(User.class);
@@ -281,25 +282,28 @@ public class BasicNotificationServiceTest {
 
   @Test
   void createSubsNotification_성공() {
-    UUID userId = UUID.randomUUID();
     UUID subscriberId = UUID.randomUUID();
     UUID playlistId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
 
     User subscriber = mock(User.class);
     given(subscriber.getName()).willReturn("민준");
     given(userRepository.findById(subscriberId)).willReturn(Optional.of(subscriber));
 
+    User owner = mock(User.class);
+    given(owner.getId()).willReturn(ownerId);
+
     Playlist playlist = mock(Playlist.class);
     given(playlist.getTitle()).willReturn("힙합 모음");
+    given(playlist.getOwner()).willReturn(owner);
     given(playlistRepository.findById(playlistId)).willReturn(Optional.of(playlist));
 
-    User receiver = mock(User.class);
-    given(userRepository.findById(userId)).willReturn(Optional.of(receiver));
+    given(userRepository.findById(ownerId)).willReturn(Optional.of(mock(User.class)));
 
     given(notificationRepository.save(any())).willReturn(mock(Notification.class));
     given(notificationMapper.toDto(any())).willReturn(mock(NotificationDto.class));
 
-    notificationService.createSubsNotification(userId, subscriberId, playlistId);
+    notificationService.createSubsNotification(subscriberId, playlistId);
 
     verify(notificationRepository).save(any());
     verify(eventPublisher).publishEvent(any(NotificationCreatedEvent.class));
@@ -307,19 +311,17 @@ public class BasicNotificationServiceTest {
 
   @Test
   void createSubsNotification_구독자없음_UserNotFoundException() {
-    UUID userId = UUID.randomUUID();
     UUID subscriberId = UUID.randomUUID();
     UUID playlistId = UUID.randomUUID();
 
     given(userRepository.findById(subscriberId)).willReturn(Optional.empty());
 
-    assertThatThrownBy(() -> notificationService.createSubsNotification(userId, subscriberId, playlistId))
+    assertThatThrownBy(() -> notificationService.createSubsNotification(subscriberId, playlistId))
         .isInstanceOf(UserNotFoundException.class);
   }
 
   @Test
   void createSubsNotification_플레이리스트없음_PlaylistNotFoundException() {
-    UUID userId = UUID.randomUUID();
     UUID subscriberId = UUID.randomUUID();
     UUID playlistId = UUID.randomUUID();
 
@@ -327,30 +329,33 @@ public class BasicNotificationServiceTest {
     given(userRepository.findById(subscriberId)).willReturn(Optional.of(subscriber));
     given(playlistRepository.findById(playlistId)).willReturn(Optional.empty());
 
-    assertThatThrownBy(() -> notificationService.createSubsNotification(userId, subscriberId, playlistId))
+    assertThatThrownBy(() -> notificationService.createSubsNotification(subscriberId, playlistId))
         .isInstanceOf(PlaylistNotFoundException.class);
   }
 
   @Test
   void createSubsNotification_수신자없음_UserNotFoundException() {
-    UUID userId = UUID.randomUUID();
     UUID subscriberId = UUID.randomUUID();
     UUID playlistId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
 
     User subscriber = mock(User.class);
     given(subscriber.getName()).willReturn("민준");
     given(userRepository.findById(subscriberId)).willReturn(Optional.of(subscriber));
 
+    User owner = mock(User.class);
+    given(owner.getId()).willReturn(ownerId);
+
     Playlist playlist = mock(Playlist.class);
     given(playlist.getTitle()).willReturn("힙합 모음");
+    given(playlist.getOwner()).willReturn(owner);
     given(playlistRepository.findById(playlistId)).willReturn(Optional.of(playlist));
 
-    given(userRepository.findById(userId)).willReturn(Optional.empty());
+    given(userRepository.findById(ownerId)).willReturn(Optional.empty());
 
-    assertThatThrownBy(() -> notificationService.createSubsNotification(userId, subscriberId, playlistId))
+    assertThatThrownBy(() -> notificationService.createSubsNotification(subscriberId, playlistId))
         .isInstanceOf(UserNotFoundException.class);
   }
-
   @Test
   void createSubsWorkNotification_성공() {
     UUID playlistId = UUID.randomUUID();
