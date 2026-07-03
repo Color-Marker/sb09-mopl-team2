@@ -3,6 +3,8 @@ package com.sb09.sb09moplteam2.playlist.service;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
+import com.sb09.sb09moplteam2.exception.content.Duplicate_Content;
 import com.sb09.sb09moplteam2.exception.playlist.DuplicateSubscribeException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistForbiddenException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistNotFoundException;
@@ -21,7 +23,6 @@ import com.sb09.sb09moplteam2.playlist.repository.PlaylistSubscriptionRepository
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -164,12 +165,12 @@ public class PlaylistService {
       throw new PlaylistForbiddenException();
     }
     if (playlistItemRepository.existsByPlaylistIdAndContentId(playlistId, contentId)) {
-      throw new IllegalArgumentException("이미 추가된 콘텐츠입니다.");
+      throw new Duplicate_Content();
     }
     Content content = contentRepository.findById(contentId)
         .orElseThrow(() -> {
           log.warn("콘텐츠 없음 - contentId: {}", contentId);
-          return new NoSuchElementException("콘텐츠를 찾을 수 없습니다.");
+          return new ContentNotFoundException();
         });
     List<PlaylistItem> items = playlistItemRepository.findByPlaylistIdOrderByOrderIndex(playlistId);
     int nextOrder = items.isEmpty() ? 1 : items.get(items.size() - 1).getOrderIndex() + 1;
