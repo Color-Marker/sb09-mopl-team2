@@ -66,6 +66,7 @@ public class SseService {
             }
         );
 
+    log.info("sse emitter를 반환합니다.");
     return sseEmitter;
   }
 

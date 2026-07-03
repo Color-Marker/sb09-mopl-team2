@@ -128,5 +128,5 @@ logging:
     root: info
 
 sse:
-  timeout: 300_000
+  timeout: 300000
   event-queue-capacity: 500
