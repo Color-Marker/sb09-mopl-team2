@@ -33,6 +33,7 @@ public class DirectMessageService {
   private final ConversationRepository conversationRepository;
   private final ConversationParticipantRepository conversationParticipantRepository;
   private final DirectMessageMapper directMessageMapper;
+  private final ConversationParticipantService conversationParticipantService;
 
   // GET /api/conversations/{conversationId}/direct-messages
   // DM 목록 조회 (커서 페이지네이션) - 참여자만 조회 가능
@@ -149,25 +150,10 @@ public class DirectMessageService {
 
   // POST /api/conversations/{conversationId}/direct-messages/{directMessageId}/read
   // DM 읽음 처리 → lastReadAt 업데이트
+  // DirectMessageService
   @Transactional
   public void read(UUID conversationId, UUID myUserId) {
-    log.debug("DM 읽음 처리 요청: conversationId={}, myUserId={}", conversationId, myUserId);
-
-    Conversation conversation = conversationRepository.findById(conversationId)
-        .orElseThrow(() -> {
-          log.warn("DM 읽음 처리 실패 - 대화방 없음: conversationId={}", conversationId);
-          return new ConversationNotFoundException(conversationId);
-        });
-
-    conversationParticipantRepository
-        .findByConversationAndUserId(conversation, myUserId)
-        .orElseThrow(() -> {
-          log.warn("DM 읽음 처리 실패 - 참여자 아님: conversationId={}, myUserId={}",
-              conversationId, myUserId);
-          return new ConversationParticipantNotFoundException(conversationId, myUserId);
-        })
-        .updateLastReadAt();
-
+    conversationParticipantService.updateLastReadAt(conversationId, myUserId);
     log.info("DM 읽음 처리 완료: conversationId={}, myUserId={}", conversationId, myUserId);
   }
 }

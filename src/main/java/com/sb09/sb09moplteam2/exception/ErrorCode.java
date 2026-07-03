@@ -29,7 +29,14 @@ public enum ErrorCode {
   FOLLOW_NOT_FOUND("존재하지 않는 팔로우 내역입니다.", HttpStatus.NOT_FOUND),
   ALREADY_FOLLOWING("이미 팔로우 중인 사용자입니다.", HttpStatus.CONFLICT),
   SELF_FOLLOW_NOT_ALLOWED("자기 자신을 팔로우할 수 없습니다.", HttpStatus.BAD_REQUEST),
-  FOLLOW_FORBIDDEN("해당 팔로우 내역에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN);
+  FOLLOW_FORBIDDEN("해당 팔로우 내역에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
+
+  // Conversation 에러 코드
+  CONVERSATION_NOT_FOUND("존재하지 않는 대화방입니다.", HttpStatus.NOT_FOUND),
+  CONVERSATION_PARTICIPANT_NOT_FOUND("해당 대화방의 참여자가 아닙니다.", HttpStatus.FORBIDDEN),
+  CONVERSATION_PARTICIPANT_ALREADY_EXISTS("이미 참여 중인 대화방입니다.", HttpStatus.CONFLICT),
+  DIRECT_MESSAGE_NOT_FOUND("존재하지 않는 메시지입니다.", HttpStatus.NOT_FOUND),
+  WATCHING_SESSION_NOT_FOUND("존재하지 않는 시청 세션입니다.", HttpStatus.NOT_FOUND);
 
   private final String message;
   private final HttpStatus httpStatus;
