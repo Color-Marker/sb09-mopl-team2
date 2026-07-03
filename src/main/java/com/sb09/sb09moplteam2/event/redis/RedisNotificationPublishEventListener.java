@@ -40,7 +40,7 @@ public class RedisNotificationPublishEventListener {
   public void on(NotificationCreatedEvent event) {
     log.info(">>> NotificationCreatedEvent 리스너 진입: {}", event);
     event.getData().forEach(dto ->
-        sseService.publishToRedis(Set.of(dto.receiverId()), "notification", dto)
+        sseService.publishToRedis(Set.of(dto.receiverId()), "notifications", dto)
     );
   }
 }

@@ -75,6 +75,7 @@ public class SseService {
     SseMessage message = sseMessageRepository.save(
         new SseMessage(UUID.randomUUID(), Set.copyOf(receiverIds), eventName, data)
     );
+    log.info("redis에 publish 실행합니다.");
     redisTemplate.convertAndSend(RedisConfig.SSE_CHANNEL, message);
   }
 
@@ -85,6 +86,7 @@ public class SseService {
     sseEmitterRepository.findAllByReceiverIdsIn(payload.receiverIds())
         .forEach(sseEmitter -> {
           try {
+            log.info("redis 구독자에게 실시간 알림을 전달합니다.");
             sseEmitter.send(event);
           } catch (IOException e) {
             log.error(e.getMessage(), e);
