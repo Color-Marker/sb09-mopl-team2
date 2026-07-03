@@ -1,8 +1,6 @@
 package com.sb09.sb09moplteam2.websocket.dto;
 
-
 import com.sb09.sb09moplteam2.dto.ContentSummary;
-
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import java.time.Instant;
 import java.util.UUID;

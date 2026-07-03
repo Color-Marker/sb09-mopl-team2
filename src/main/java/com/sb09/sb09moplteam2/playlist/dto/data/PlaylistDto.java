@@ -1,6 +1,6 @@
 package com.sb09.sb09moplteam2.playlist.dto.data;
 
-import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
+import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import java.time.Instant;
 import java.util.List;

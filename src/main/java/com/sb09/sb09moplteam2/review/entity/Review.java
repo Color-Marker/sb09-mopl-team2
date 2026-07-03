@@ -1,5 +1,6 @@
-package com.sb09.sb09moplteam2.playlist.entity;
+package com.sb09.sb09moplteam2.review.entity;
 
+import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,24 +23,21 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "playlists")
+@Table(name = "reviews")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class Playlist {
+public class Review {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(nullable = false, length = 100)
-  private String title;
+  @Column(nullable = false)
+  private Double rating;
 
   @Column(nullable = false, columnDefinition = "text")
-  private String description;
-
-  @Column(name = "subscriber_count", nullable = false)
-  private Long subscriberCount = 0L;
+  private String text;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false)
@@ -50,27 +48,24 @@ public class Playlist {
   private Instant updatedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "owner_id", nullable = false)
-  private User owner;
+  @JoinColumn(name = "content_id", nullable = false)
+  private Content content;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
   @Builder
-  public Playlist(String title, String description, User owner) {
-    this.title = title;
-    this.description = description;
-    this.owner = owner;
-    this.subscriberCount = 0L;
+  public Review(Double rating, String text, Content content, User user) {
+    this.rating = rating;
+    this.text = text;
+    this.content = content;
+    this.user = user;
   }
 
-  public void update(String title, String description) {
-    this.title = title;
-    this.description = description;
+  public void update(Double rating, String text) {
+    this.rating = rating;
+    this.text = text;
   }
 
-  public void incrementSubscriberCount() {
-    this.subscriberCount++;
-  }
-
-  public void decrementSubscriberCount() {
-    this.subscriberCount--;
-  }
 }
