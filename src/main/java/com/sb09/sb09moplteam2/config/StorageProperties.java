@@ -13,10 +13,21 @@ public class StorageProperties {
 
   private String type;
   private Local local = new Local();
+  private S3 s3 = new S3();
 
   @Getter
   @Setter
   public static class Local {
     private String rootPath;
+  }
+
+  @Getter
+  @Setter
+  public static class S3 {
+    private String accessKey;
+    private String secretKey;
+    private String region;
+    private String bucket;
+    private long presignedUrlExpiration;
   }
 }
