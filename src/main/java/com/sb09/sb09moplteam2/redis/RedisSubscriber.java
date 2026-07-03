@@ -31,7 +31,6 @@ public class RedisSubscriber implements MessageListener {
       SseMessage payload = (SseMessage) redisSerializer.deserialize(message.getBody());
       log.info(">>> 전송 작업 실시: {}", payload);
       sseService.send(payload);
-      sseService.send(payload);
     } catch (Exception e) {
       log.error("Redis SSE 메시지 처리 실패", e);
     }
