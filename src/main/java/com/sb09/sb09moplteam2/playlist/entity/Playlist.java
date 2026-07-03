@@ -65,4 +65,12 @@ public class Playlist {
     this.title = title;
     this.description = description;
   }
+
+  public void incrementSubscriberCount() {
+    this.subscriberCount++;
+  }
+
+  public void decrementSubscriberCount() {
+    this.subscriberCount--;
+  }
 }
