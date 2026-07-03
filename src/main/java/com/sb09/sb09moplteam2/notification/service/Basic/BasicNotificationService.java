@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.notification.service.basic;
+package com.sb09.sb09moplteam2.notification.service.Basic;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.event.message.NotificationCreatedEvent;
@@ -6,6 +6,7 @@ import com.sb09.sb09moplteam2.event.message.NotificationDmEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
 import com.sb09.sb09moplteam2.exception.notification.NotificationForbiddenException;
 import com.sb09.sb09moplteam2.exception.notification.NotificationNotFoundException;
+import com.sb09.sb09moplteam2.exception.playlist.PlaylistNotFoundException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.DirectMessageNotFoundException;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
@@ -17,6 +18,7 @@ import com.sb09.sb09moplteam2.notification.mapper.NotificationMapper;
 import com.sb09.sb09moplteam2.notification.repository.NotificationRepository;
 import com.sb09.sb09moplteam2.notification.service.NotificationService;
 import com.sb09.sb09moplteam2.playlist.entity.Playlist;
+import com.sb09.sb09moplteam2.playlist.repository.PlaylistRepository;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
@@ -101,7 +103,7 @@ public class BasicNotificationService implements NotificationService {
   public void createFollowWorkNotification(Set<UUID> userIds, UUID followedId, UUID playlistId) {
 
     User followed = userRepository.findById(followedId).orElseThrow(() -> UserNotFoundException.withId(followedId));
-    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> new PlaylistNotFoundException());
 
     String title = followed.getName() + "님이 플레이리스트를 만들었어요.";
     String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
@@ -113,7 +115,7 @@ public class BasicNotificationService implements NotificationService {
   public void createSubsNotification(UUID userId, UUID subscriberId, UUID playlistId) {
 
     User subscriber = userRepository.findById(subscriberId).orElseThrow(() -> UserNotFoundException.withId(subscriberId));
-    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> new PlaylistNotFoundException());
 
     String title = subscriber.getName() + "님이 나의 플레이리스트 [" + playlist.getTitle() + "]를 구독했어요.";
 
@@ -123,7 +125,7 @@ public class BasicNotificationService implements NotificationService {
   @Override
   public void createSubsWorkNotification(Set<UUID> userIds, UUID playlistId) {
 
-    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> PlaylistNotFoundException.withId(playlistId));
+    Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> new PlaylistNotFoundException());
 
     String title = "구독 중인 플레이리스트 [" + playlist.getTitle() + "]가  업데이트됐어요.";
 

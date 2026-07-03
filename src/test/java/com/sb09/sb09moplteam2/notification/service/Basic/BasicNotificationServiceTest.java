@@ -7,6 +7,7 @@ import com.sb09.sb09moplteam2.event.message.NotificationDmEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
 import com.sb09.sb09moplteam2.exception.notification.NotificationForbiddenException;
 import com.sb09.sb09moplteam2.exception.notification.NotificationNotFoundException;
+import com.sb09.sb09moplteam2.exception.playlist.PlaylistNotFoundException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.DirectMessageNotFoundException;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
@@ -15,8 +16,8 @@ import com.sb09.sb09moplteam2.notification.entity.Notification;
 import com.sb09.sb09moplteam2.notification.mapper.CursorResponseNotificationMapper;
 import com.sb09.sb09moplteam2.notification.mapper.NotificationMapper;
 import com.sb09.sb09moplteam2.notification.repository.NotificationRepository;
-import com.sb09.sb09moplteam2.notification.service.basic.BasicNotificationService;
 import com.sb09.sb09moplteam2.playlist.entity.Playlist;
+import com.sb09.sb09moplteam2.playlist.repository.PlaylistRepository;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
@@ -44,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class BasicNotificationServiceTest {
@@ -83,8 +85,8 @@ public class BasicNotificationServiceTest {
     given(userRepository.existsById(userId)).willReturn(true);
     given(notificationRepository.searchNotification(userId, request)).willReturn(slice);
     given(notificationRepository.countByReceiver_Id(userId)).willReturn(5L);
-    given(cursorMapper.fromSlice(eq(slice), any(), any(), any(), eq(5L), any())).willReturn(expected);
-
+    willReturn(expected).given(cursorMapper)
+        .fromSlice(eq(slice), any(), any(), any(), eq(5L), any());
     CursorResponse<NotificationDto> result = notificationService.list(userId, request);
 
     assertThat(result).isEqualTo(expected);
@@ -269,7 +271,6 @@ public class BasicNotificationServiceTest {
     UUID playlistId = UUID.randomUUID();
 
     User followed = mock(User.class);
-    given(followed.getName()).willReturn("영희");
     given(userRepository.findById(followedId)).willReturn(Optional.of(followed));
     given(playlistRepository.findById(playlistId)).willReturn(Optional.empty());
 
@@ -323,7 +324,6 @@ public class BasicNotificationServiceTest {
     UUID playlistId = UUID.randomUUID();
 
     User subscriber = mock(User.class);
-    given(subscriber.getName()).willReturn("민준");
     given(userRepository.findById(subscriberId)).willReturn(Optional.of(subscriber));
     given(playlistRepository.findById(playlistId)).willReturn(Optional.empty());
 
