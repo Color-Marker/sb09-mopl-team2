@@ -35,7 +35,7 @@ public class NotificationRequiredTopicListener {
   public void onSubscribedPlaylistEvent(String kafkaEvent){ // 내 플리가 구독됌
     try {
       SubscribedPlaylistEvent event = objectMapper.readValue(kafkaEvent, SubscribedPlaylistEvent.class);
-      notificationService.createSubsNotification(event.userId(),event.subscriberId(), event.playlistId());;
+      notificationService.createSubsNotification(event.userId(),event.subscriberId(), event.playlistId());
     } catch (JsonProcessingException e){
       throw new RuntimeException(e);
     }
