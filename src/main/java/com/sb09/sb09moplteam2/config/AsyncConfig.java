@@ -33,8 +33,7 @@ public class AsyncConfig {
 
   public TaskDecorator mdcTaskDecorator() {
     return runnable -> {
-      Optional<String> requestId = Optional.ofNullable(MDC.get(MDCLoggingInterceptor.REQUEST_ID))
-          .map(String.class::cast);
+      Optional<String> requestId = Optional.ofNullable(MDC.get(MDCLoggingInterceptor.REQUEST_ID));
       return () -> {
         requestId.ifPresent(id -> MDC.put(MDCLoggingInterceptor.REQUEST_ID, id));
         try {
