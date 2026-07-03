@@ -1,9 +1,9 @@
 package com.sb09.sb09moplteam2.playlist.mapper;
 
-import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.mapper.ContentMapper;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
+import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.playlist.dto.data.PlaylistDto;
 import com.sb09.sb09moplteam2.playlist.entity.Playlist;
