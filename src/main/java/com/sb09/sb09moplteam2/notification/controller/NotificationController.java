@@ -29,10 +29,9 @@ public class NotificationController implements NotificationApi {
   @GetMapping
   @Override
   public ResponseEntity<CursorResponse<NotificationDto>> list(
-      @AuthenticationPrincipal CustomUserDetails principal,
+      @AuthenticationPrincipal UUID userId,
       @Valid NotificationListRequest request
   ) {
-    UUID userId = principal.getId();
     log.info("알림 목록 조회 요청: userId={}", userId);
     CursorResponse<NotificationDto> result = notificationService.list(userId, request);
     log.debug("알림 목록 조회 응답: count={}", result.totalCount());
@@ -42,10 +41,9 @@ public class NotificationController implements NotificationApi {
   @DeleteMapping("/{notificationId}")
   @Override
   public ResponseEntity<Void> delete(
-      @AuthenticationPrincipal CustomUserDetails principal,
+      @AuthenticationPrincipal UUID userId,
       @PathVariable UUID notificationId
   ) {
-    UUID userId = principal.getId();
     log.info("알림 삭제 요청: id={}, userId={}", notificationId, userId);
     notificationService.delete(notificationId, userId);
     log.debug("알림 삭제 응답: id={}", notificationId);

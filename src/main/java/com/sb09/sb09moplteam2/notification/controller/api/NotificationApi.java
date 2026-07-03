@@ -22,7 +22,7 @@ public interface NotificationApi {
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   ResponseEntity<CursorResponse<NotificationDto>> list(
-      @Parameter(hidden = true) CustomUserDetails principal,
+      @Parameter(hidden = true) UUID userId,
       @Valid NotificationListRequest request
   );
 
@@ -33,7 +33,7 @@ public interface NotificationApi {
       @ApiResponse(responseCode = "500", description = "서버 내부 오류")
   })
   ResponseEntity<Void> delete(
-      @Parameter(hidden = true) CustomUserDetails principal,
+      @Parameter(hidden = true) UUID userId,
       @PathVariable @NotNull(message = "알림 ID는 필수입니다") UUID notificationId
   );
 
