@@ -13,9 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.util.List;
 import java.util.UUID;
@@ -43,12 +46,17 @@ class NotificationControllerTest {
   private NotificationService notificationService;
 
   private UUID userId;
-  private Authentication authentication;
+
 
   @BeforeEach
   void setUp() {
     userId = UUID.randomUUID();
-    authentication = new UsernamePasswordAuthenticationToken(userId, null, List.of());
+  }
+
+  private RequestPostProcessor userPrincipal(UUID userId) {
+    UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+        userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    return authentication(token);
   }
 
   @Test
@@ -59,12 +67,13 @@ class NotificationControllerTest {
         .willReturn(response);
 
     mockMvc.perform(get("/api/notifications")
-            .with(authentication(authentication))
+            .with(userPrincipal(userId))
             .param("sortBy", "createdAt")
             .param("sortDirection", "ASCENDING")
             .param("limit", "10"))
         .andExpect(status().isOk());
   }
+
 
   @Test
   void list_인증없음_401() throws Exception {
@@ -81,7 +90,7 @@ class NotificationControllerTest {
     willDoNothing().given(notificationService).delete(notificationId, userId);
 
     mockMvc.perform(delete("/api/notifications/{notificationId}", notificationId)
-            .with(authentication(authentication))
+            .with(userPrincipal(userId))
             .with(csrf()))
         .andExpect(status().isNoContent());
   }
@@ -93,7 +102,7 @@ class NotificationControllerTest {
         .given(notificationService).delete(notificationId, userId);
 
     mockMvc.perform(delete("/api/notifications/{notificationId}", notificationId)
-            .with(authentication(authentication))
+            .with(userPrincipal(userId))
             .with(csrf()))
         .andExpect(status().isNotFound());
   }
@@ -105,7 +114,7 @@ class NotificationControllerTest {
         .given(notificationService).delete(notificationId, userId);
 
     mockMvc.perform(delete("/api/notifications/{notificationId}", notificationId)
-            .with(authentication(authentication))
+            .with(userPrincipal(userId))
             .with(csrf()))
         .andExpect(status().isForbidden());
   }

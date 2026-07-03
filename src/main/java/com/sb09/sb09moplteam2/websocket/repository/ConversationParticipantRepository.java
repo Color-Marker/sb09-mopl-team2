@@ -41,4 +41,14 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
   List<ConversationParticipant> findByConversationIdIn(
       @Param("conversationIds") List<UUID> conversationIds
   );
+
+  @Query("""
+      SELECT cp FROM ConversationParticipant cp
+      WHERE cp.conversation.id = :conversationId
+      AND cp.userId <> :senderId
+      """)
+  Optional<ConversationParticipant> findOtherParticipants(
+      @Param("conversationId") UUID conversationId,
+      @Param("senderId") UUID senderId
+  );
 }

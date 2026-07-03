@@ -112,10 +112,12 @@ public class BasicNotificationService implements NotificationService {
   }
 
   @Override
-  public void createSubsNotification(UUID userId, UUID subscriberId, UUID playlistId) {
+  public void createSubsNotification(UUID subscriberId, UUID playlistId) {
 
     User subscriber = userRepository.findById(subscriberId).orElseThrow(() -> UserNotFoundException.withId(subscriberId));
     Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> new PlaylistNotFoundException());
+
+    UUID userId = playlist.getOwner().getId();
 
     String title = subscriber.getName() + "님이 나의 플레이리스트 [" + playlist.getTitle() + "]를 구독했어요.";
 
