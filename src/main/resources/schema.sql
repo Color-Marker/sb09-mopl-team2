@@ -22,33 +22,33 @@ ALTER TABLE users
 CREATE TABLE follows
 (
     id uuid PRIMARY KEY,
-    to_user_id UUID NOT NULL,
-    from_user_id UUID not null,
+    follower_id UUID NOT NULL,
+    followee_id UUID not null,
     created_at timestamp with time zone NOT NULL
 );
 
 -- follows -> users
 ALTER TABLE follows
     ADD CONSTRAINT fk_follows_to_user
-        FOREIGN KEY (to_user_id)
+        FOREIGN KEY (follower_id)
             REFERENCES users (id)
             ON DELETE CASCADE;
 
 ALTER TABLE follows
     ADD CONSTRAINT fk_follows_from_user
-        FOREIGN KEY (from_user_id)
+        FOREIGN KEY (followee_id)
             REFERENCES users (id)
             ON DELETE CASCADE;
 
 -- 팔로우 관계는 유일해야 함
 ALTER TABLE follows
     ADD CONSTRAINT unique_follow
-        UNIQUE (from_user_id, to_user_id);
+        UNIQUE (followee_id, follower_id);
 
 -- 스스로 팔로우하는 거 방지
 ALTER TABLE follows
     ADD CONSTRAINT check_not_self_follow
-        CHECK ( from_user_id <> to_user_id);
+        CHECK ( followee_id <> follower_id);
 
 -- jwt_sessions
 CREATE TABLE jwt_sessions
@@ -152,13 +152,13 @@ ALTER TABLE reviews
 -- playlists
 CREATE TABLE playlists
 (
-    id               uuid PRIMARY KEY,
-    title            varchar(100)             not null,
-    description      text                     not null,
-    subscriber_count bigint                   not null,
-    created_at       timestamp with time zone not null,
-    updated_at       timestamp with time zone,
-    owner_id         uuid                     not null
+    id uuid primary key,
+    title varchar(100) not null,
+    description text not null,
+    subscriber_count bigint not null,
+    created_at timestamp with time zone not null,
+    updated_at timestamp with time zone,
+    owner_id uuid not null
 );
 
 -- playlists -> users
@@ -243,12 +243,12 @@ ALTER TABLE watching_sessions
 -- conversations
 CREATE TABLE conversations
 (
-    id              uuid PRIMARY KEY,
-    type            varchar(10),
-    name            varchar(100),
-    created_at      timestamp with time zone NOT NULL,
+    id         uuid PRIMARY KEY,
+    type       varchar(10),
+    name       varchar(100),
+    created_at timestamp with time zone NOT NULL,
     last_message_at timestamp with time zone NOT NULL,
-    version         bigint                   NOT NULL DEFAULT 0
+    version    bigint                   NOT NULL DEFAULT 0
 );
 
 -- conversations_participants
