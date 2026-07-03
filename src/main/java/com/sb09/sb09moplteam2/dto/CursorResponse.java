@@ -1,6 +1,5 @@
 package com.sb09.sb09moplteam2.dto;
 
-import com.sb09.sb09moplteam2.common.SortDirection;
 import java.util.List;
 import java.util.UUID;
 
