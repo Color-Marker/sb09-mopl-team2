@@ -40,7 +40,7 @@ spring:
     jdbc:
       initialize-schema: always
     job:
-      enabled: true # false
+      enabled: false # 서버 켜면 자동으로 배치 돌려야 하는 경우 true 이용 
   security:
     oauth2:
       client:
