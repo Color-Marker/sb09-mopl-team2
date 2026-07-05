@@ -20,11 +20,6 @@ spring:
     type: redis
     cache-names:
       # - 쓸 캐시 이름들
-    caffeine:
-      spec: >
-        maximumSize=100,
-        expireAfterAccess=600s,
-        recordStats
     redis:
       enable-statistics: true
   data:
@@ -45,7 +40,7 @@ spring:
     jdbc:
       initialize-schema: always
     job:
-      enabled: false
+      enabled: false # 서버 켜면 자동으로 배치 돌려야 하는 경우 true 이용 
   security:
     oauth2:
       client:
@@ -133,4 +128,5 @@ logging:
     root: info
 
 sse:
-  timeout: 300_000
+  timeout: 300000
+  event-queue-capacity: 500
