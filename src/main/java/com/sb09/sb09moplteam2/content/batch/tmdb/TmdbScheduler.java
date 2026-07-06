@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.content.batch.Tmdb;
+package com.sb09.sb09moplteam2.content.batch.tmdb;
 
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;

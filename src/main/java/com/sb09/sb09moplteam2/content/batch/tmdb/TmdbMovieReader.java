@@ -1,7 +1,7 @@
-package com.sb09.sb09moplteam2.content.batch.Tmdb;
+package com.sb09.sb09moplteam2.content.batch.tmdb;
 
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbEventResponse;
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbPageResponse;
+import com.sb09.sb09moplteam2.content.batch.tmdb.dto.TmdbEventResponse;
+import com.sb09.sb09moplteam2.content.batch.tmdb.dto.TmdbPageResponse;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import java.util.ArrayList;
 import java.util.List;

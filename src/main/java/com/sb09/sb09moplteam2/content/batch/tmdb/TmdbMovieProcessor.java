@@ -1,6 +1,6 @@
-package com.sb09.sb09moplteam2.content.batch.Tmdb;
+package com.sb09.sb09moplteam2.content.batch.tmdb;
 
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbEventResponse;
+import com.sb09.sb09moplteam2.content.batch.tmdb.dto.TmdbEventResponse;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
