@@ -42,7 +42,7 @@ public class PlaylistController {
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
-  @Operation(summary = "플레이리스트 목록 조회(커서 페이지네이)")
+  @Operation(summary = "플레이리스트 목록 조회(커서 페이지네이션)")
   @GetMapping
   public ResponseEntity<CursorResponsePlaylistDto> findAll(
       @Parameter(description = "검색 키워드") @RequestParam(required = false) String keywordLike,
