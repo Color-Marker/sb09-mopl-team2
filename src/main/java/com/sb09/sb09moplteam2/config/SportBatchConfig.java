@@ -1,10 +1,10 @@
 package com.sb09.sb09moplteam2.config;
 
-import com.sb09.sb09moplteam2.content.batch.Sports.SportsClient;
-import com.sb09.sb09moplteam2.content.batch.Sports.SportsProcessor;
-import com.sb09.sb09moplteam2.content.batch.Sports.SportsReader;
-import com.sb09.sb09moplteam2.content.batch.Sports.SportsWriter;
-import com.sb09.sb09moplteam2.content.batch.Sports.dto.SportsEventResponse;
+import com.sb09.sb09moplteam2.content.batch.sport.SportClient;
+import com.sb09.sb09moplteam2.content.batch.sport.SportProcessor;
+import com.sb09.sb09moplteam2.content.batch.sport.SportReader;
+import com.sb09.sb09moplteam2.content.batch.sport.SportWriter;
+import com.sb09.sb09moplteam2.content.batch.sport.dto.SportsEventResponse;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +19,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
-public class SportsBatchConfig {
+public class SportBatchConfig {
 
   private final JobRepository jobRepository;
   private final PlatformTransactionManager transactionManager;
-  private final SportsClient sportsClient;
+  private final SportClient sportClient;
   private final ContentRepository contentRepository;
 
   @Bean
@@ -44,17 +44,17 @@ public class SportsBatchConfig {
   }
 
   @Bean
-  public SportsReader sportsReader() {
-    return new SportsReader(sportsClient);
+  public SportReader sportsReader() {
+    return new SportReader(sportClient);
   }
 
   @Bean
-  public SportsProcessor sportsProcessor() {
-    return new SportsProcessor(contentRepository);
+  public SportProcessor sportsProcessor() {
+    return new SportProcessor(contentRepository);
   }
 
   @Bean
-  public SportsWriter sportsWriter() {
-    return new SportsWriter(contentRepository);
+  public SportWriter sportsWriter() {
+    return new SportWriter(contentRepository);
   }
 }

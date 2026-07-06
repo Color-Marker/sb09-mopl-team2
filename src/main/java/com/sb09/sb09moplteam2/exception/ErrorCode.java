@@ -37,10 +37,15 @@ public enum ErrorCode {
   DUPLICATE_REVIEW("이미 리뷰를 작성했습니다.", HttpStatus.CONFLICT),
 
   // playlist 에러 코드
-  PLAYLIST_NOT_FOUND("플레이리스트를  찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  PLAYLIST_NOT_FOUND("플레이리스트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   PLAYLIST_FORBIDDEN("플레이리스트 삭제 권한이 없습니다.",HttpStatus.FORBIDDEN),
   DUPLICATE_SUBSCRIBE("이미 구독 중입니다", HttpStatus.CONFLICT),
   SUBSCRIBE_NOT_FOUND("구독 중이 아닙니다", HttpStatus.NOT_FOUND),
+
+  // content 에러 코드
+  CONTENT_NOT_FOUND("콘텐츠를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+  DUPLICATE_CONTENT("이미 추가된 콘텐츠입니다", HttpStatus.CONFLICT),
+  CONTENT_FORBIDDEN("", HttpStatus.FORBIDDEN),
   ;
 
   private final String message;
