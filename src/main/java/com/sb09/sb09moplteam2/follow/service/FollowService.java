@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.follow.service;
 
+import com.sb09.sb09moplteam2.event.message.FollowedEvent;
 import com.sb09.sb09moplteam2.exception.ErrorCode;
 import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.exception.follow.*;
@@ -10,6 +11,7 @@ import com.sb09.sb09moplteam2.follow.repository.FollowRepository;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,11 +24,16 @@ public class FollowService {
 
   private final FollowRepository followRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   // 1. 팔로우 하기
   @Transactional
   public FollowDto follow(UUID followerId, FollowRequest request) {
     UUID followeeId = request.getFolloweeId();
+
+    if (followerId.equals(followeeId)) {
+      throw new SelfFollowNotAllowedException();
+    }
 
     User followee = userRepository.findById(followeeId)
         .orElseThrow(() -> new MoplException(ErrorCode.USER_NOT_FOUND));
@@ -39,6 +46,11 @@ public class FollowService {
 
     Follow follow = new Follow(follower, followee);
     Follow savedFollow = followRepository.save(follow);
+
+    // TODO: 알림(notification) 발송
+    eventPublisher.publishEvent(
+        new FollowedEvent(followeeId, followerId)
+    );
 
     return new FollowDto(
         savedFollow.getId(),
@@ -60,13 +72,11 @@ public class FollowService {
     followRepository.delete(follow);
   }
 
-  // 3. 특정 유저를 내가 팔로우하는지 상세 조회 (명세서 규격 반영)
+  // 3. 특정 유저를 내가 팔로우하는지 여부 조회
   public FollowDto getFollowDetails(UUID followerId, UUID followeeId) {
-    // 팔로우 상태가 아니면 404 Not Found (미리 만들어두신 예외 사용)
     Follow follow = followRepository.findByFollowerIdAndFolloweeId(followerId, followeeId)
         .orElseThrow(FollowNotFoundException::new);
 
-    // 찾은 엔티티를 DTO로 변환하여 반환
     return new FollowDto(
         follow.getId(),
         follow.getFollowee().getId(),

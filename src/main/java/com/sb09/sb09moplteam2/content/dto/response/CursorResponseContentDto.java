@@ -1,6 +1,6 @@
 package com.sb09.sb09moplteam2.content.dto.response;
 
-import com.sb09.sb09moplteam2.content.dto.data.ContentSummary;
+import com.sb09.sb09moplteam2.dto.ContentSummary;
 import java.util.List;
 import java.util.UUID;
 

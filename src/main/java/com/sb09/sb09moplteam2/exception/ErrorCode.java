@@ -10,7 +10,7 @@ public enum ErrorCode {
   USER_NOT_FOUND("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   DUPLICATE_USER("이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),
   INVALID_USER_CREDENTIALS("잘못된 사용자 인증 정보입니다.", HttpStatus.UNAUTHORIZED),
-  USER_FORBIDDEN("해당 사용자에 대한 접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
+  USER_FORBIDDEN("접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
 
   // Server 에러 코드
   INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
@@ -31,12 +31,17 @@ public enum ErrorCode {
   SELF_FOLLOW_NOT_ALLOWED("자기 자신을 팔로우할 수 없습니다.", HttpStatus.BAD_REQUEST),
   FOLLOW_FORBIDDEN("해당 팔로우 내역에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
 
-  // Conversation 에러 코드
-  CONVERSATION_NOT_FOUND("존재하지 않는 대화방입니다.", HttpStatus.NOT_FOUND),
-  CONVERSATION_PARTICIPANT_NOT_FOUND("해당 대화방의 참여자가 아닙니다.", HttpStatus.FORBIDDEN),
-  CONVERSATION_PARTICIPANT_ALREADY_EXISTS("이미 참여 중인 대화방입니다.", HttpStatus.CONFLICT),
-  DIRECT_MESSAGE_NOT_FOUND("존재하지 않는 메시지입니다.", HttpStatus.NOT_FOUND),
-  WATCHING_SESSION_NOT_FOUND("존재하지 않는 시청 세션입니다.", HttpStatus.NOT_FOUND);
+  // review 에러 코드
+  REVIEW_NOT_FOUND("리뷰를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  REVIEW_FORBIDDEN("리뷰에 대해 권한이 없습니다.", HttpStatus.FORBIDDEN),
+  DUPLICATE_REVIEW("이미 리뷰를 작성했습니다.", HttpStatus.CONFLICT),
+
+  // playlist 에러 코드
+  PLAYLIST_NOT_FOUND("플레이리스트를  찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  PLAYLIST_FORBIDDEN("플레이리스트 삭제 권한이 없습니다.",HttpStatus.FORBIDDEN),
+  DUPLICATE_SUBSCRIBE("이미 구독 중입니다", HttpStatus.CONFLICT),
+  SUBSCRIBE_NOT_FOUND("구독 중이 아닙니다", HttpStatus.NOT_FOUND),
+  ;
 
   private final String message;
   private final HttpStatus httpStatus;

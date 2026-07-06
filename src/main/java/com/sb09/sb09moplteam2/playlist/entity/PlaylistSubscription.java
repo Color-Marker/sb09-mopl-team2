@@ -15,6 +15,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -42,4 +43,10 @@ public class PlaylistSubscription {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "subscriber_id", nullable = false)
   private User subscriber;
+
+  @Builder
+  public PlaylistSubscription(Playlist playlist, User subscriber) {
+    this.playlist = playlist;
+    this.subscriber = subscriber;
+  }
 }

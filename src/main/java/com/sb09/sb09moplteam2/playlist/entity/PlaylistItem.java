@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -39,9 +40,16 @@ public class PlaylistItem {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "playlist_id", nullable = false)
-  private Playlist playlist_id;
+  private Playlist playlist;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "content_id", nullable = false)
   private Content content;
+
+  @Builder
+  public PlaylistItem(Playlist playlist, Content content, Integer orderIndex) {
+    this.playlist = playlist;
+    this.content = content;
+    this.orderIndex = orderIndex;
+  }
 }
