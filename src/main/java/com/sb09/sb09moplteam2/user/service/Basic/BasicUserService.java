@@ -6,6 +6,7 @@ import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
+import com.sb09.sb09moplteam2.event.message.RoleUpdatedEvent;
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.storage.FileStorageService;
@@ -22,6 +23,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicUserService implements UserService {
 
   private final UserRepository userRepository;
@@ -37,6 +41,7 @@ public class BasicUserService implements UserService {
   private final PasswordResetTokenRepository passwordResetTokenRepository;
   private final FileStorageService fileStorageService;
   private final JwtSessionRepository jwtSessionRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -145,8 +150,15 @@ public class BasicUserService implements UserService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
+    Role previousRole = user.getRole();
+
     user.changeRole(role);
 
+    eventPublisher.publishEvent(
+        new RoleUpdatedEvent(userId, previousRole, role)
+    );
+
+    log.info("userId {} 의 권한이 변경되었습니다.", userId);
     jwtSessionRepository.findAllByUserIdAndRevokedFalse(userId)
         .forEach(JwtSession::revoke);
   }

@@ -3,6 +3,10 @@ package com.sb09.sb09moplteam2.playlist.service;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
+import com.sb09.sb09moplteam2.exception.content.Duplicate_Content;
+import com.sb09.sb09moplteam2.event.message.SubsPlaylistWorkEvent;
+import com.sb09.sb09moplteam2.event.message.SubscribedPlaylistEvent;
 import com.sb09.sb09moplteam2.exception.playlist.DuplicateSubscribeException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistForbiddenException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistNotFoundException;
@@ -22,9 +26,11 @@ import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +46,7 @@ public class PlaylistService {
   private final ContentRepository contentRepository;
   private final UserRepository userRepository;
   private final PlaylistMapper playlistMapper;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public PlaylistDto create(PlaylistCreatedRequest request, UUID ownerId) {
@@ -164,12 +171,12 @@ public class PlaylistService {
       throw new PlaylistForbiddenException();
     }
     if (playlistItemRepository.existsByPlaylistIdAndContentId(playlistId, contentId)) {
-      throw new IllegalArgumentException("이미 추가된 콘텐츠입니다.");
+      throw new Duplicate_Content();
     }
     Content content = contentRepository.findById(contentId)
         .orElseThrow(() -> {
           log.warn("콘텐츠 없음 - contentId: {}", contentId);
-          return new NoSuchElementException("콘텐츠를 찾을 수 없습니다.");
+          return new ContentNotFoundException();
         });
     List<PlaylistItem> items = playlistItemRepository.findByPlaylistIdOrderByOrderIndex(playlistId);
     int nextOrder = items.isEmpty() ? 1 : items.get(items.size() - 1).getOrderIndex() + 1;
@@ -179,6 +186,11 @@ public class PlaylistService {
         .orderIndex(nextOrder)
         .build());
     log.info("플레이리스트 콘텐츠 추가 완료 - playlistId: {}, contentId: {}", playlistId, contentId);
+
+    Set<UUID> subscriberIds = playlistSubscriptionRepository.findSubscriberIdsByPlaylistId(playlistId);
+    eventPublisher.publishEvent(
+        new SubsPlaylistWorkEvent(subscriberIds,playlistId)
+    );
   }
 
   @Transactional
@@ -215,6 +227,10 @@ public class PlaylistService {
         .build());
     playlist.incrementSubscriberCount();
     log.info("플레이리스트 구독 완료 - playlistId: {}, userId: {}", playlistId, currentUserId);
+
+    eventPublisher.publishEvent(
+        new SubscribedPlaylistEvent(subscriber.getId(), playlistId)
+    );
   }
 
   @Transactional

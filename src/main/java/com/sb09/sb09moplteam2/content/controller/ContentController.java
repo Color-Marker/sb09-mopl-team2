@@ -5,6 +5,10 @@ import com.sb09.sb09moplteam2.content.dto.request.ContentCreateRequest;
 import com.sb09.sb09moplteam2.content.dto.request.ContentUpdateRequest;
 import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
 import com.sb09.sb09moplteam2.content.service.ContentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -27,10 +31,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/contents")
 @RequiredArgsConstructor
+@Tag(name = "콘텐츠 관리")
 public class ContentController {
 
   private final ContentService contentService;
 
+  @Operation(summary = "[어드민] 콘텐츠 생성")
   @PostMapping
   public ResponseEntity<ContentDto> create(
       @RequestBody @Valid ContentCreateRequest request
@@ -40,6 +46,7 @@ public class ContentController {
         .body(contentService.create(request));
   }
 
+  @Operation(summary = "콘텐츠 단건 조회")
   @GetMapping("/{contentId}")
   public ResponseEntity<ContentDto> findById(
       @PathVariable UUID contentId
@@ -48,6 +55,7 @@ public class ContentController {
     return ResponseEntity.ok(contentService.findById(contentId));
   }
 
+  @Operation(summary = "[어드민] 콘텐츠 수정")
   @PatchMapping("/{contentId}")
   public ResponseEntity<ContentDto> update(
       @PathVariable UUID contentId,
@@ -57,6 +65,7 @@ public class ContentController {
     return ResponseEntity.ok(contentService.update(contentId, request));
   }
 
+  @Operation(summary = "[어드민] 콘텐츠 삭제")
   @DeleteMapping("/{contentId}")
   public ResponseEntity<Void> delete(
       @PathVariable UUID contentId
@@ -66,15 +75,19 @@ public class ContentController {
     return ResponseEntity.noContent().build();
   }
 
+  @Operation(summary = "콘텐츠 목록 조회(커서 페이지네이션)")
   @GetMapping
   public ResponseEntity<CursorResponseContentDto> findContents(
+      @Parameter(description = "콘텐츠 타입", schema = @Schema(allowableValues = {"movie", "tvSeries", "sport"}))
       @RequestParam(required = false) String typeEqual,
-      @RequestParam(required = false) String keywordLike,
-      @RequestParam(required = false) List<String> tagsIn,
-      @RequestParam(required = false) String cursor,
-      @RequestParam(required = false) UUID idAfter,
-      @RequestParam @NotNull Integer limit,
+      @Parameter(description = "검색 키워드") @RequestParam(required = false) String keywordLike,
+      @Parameter(description = "태그 목록") @RequestParam(required = false) List<String> tagsIn,
+      @Parameter(description = "커서") @RequestParam(required = false) String cursor,
+      @Parameter(description = "보조 커서") @RequestParam(required = false) UUID idAfter,
+      @Parameter(description = "한 번에 가져올 개수") @RequestParam @NotNull Integer limit,
+      @Parameter(description = "정렬 방향", schema = @Schema(allowableValues = {"ASCENDING", "DESCENDING"}))
       @RequestParam @NotNull String sortDirection,
+      @Parameter(description = "정렬 기준", schema = @Schema(allowableValues = {"createdAt", "watcherCount","rate"}))
       @RequestParam @NotNull String sortBy
   ) {
     log.info("GET /api/contents");

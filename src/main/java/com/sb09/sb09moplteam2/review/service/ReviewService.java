@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.review.service;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
 import com.sb09.sb09moplteam2.exception.review.DuplicateReviewException;
 import com.sb09.sb09moplteam2.exception.review.ReviewForbiddenException;
 import com.sb09.sb09moplteam2.exception.review.ReviewNotFoundException;
@@ -16,7 +17,6 @@ import com.sb09.sb09moplteam2.review.repository.ReviewRepository;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +43,7 @@ public class ReviewService {
     Content content = contentRepository.findById(request.contentId())
         .orElseThrow(() -> {
           log.warn("콘텐츠 없음 - contentId: {}", request.contentId());
-          return new NoSuchElementException("콘텐츠를 찾을 수 없습니다.");
+          return new ContentNotFoundException();
         });
     User user = userRepository.findById(currentUserId)
         .orElseThrow(() -> UserNotFoundException.withId(currentUserId));
@@ -137,7 +137,10 @@ public class ReviewService {
         .average()
         .orElse(0.0);
     Content content = contentRepository.findById(contentId)
-        .orElseThrow(() -> new NoSuchElementException("콘텐츠를 찾을 수 없습니다."));
+        .orElseThrow(() -> {
+          log.warn("콘텐츠 없음 - contentId: {}", contentId);
+          return new ContentNotFoundException();
+        });
     content.updateReviewStats(averageRating, reviewCount);
   }
 }

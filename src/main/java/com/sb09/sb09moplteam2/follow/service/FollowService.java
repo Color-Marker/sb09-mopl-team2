@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.follow.service;
 
+import com.sb09.sb09moplteam2.event.message.FollowedEvent;
 import com.sb09.sb09moplteam2.exception.ErrorCode;
 import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.exception.follow.*;
@@ -10,6 +11,7 @@ import com.sb09.sb09moplteam2.follow.repository.FollowRepository;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ public class FollowService {
 
   private final FollowRepository followRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   // 1. 팔로우 하기
   @Transactional
@@ -45,6 +48,9 @@ public class FollowService {
     Follow savedFollow = followRepository.save(follow);
 
     // TODO: 알림(notification) 발송
+    eventPublisher.publishEvent(
+        new FollowedEvent(followeeId, followerId)
+    );
 
     return new FollowDto(
         savedFollow.getId(),

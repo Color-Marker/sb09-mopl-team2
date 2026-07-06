@@ -94,4 +94,8 @@ public class Content {
     this.averageRating = averageRating;
     this.reviewCount = reviewCount;
   }
+
+  public void updateWatcherCount(Long watcherCount) {
+    this.watcherCount = watcherCount;
+  }
 }
