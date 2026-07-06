@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.content.batch.Sports;
+package com.sb09.sb09moplteam2.content.batch.tmdb;
 
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
@@ -14,27 +14,27 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SportsScheduler {
+public class TmdbScheduler {
 
   private final JobLauncher jobLauncher;
-  private final Job sportsJob;
-
-  @PostConstruct
-  public void runOnStartup() {
-    runSportsBatch();
-  }
+  private final Job tmdbEventJob;
 
   @Scheduled(cron = "0 0 0 * * *")
-  public void runSportsBatch() {
+  public void runTmdbBatch() {
     try {
-      log.info("Sports 배치 작업 시작");
+      log.info("TMDB 배치 작업 시작");
       JobParameters params = new JobParametersBuilder()
           .addLocalDateTime("runTime", LocalDateTime.now())
           .toJobParameters();
-      jobLauncher.run(sportsJob, params);
-      log.info("Sports 배치 작업 완료");
+      jobLauncher.run(tmdbEventJob, params);
+      log.info("TMDB 배치 작업 완료");
     } catch (Exception e) {
-      log.error("Sports 배치 작업 실패", e);
+      log.error("TMDB 배치 작업 실패", e);
     }
+  }
+
+  @PostConstruct //테스트를 위 어플리케이션 시작할때 TMDB API 시작
+  public void runOnStartup() {
+    runTmdbBatch();
   }
 }

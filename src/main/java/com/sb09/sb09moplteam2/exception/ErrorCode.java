@@ -36,7 +36,7 @@ public enum ErrorCode {
   DUPLICATE_REVIEW("이미 리뷰를 작성했습니다.", HttpStatus.CONFLICT),
 
   // playlist 에러 코드
-  PLAYLIST_NOT_FOUND("플레이리스트를  찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  PLAYLIST_NOT_FOUND("플레이리스트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   PLAYLIST_FORBIDDEN("플레이리스트 삭제 권한이 없습니다.",HttpStatus.FORBIDDEN),
   DUPLICATE_SUBSCRIBE("이미 구독 중입니다", HttpStatus.CONFLICT),
   SUBSCRIBE_NOT_FOUND("구독 중이 아닙니다", HttpStatus.NOT_FOUND),
@@ -47,6 +47,7 @@ public enum ErrorCode {
   CONVERSATION_PARTICIPANT_ALREADY_EXISTS("이미 참여 중인 대화방입니다.", HttpStatus.CONFLICT),
   DIRECT_MESSAGE_NOT_FOUND("존재하지 않는 메시지입니다.", HttpStatus.NOT_FOUND),
   WATCHING_SESSION_NOT_FOUND("존재하지 않는 시청 세션입니다.", HttpStatus.NOT_FOUND);
+
 
   private final String message;
   private final HttpStatus httpStatus;

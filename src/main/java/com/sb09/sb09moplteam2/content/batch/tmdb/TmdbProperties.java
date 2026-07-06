@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.content.batch.Tmdb;
+package com.sb09.sb09moplteam2.content.batch.tmdb;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
