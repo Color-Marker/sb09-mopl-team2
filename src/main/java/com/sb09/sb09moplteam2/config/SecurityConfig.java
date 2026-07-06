@@ -63,9 +63,12 @@ public class SecurityConfig {
         .csrf(csrf -> csrf
             .csrfTokenRepository(csrfTokenRepository)
             .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .sessionAuthenticationStrategy((authentication, request, response) -> {})
+        )
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/index.html", "/favicon.svg", "/assets/**", "/error").permitAll()
+            .requestMatchers("/", "/index.html", "/favicon.svg", "/assets/**", "/error", "/files/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
