@@ -1,8 +1,8 @@
-package com.sb09.sb09moplteam2.content.batch.Sports;
+package com.sb09.sb09moplteam2.content.batch.sport;
 
 
-import com.sb09.sb09moplteam2.content.batch.Sports.dto.SportsEventResponse;
-import com.sb09.sb09moplteam2.content.batch.Sports.dto.SportsPageResponse;
+import com.sb09.sb09moplteam2.content.batch.sport.dto.SportsEventResponse;
+import com.sb09.sb09moplteam2.content.batch.sport.dto.SportsPageResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,10 +12,10 @@ import org.springframework.web.client.RestClient;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SportsClient {
+public class SportClient {
 
   private final RestClient restClient;
-  private final SportsProperties sportsProperties;
+  private final SportProperties sportProperties;
 
   public List<SportsEventResponse> fetchNextEvents(String leagueId) {
     return fetchEvents("/eventsnextleague.php?id=" + leagueId);
@@ -28,7 +28,7 @@ public class SportsClient {
   private List<SportsEventResponse> fetchEvents(String path) {
     try {
       SportsPageResponse response = restClient.get()
-          .uri(sportsProperties.baseUrl() + "/" + sportsProperties.key() + path)
+          .uri(sportProperties.baseUrl() + "/" + sportProperties.key() + path)
           .retrieve()
           .body(SportsPageResponse.class);
 

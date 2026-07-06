@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
 import com.sb09.sb09moplteam2.exception.review.DuplicateReviewException;
 import com.sb09.sb09moplteam2.exception.review.ReviewForbiddenException;
 import com.sb09.sb09moplteam2.exception.review.ReviewNotFoundException;
@@ -101,7 +102,7 @@ class ReviewServiceTest {
     given(contentRepository.findById(contentId)).willReturn(Optional.empty());
 
     assertThatThrownBy(() -> reviewService.create(request, userId))
-        .isInstanceOf(NoSuchElementException.class);
+        .isInstanceOf(ContentNotFoundException.class);
   }
 
   @Test
@@ -114,12 +115,18 @@ class ReviewServiceTest {
     User user = mock(User.class);
     given(user.getId()).willReturn(userId);
 
+    Content content = mock(Content.class);
+    given(content.getId()).willReturn(contentId);
+
     Review review = mock(Review.class);
     given(review.getUser()).willReturn(user);
+    given(review.getContent()).willReturn(content);
 
     ReviewUpdateRequest request = new ReviewUpdateRequest("수정된 리뷰", 3.0);
     ReviewDto reviewDto = new ReviewDto(reviewId, contentId, null, "수정된 리뷰", 3.0);
 
+    given(reviewRepository.findByContentId(contentId)).willReturn(List.of());
+    given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
     given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
     given(reviewMapper.toDto(review)).willReturn(reviewDto);
 
@@ -169,14 +176,21 @@ class ReviewServiceTest {
   void 리뷰_삭제에_성공하면_리뷰가_삭제된다() {
     UUID userId = UUID.randomUUID();
     UUID reviewId = UUID.randomUUID();
+    UUID contentId = UUID.randomUUID();
 
     User user = mock(User.class);
     given(user.getId()).willReturn(userId);
 
+    Content content = mock(Content.class);
+    given(content.getId()).willReturn(contentId);
+
     Review review = mock(Review.class);
     given(review.getUser()).willReturn(user);
+    given(review.getContent()).willReturn(content);
 
     given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+    given(reviewRepository.findByContentId(contentId)).willReturn(List.of());
+    given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
 
     reviewService.delete(reviewId, userId);
 

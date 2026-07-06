@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.content.batch.Tmdb.dto;
+package com.sb09.sb09moplteam2.content.batch.tmdb.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
