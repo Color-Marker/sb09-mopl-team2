@@ -1,10 +1,10 @@
 package com.sb09.sb09moplteam2.config;
 
-import com.sb09.sb09moplteam2.content.batch.Tmdb.TmdbClient;
-import com.sb09.sb09moplteam2.content.batch.Tmdb.TmdbMovieProcessor;
-import com.sb09.sb09moplteam2.content.batch.Tmdb.TmdbMovieReader;
-import com.sb09.sb09moplteam2.content.batch.Tmdb.TmdbMovieWriter;
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbEventResponse;
+import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbClient;
+import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbMovieProcessor;
+import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbMovieReader;
+import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbMovieWriter;
+import com.sb09.sb09moplteam2.content.batch.tmdb.dto.TmdbEventResponse;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
