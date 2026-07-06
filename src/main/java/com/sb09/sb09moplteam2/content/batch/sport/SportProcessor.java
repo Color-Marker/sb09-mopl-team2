@@ -1,6 +1,6 @@
-package com.sb09.sb09moplteam2.content.batch.Sports;
+package com.sb09.sb09moplteam2.content.batch.sport;
 
-import com.sb09.sb09moplteam2.content.batch.Sports.dto.SportsEventResponse;
+import com.sb09.sb09moplteam2.content.batch.sport.dto.SportsEventResponse;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
@@ -11,7 +11,7 @@ import org.springframework.batch.item.ItemProcessor;
 
 @Slf4j
 @RequiredArgsConstructor
-public class SportsProcessor implements ItemProcessor<SportsEventResponse, Content> {
+public class SportProcessor implements ItemProcessor<SportsEventResponse, Content> {
 
   private final ContentRepository contentRepository;
 

@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.content.batch.Sports;
+package com.sb09.sb09moplteam2.content.batch.sport;
 
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SportsScheduler {
+public class SportScheduler {
 
   private final JobLauncher jobLauncher;
   private final Job sportsJob;

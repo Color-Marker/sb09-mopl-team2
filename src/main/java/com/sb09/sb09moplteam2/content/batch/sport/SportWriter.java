@@ -1,4 +1,4 @@
-package com.sb09.sb09moplteam2.content.batch.Sports;
+package com.sb09.sb09moplteam2.content.batch.sport;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
@@ -10,7 +10,7 @@ import org.springframework.batch.item.ItemWriter;
 
 @Slf4j
 @RequiredArgsConstructor
-public class SportsWriter implements ItemWriter<Content> {
+public class SportWriter implements ItemWriter<Content> {
 
   private final ContentRepository contentRepository;
 
