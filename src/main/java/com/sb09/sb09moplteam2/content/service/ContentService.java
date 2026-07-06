@@ -11,8 +11,8 @@ import com.sb09.sb09moplteam2.content.mapper.ContentMapper;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
+import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +69,7 @@ public class ContentService {
     Content content = contentRepository.findById(contentId)
         .orElseThrow(() -> {
           log.warn("콘텐츠 없음 - contentId: {}", contentId);
-          return new NoSuchElementException("콘텐츠를 찾을 수 없습니다.");
+          return new ContentNotFoundException();
         });
     List<ContentTag> tags = contentTagRepository.findByContentId(contentId);
     return contentMapper.toDto(content, tags);
@@ -82,7 +82,7 @@ public class ContentService {
     Content content = contentRepository.findById(contentId)
         .orElseThrow(() -> {
           log.warn("콘텐츠 없음 - contentId: {}", contentId);
-          return new NoSuchElementException("콘텐츠를 찾을 수 없습니다.");
+          return new ContentNotFoundException();
         });
 
     content.update(request.title(), request.description());
@@ -111,7 +111,7 @@ public class ContentService {
     Content content = contentRepository.findById(contentId)
         .orElseThrow(() -> {
           log.warn("콘텐츠 없음 - contentId: {}", contentId);
-          return new NoSuchElementException("콘텐츠를 찾을 수 없습니다.");
+          return new ContentNotFoundException();
         });
     contentRepository.delete(content);
     log.info("콘텐츠 삭제 완료 - contentId: {}", contentId);
@@ -120,7 +120,10 @@ public class ContentService {
   @Transactional(readOnly = true)
   public ContentSummary getContentSummary(UUID contentId) {
     Content content = contentRepository.findById(contentId)
-        .orElseThrow(() -> new NoSuchElementException("콘텐츠를 찾을 수 없습니다: " + contentId));
+        .orElseThrow(() -> {
+          log.warn("콘텐츠 없음 - contentId: {}", contentId);
+          return new ContentNotFoundException();
+        });
     List<ContentTag> tags = contentTagRepository.findByContentId(contentId);
     return contentMapper.toContentSummary(content, tags);
   }

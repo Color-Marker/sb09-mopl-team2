@@ -1,7 +1,7 @@
-package com.sb09.sb09moplteam2.content.batch.Tmdb;
+package com.sb09.sb09moplteam2.content.batch.tmdb;
 
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbEventResponse;
-import com.sb09.sb09moplteam2.content.batch.Tmdb.dto.TmdbPageResponse;
+import com.sb09.sb09moplteam2.content.batch.tmdb.dto.TmdbEventResponse;
+import com.sb09.sb09moplteam2.content.batch.tmdb.dto.TmdbPageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;

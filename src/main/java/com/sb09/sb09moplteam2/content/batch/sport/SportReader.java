@@ -1,6 +1,6 @@
-package com.sb09.sb09moplteam2.content.batch.Sports;
+package com.sb09.sb09moplteam2.content.batch.sport;
 
-import com.sb09.sb09moplteam2.content.batch.Sports.dto.SportsEventResponse;
+import com.sb09.sb09moplteam2.content.batch.sport.dto.SportsEventResponse;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +9,9 @@ import org.springframework.batch.item.ItemReader;
 
 @Slf4j
 @RequiredArgsConstructor
-public class SportsReader implements ItemReader<SportsEventResponse> {
+public class SportReader implements ItemReader<SportsEventResponse> {
 
-  private final SportsClient sportsClient;
+  private final SportClient sportClient;
 
   private static final List<String> LEAGUE_IDS = List.of("4328", "4387", "4424");
 
@@ -32,14 +32,14 @@ public class SportsReader implements ItemReader<SportsEventResponse> {
       String leagueId = LEAGUE_IDS.get(leagueIndex);
 
       if (!fetchedNext) {
-        buffer = new ArrayList<>(sportsClient.fetchNextEvents(leagueId));
+        buffer = new ArrayList<>(sportClient.fetchNextEvents(leagueId));
         fetchedNext = true;
         index = 0;
         if (!buffer.isEmpty()) return buffer.get(index++);
       }
 
       if (!fetchedPast) {
-        buffer = new ArrayList<>(sportsClient.fetchPastEvents(leagueId));
+        buffer = new ArrayList<>(sportClient.fetchPastEvents(leagueId));
         fetchedPast = true;
         index = 0;
         if (!buffer.isEmpty()) return buffer.get(index++);
