@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sb09.sb09moplteam2.security.jwt.CsrfCookieFilter;
+import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import com.sb09.sb09moplteam2.security.oauth.CustomOAuth2UserService;
 import com.sb09.sb09moplteam2.security.jwt.JwtAuthenticationFilter;
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
@@ -43,6 +44,7 @@ public class SecurityConfig {
   private final CustomOAuth2UserService customOAuth2UserService;
   private final OAuth2SignInSuccessHandler oAuth2SignInSuccessHandler;
   private final OAuth2SignInFailureHandler oAuth2SignInFailureHandler;
+  private final SessionBlacklistService sessionBlacklistService;
 
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -56,7 +58,7 @@ public class SecurityConfig {
     csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
 
     JwtSignInFilter jwtSignInFilter = new JwtSignInFilter(
-        authenticationManager, jwtProvider, jwtSessionRepository, userRepository, userMapper, objectMapper
+        authenticationManager, jwtProvider, jwtSessionRepository, userRepository, userMapper, objectMapper, sessionBlacklistService
     );
 
     http
@@ -88,7 +90,7 @@ public class SecurityConfig {
         )
         .addFilterAt(jwtSignInFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
-        .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(new JwtAuthenticationFilter(jwtProvider, sessionBlacklistService), UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }
 }
