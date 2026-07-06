@@ -50,3 +50,7 @@ mopl:
     refresh-token:
       secret: test-refresh-token-secret-key-must-be-long-enough
       expiration-ms: 604800000
+
+sse:
+  timeout: 300000
+  event-queue-capacity: 500
