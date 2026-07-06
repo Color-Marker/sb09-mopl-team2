@@ -5,7 +5,6 @@ import com.sb09.sb09moplteam2.review.dto.request.ReviewCreateRequest;
 import com.sb09.sb09moplteam2.review.dto.request.ReviewUpdateRequest;
 import com.sb09.sb09moplteam2.review.dto.response.CursorResponseReviewDto;
 import com.sb09.sb09moplteam2.review.service.ReviewService;
-import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -39,9 +38,9 @@ public class ReviewController {
   @PostMapping
   public ResponseEntity<ReviewDto> create(
       @RequestBody ReviewCreateRequest request,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    ReviewDto dto = reviewService.create(request, userDetails.getId());
-    log.info("POST /api/reviews - userId: {}", userDetails.getId());
+      @AuthenticationPrincipal UUID userId) {
+    ReviewDto dto = reviewService.create(request, userId);
+    log.info("POST /api/reviews - userId: {}", userId);
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
@@ -50,18 +49,18 @@ public class ReviewController {
   public ResponseEntity<ReviewDto> update(
       @PathVariable UUID reviewId,
       @RequestBody ReviewUpdateRequest request,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    log.info("PATCH /api/reviews/{} - userId: {}", reviewId, userDetails.getId());
-    return ResponseEntity.ok(reviewService.update(reviewId, request, userDetails.getId()));
+      @AuthenticationPrincipal UUID userId) {
+    log.info("PATCH /api/reviews/{} - userId: {}", reviewId, userId);
+    return ResponseEntity.ok(reviewService.update(reviewId, request, userId));
   }
 
   @Operation(summary = "리뷰 삭제")
   @DeleteMapping("/{reviewId}")
   public ResponseEntity<Void> delete(
       @PathVariable UUID reviewId,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    reviewService.delete(reviewId, userDetails.getId());
-    log.info("DELETE /api/reviews/{} - userId: {}", reviewId, userDetails.getId());
+      @AuthenticationPrincipal UUID userId) {
+    reviewService.delete(reviewId, userId);
+    log.info("DELETE /api/reviews/{} - userId: {}", reviewId, userId);
     return ResponseEntity.noContent().build();
   }
 

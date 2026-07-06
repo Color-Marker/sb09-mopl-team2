@@ -7,6 +7,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
+import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantAlreadyExistsException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
@@ -75,14 +76,13 @@ class ConversationParticipantServiceTest {
   }
 
   @Test
-  void join_이미_참여_중이면_IllegalStateException을_던진다() {
+  void join_이미_참여_중이면_ConversationParticipantAlreadyExistsException을_던진다() {
     given(conversationRepository.findById(conversationId)).willReturn(Optional.of(conversation));
     given(conversationParticipantRepository.existsByConversationAndUserId(conversation, userId))
         .willReturn(true);
 
     assertThatThrownBy(() -> conversationParticipantService.join(conversationId, userId))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining(userId.toString());
+        .isInstanceOf(ConversationParticipantAlreadyExistsException.class);
   }
 
   // ───────────────────────────── findAllByConversationId ─────────────────────────────

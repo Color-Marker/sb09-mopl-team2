@@ -20,7 +20,6 @@ public enum ErrorCode {
   INVALID_TOKEN("토큰이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED),
   INVALID_USER_DETAILS("사용자 인증 정보(UserDetails)가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED),
 
-
   // notification 에러 코드
   NOTIFICATION_NOT_FOUND("알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   NOTIFICATION_FORBIDDEN("알림을 삭제할 권한이 없습니다.", HttpStatus.FORBIDDEN),
@@ -42,11 +41,17 @@ public enum ErrorCode {
   DUPLICATE_SUBSCRIBE("이미 구독 중입니다", HttpStatus.CONFLICT),
   SUBSCRIBE_NOT_FOUND("구독 중이 아닙니다", HttpStatus.NOT_FOUND),
 
+  // Conversation 에러 코드
+  CONVERSATION_NOT_FOUND("존재하지 않는 대화방입니다.", HttpStatus.NOT_FOUND),
+  CONVERSATION_PARTICIPANT_NOT_FOUND("해당 대화방의 참여자가 아닙니다.", HttpStatus.FORBIDDEN),
+  CONVERSATION_PARTICIPANT_ALREADY_EXISTS("이미 참여 중인 대화방입니다.", HttpStatus.CONFLICT),
+  DIRECT_MESSAGE_NOT_FOUND("존재하지 않는 메시지입니다.", HttpStatus.NOT_FOUND),
+  WATCHING_SESSION_NOT_FOUND("존재하지 않는 시청 세션입니다.", HttpStatus.NOT_FOUND),
+
   // content 에러 코드
   CONTENT_NOT_FOUND("콘텐츠를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   DUPLICATE_CONTENT("이미 추가된 콘텐츠입니다", HttpStatus.CONFLICT),
-  CONTENT_FORBIDDEN("", HttpStatus.FORBIDDEN),
-  ;
+  CONTENT_FORBIDDEN("", HttpStatus.FORBIDDEN);
 
   private final String message;
   private final HttpStatus httpStatus;

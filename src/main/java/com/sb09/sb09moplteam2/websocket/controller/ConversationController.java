@@ -1,7 +1,6 @@
 package com.sb09.sb09moplteam2.websocket.controller;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
-import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import com.sb09.sb09moplteam2.websocket.dto.ConversationDto;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.dto.request.ConversationCreateRequest;
@@ -38,9 +37,8 @@ public class ConversationController {
   @PostMapping
   public ResponseEntity<ConversationDto> create(
       @RequestBody @Valid ConversationCreateRequest request,
-      @AuthenticationPrincipal CustomUserDetails userDetails
+      @AuthenticationPrincipal UUID myUserId
   ) {
-    UUID myUserId = userDetails.getId();
     log.info("POST /api/conversations - withUserId: {}", request.withUserId());
     return ResponseEntity.ok(conversationService.createDirect(myUserId, request.withUserId()));
   }
@@ -53,9 +51,8 @@ public class ConversationController {
       @RequestParam @Min(1) @Max(100) Integer limit,
       @RequestParam @NotBlank String sortBy,
       @RequestParam @NotBlank String sortDirection,
-      @AuthenticationPrincipal CustomUserDetails userDetails
+      @AuthenticationPrincipal UUID myUserId
   ) {
-    UUID myUserId = userDetails.getId();
     log.info("GET /api/conversations - myUserId: {}", myUserId);
     return ResponseEntity.ok(conversationService.findAll(
         myUserId, keywordLike, cursor, idAfter, limit, sortBy, sortDirection));
@@ -64,9 +61,8 @@ public class ConversationController {
   @GetMapping("/{conversationId}")
   public ResponseEntity<ConversationDto> findById(
       @PathVariable UUID conversationId,
-      @AuthenticationPrincipal CustomUserDetails userDetails
+      @AuthenticationPrincipal UUID myUserId
   ) {
-    UUID myUserId = userDetails.getId();
     log.info("GET /api/conversations/{}", conversationId);
     return ResponseEntity.ok(conversationService.findById(conversationId, myUserId));
   }
@@ -74,9 +70,8 @@ public class ConversationController {
   @GetMapping("/with")
   public ResponseEntity<ConversationDto> findWithUser(
       @RequestParam UUID userId,
-      @AuthenticationPrincipal CustomUserDetails userDetails
+      @AuthenticationPrincipal UUID myUserId
   ) {
-    UUID myUserId = userDetails.getId();
     log.info("GET /api/conversations/with - userId: {}", userId);
     return ResponseEntity.ok(conversationService.findWithUser(myUserId, userId));
   }
@@ -89,22 +84,19 @@ public class ConversationController {
       @RequestParam @Min(1) @Max(100) Integer limit,
       @RequestParam @NotBlank String sortBy,
       @RequestParam @NotBlank String sortDirection,
-      @AuthenticationPrincipal CustomUserDetails userDetails
+      @AuthenticationPrincipal UUID myUserId
   ) {
-    UUID myUserId = userDetails.getId();
     log.info("GET /api/conversations/{}/direct-messages", conversationId);
     return ResponseEntity.ok(directMessageService.findAll(
         conversationId, myUserId, cursor, idAfter, limit, sortBy, sortDirection));
   }
 
-  @PostMapping("/{conversationId}/direct-messages/{directMessageId}/read")
+  @PostMapping("/{conversationId}/read")
   public ResponseEntity<Void> read(
       @PathVariable UUID conversationId,
-      @PathVariable UUID directMessageId,
-      @AuthenticationPrincipal CustomUserDetails userDetails
+      @AuthenticationPrincipal UUID myUserId
   ) {
-    UUID myUserId = userDetails.getId();
-    log.info("POST /api/conversations/{}/direct-messages/{}/read", conversationId, directMessageId);
+    log.info("POST /api/conversations/{}/read", conversationId);
     directMessageService.read(conversationId, myUserId);
     return ResponseEntity.ok().build();
   }
