@@ -3,16 +3,21 @@ package com.sb09.sb09moplteam2.websocket.controller;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.service.WatchingSessionService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
+@Validated
 @RestController
 @RequiredArgsConstructor
 public class WatchingSessionController {
@@ -29,7 +34,6 @@ public class WatchingSessionController {
     return ResponseEntity.ok(watchingSessionService.findActiveByUserId(watcherId));
   }
 
-
   // GET /api/contents/{contentId}/watching-sessions
   // 특정 콘텐츠의 시청 세션 목록 조회 (커서 페이지네이션)
   @GetMapping("/api/contents/{contentId}/watching-sessions")
@@ -37,9 +41,9 @@ public class WatchingSessionController {
       @PathVariable UUID contentId,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) UUID idAfter,
-      @RequestParam Integer limit,
-      @RequestParam String sortBy,
-      @RequestParam String sortDirection
+      @RequestParam @Min(1) @Max(100) Integer limit,
+      @RequestParam @NotBlank String sortBy,
+      @RequestParam @NotBlank String sortDirection
   ) {
     log.info("GET /api/contents/{}/watching-sessions", contentId);
     return ResponseEntity.ok(watchingSessionService.findAllByContentId(
