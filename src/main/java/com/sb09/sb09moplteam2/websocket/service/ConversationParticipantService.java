@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.websocket.service;
 
+import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantAlreadyExistsException;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
@@ -38,7 +39,7 @@ public class ConversationParticipantService {
     if (conversationParticipantRepository.existsByConversationAndUserId(conversation, userId)) {
       log.warn("참여자 추가 실패 - 이미 참여 중: conversationId={}, userId={}",
           conversationId, userId);
-      throw new IllegalStateException("이미 참여 중인 대화방입니다. userId=" + userId);
+      throw new ConversationParticipantAlreadyExistsException(conversationId, userId);
     }
 
     ConversationParticipant participant = ConversationParticipant.of(conversation, userId);

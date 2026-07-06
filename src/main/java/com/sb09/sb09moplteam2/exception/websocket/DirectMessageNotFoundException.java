@@ -1,9 +1,13 @@
 package com.sb09.sb09moplteam2.exception.websocket;
 
+import com.sb09.sb09moplteam2.exception.ErrorCode;
+import com.sb09.sb09moplteam2.exception.MoplException;
 import java.util.UUID;
 
-public class DirectMessageNotFoundException extends RuntimeException {
+public class DirectMessageNotFoundException extends MoplException {
+
   public DirectMessageNotFoundException(UUID id) {
-    super("DirectMessage를 찾을 수 없습니다. id=" + id);
+    super(ErrorCode.DIRECT_MESSAGE_NOT_FOUND);
+    addDetail("id", id);
   }
 }

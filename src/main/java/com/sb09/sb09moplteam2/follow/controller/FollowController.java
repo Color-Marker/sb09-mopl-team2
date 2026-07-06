@@ -3,7 +3,6 @@ package com.sb09.sb09moplteam2.follow.controller;
 import com.sb09.sb09moplteam2.follow.dto.data.FollowDto;
 import com.sb09.sb09moplteam2.follow.dto.request.FollowRequest;
 import com.sb09.sb09moplteam2.follow.service.FollowService;
-import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,27 +22,27 @@ public class FollowController {
   // 1. 팔로우 하기 (POST /api/follows)
   @PostMapping
   public ResponseEntity<FollowDto> follow(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @AuthenticationPrincipal UUID userId,
       @Valid @RequestBody FollowRequest request) {
-    FollowDto response = followService.follow(userDetails.getId(), request);
+    FollowDto response = followService.follow(userId, request.getFolloweeId());
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   // 2. 팔로우 취소 (DELETE /api/follows/{followId})
   @DeleteMapping("/{followId}")
   public ResponseEntity<Void> unfollow(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @AuthenticationPrincipal UUID userId,
       @PathVariable UUID followId) {
-    followService.unfollow(userDetails.getId(), followId);
+    followService.unfollow(userId, followId);
     return ResponseEntity.noContent().build();
   }
 
   // 3. 팔로우 여부 조회 (GET /api/follows/followed-by-me?followeeId={uuid})
   @GetMapping("/followed-by-me")
   public ResponseEntity<FollowDto> checkFollowingStatus(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @AuthenticationPrincipal UUID userId,
       @RequestParam UUID followeeId) {
-    FollowDto response = followService.getFollowDetails(userDetails.getId(), followeeId);
+    FollowDto response = followService.getFollowDetails(userId, followeeId);
     return ResponseEntity.ok(response);
   }
 
