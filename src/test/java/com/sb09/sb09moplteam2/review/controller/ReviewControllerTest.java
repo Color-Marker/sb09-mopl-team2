@@ -3,8 +3,10 @@ package com.sb09.sb09moplteam2.review.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -12,11 +14,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
-import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
-import com.sb09.sb09moplteam2.user.entity.Role;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -32,6 +33,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @WebMvcTest(ReviewController.class)
 class ReviewControllerTest {
@@ -45,9 +47,11 @@ class ReviewControllerTest {
   @Autowired
   private ObjectMapper objectMapper;
 
-  private CustomUserDetails mockUserDetails() {
-    UUID userId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-    return new CustomUserDetails(userId, "test@test.com", "password", Role.USER, false);
+  private static final UUID TEST_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
+  private RequestPostProcessor mockUser() {
+    return authentication(new UsernamePasswordAuthenticationToken(
+        TEST_USER_ID, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
   }
 
   @Test
@@ -58,12 +62,12 @@ class ReviewControllerTest {
     ReviewCreateRequest request = new ReviewCreateRequest(contentId, "좋아요", 4.5);
     ReviewDto reviewDto = new ReviewDto(reviewId, contentId, null, "좋아요", 4.5);
 
-    given(reviewService.create(any(ReviewCreateRequest.class), any(UUID.class)))
+    given(reviewService.create(any(ReviewCreateRequest.class), eq(TEST_USER_ID)))
         .willReturn(reviewDto);
 
     mockMvc.perform(post("/api/reviews")
             .with(csrf())
-            .with(user(mockUserDetails()))
+            .with(mockUser())
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isCreated())
@@ -79,12 +83,12 @@ class ReviewControllerTest {
     ReviewUpdateRequest request = new ReviewUpdateRequest("수정된 리뷰", 3.0);
     ReviewDto reviewDto = new ReviewDto(reviewId, contentId, null, "수정된 리뷰", 3.0);
 
-    given(reviewService.update(any(UUID.class), any(ReviewUpdateRequest.class), any(UUID.class)))
+    given(reviewService.update(any(UUID.class), any(ReviewUpdateRequest.class), eq(TEST_USER_ID)))
         .willReturn(reviewDto);
 
     mockMvc.perform(patch("/api/reviews/{reviewId}", reviewId)
             .with(csrf())
-            .with(user(mockUserDetails()))
+            .with(mockUser())
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isOk())
@@ -100,7 +104,7 @@ class ReviewControllerTest {
 
     mockMvc.perform(delete("/api/reviews/{reviewId}", reviewId)
             .with(csrf())
-            .with(user(mockUserDetails())))
+            .with(mockUser()))
         .andExpect(status().isNoContent());
   }
 
