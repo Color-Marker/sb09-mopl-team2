@@ -1,6 +1,5 @@
 package com.sb09.sb09moplteam2.auth.controller;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
@@ -13,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.sb09.sb09moplteam2.auth.dto.response.TokenRefreshResult;
 import com.sb09.sb09moplteam2.auth.service.AuthService;
 import com.sb09.sb09moplteam2.config.JpaAuditingConfig;
+import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import com.sb09.sb09moplteam2.exception.GlobalExceptionHandler;
 import com.sb09.sb09moplteam2.exception.auth.InvalidTokenException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;

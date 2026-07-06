@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.review.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import com.sb09.sb09moplteam2.config.TestJpaConfig;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
