@@ -4,10 +4,10 @@ import com.sb09.sb09moplteam2.exception.ErrorCode;
 import com.sb09.sb09moplteam2.exception.MoplException;
 import java.util.UUID;
 
-public class ConversationParticipantNotFoundException extends MoplException {
+public class ConversationParticipantAlreadyExistsException extends MoplException {
 
-  public ConversationParticipantNotFoundException(UUID conversationId, UUID userId) {
-    super(ErrorCode.CONVERSATION_PARTICIPANT_NOT_FOUND);
+  public ConversationParticipantAlreadyExistsException(UUID conversationId, UUID userId) {
+    super(ErrorCode.CONVERSATION_PARTICIPANT_ALREADY_EXISTS);
     addDetail("conversationId", conversationId);
     addDetail("userId", userId);
   }

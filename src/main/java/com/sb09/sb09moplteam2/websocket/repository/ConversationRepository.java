@@ -12,8 +12,6 @@ import java.util.UUID;
 
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
 
-  // 특정 유저가 참여한 대화방 목록 - 커서 없을 때 (첫 페이지)
-  // lastMessageAt 기준 최신순
   @Query("""
         SELECT c FROM Conversation c
         JOIN ConversationParticipant cp ON cp.conversation = c
@@ -23,8 +21,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
   List<Conversation> findAllByParticipantUserId(
       @Param("userId") UUID userId, Pageable pageable);
 
-  // 특정 유저가 참여한 대화방 목록 - 커서 있을 때
-  // (lastMessageAt 기준으로 그 이전 대화방 조회)
   @Query("""
         SELECT c FROM Conversation c
         JOIN ConversationParticipant cp ON cp.conversation = c
@@ -39,4 +35,13 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
       @Param("idAfter") UUID idAfter,
       Pageable pageable
   );
+
+  // 키워드 검색용 - 커서 없이 전체 목록 (애플리케이션 레벨 필터링/페이징에 사용)
+  @Query("""
+        SELECT c FROM Conversation c
+        JOIN ConversationParticipant cp ON cp.conversation = c
+        WHERE cp.userId = :userId
+        ORDER BY c.lastMessageAt DESC, c.id DESC
+        """)
+  List<Conversation> findAllByParticipantUserIdNoPaging(@Param("userId") UUID userId);
 }

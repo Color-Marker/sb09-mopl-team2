@@ -1,5 +1,7 @@
 package com.sb09.sb09moplteam2.websocket.controller;
 
+import com.sb09.sb09moplteam2.exception.ErrorResponse;
+import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.websocket.dto.request.DirectMessageRequest;
 import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.service.DirectMessageService;
@@ -7,9 +9,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
@@ -48,5 +52,19 @@ public class DirectMessageController {
         "/topic/conversations/" + conversationId,
         response
     );
+  }
+
+  @MessageExceptionHandler(MoplException.class)
+  @SendToUser("/queue/errors")
+  public ErrorResponse handleMoplException(MoplException e) {
+    log.warn("STOMP DM 처리 실패 (도메인 예외): {}", e.getMessage());
+    return new ErrorResponse(e);
+  }
+
+  @MessageExceptionHandler(Exception.class)
+  @SendToUser("/queue/errors")
+  public ErrorResponse handleException(Exception e) {
+    log.error("STOMP DM 처리 실패 (예상치 못한 예외)", e);
+    return new ErrorResponse(e);
   }
 }
