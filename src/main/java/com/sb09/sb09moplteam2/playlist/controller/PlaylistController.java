@@ -5,7 +5,6 @@ import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistCreatedRequest;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistUpdateRequest;
 import com.sb09.sb09moplteam2.playlist.dto.response.CursorResponsePlaylistDto;
 import com.sb09.sb09moplteam2.playlist.service.PlaylistService;
-import com.sb09.sb09moplteam2.security.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,8 +37,8 @@ public class PlaylistController {
   @PostMapping
   public ResponseEntity<PlaylistDto> create(
       @RequestBody PlaylistCreatedRequest request,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    PlaylistDto dto = playlistService.create(request, userDetails.getId());
+      @AuthenticationPrincipal UUID userId) {
+    PlaylistDto dto = playlistService.create(request, userId);
     return ResponseEntity.status(HttpStatus.CREATED).body(dto);
   }
 
@@ -56,12 +55,11 @@ public class PlaylistController {
       @RequestParam String sortDirection,
       @Parameter(description = "정렬 기준", schema = @Schema(allowableValues = {"updatedAt", "subscribeCount"}))
       @RequestParam String sortBy,
-      @AuthenticationPrincipal CustomUserDetails userDetails
+      @AuthenticationPrincipal UUID userId
   ) {
-    UUID currentUserId = userDetails != null ? userDetails.getId() : null;
     CursorResponsePlaylistDto response = playlistService.findAll(
         keywordLike, ownerIdEqual, subscriberIdEqual, cursor, idAfter,
-        limit, sortDirection, sortBy, currentUserId
+        limit, sortDirection, sortBy, userId
     );
     return ResponseEntity.ok(response);
   }
@@ -70,9 +68,8 @@ public class PlaylistController {
   @GetMapping("/{playlistId}")
   public ResponseEntity<PlaylistDto> findById(
       @PathVariable UUID playlistId,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    UUID currentUserId = userDetails != null ? userDetails.getId() : null;
-    return ResponseEntity.ok(playlistService.findById(playlistId, currentUserId));
+      @AuthenticationPrincipal UUID userId) {
+    return ResponseEntity.ok(playlistService.findById(playlistId, userId));
   }
 
   @Operation(summary = "플레이리스트 수정")
@@ -80,16 +77,16 @@ public class PlaylistController {
   public ResponseEntity<PlaylistDto> update(
       @PathVariable UUID playlistId,
       @RequestBody PlaylistUpdateRequest request,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    return ResponseEntity.ok(playlistService.update(playlistId, request, userDetails.getId()));
+      @AuthenticationPrincipal UUID userId) {
+    return ResponseEntity.ok(playlistService.update(playlistId, request, userId));
   }
 
   @Operation(summary = "플레이리스트 삭제")
   @DeleteMapping("/{playlistId}")
   public ResponseEntity<Void> delete(
       @PathVariable UUID playlistId,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    playlistService.delete(playlistId, userDetails.getId());
+      @AuthenticationPrincipal UUID userId) {
+    playlistService.delete(playlistId, userId);
     return ResponseEntity.noContent().build();
   }
 
@@ -98,8 +95,8 @@ public class PlaylistController {
   public ResponseEntity<Void> addContent(
       @PathVariable UUID playlistId,
       @PathVariable UUID contentId,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    playlistService.addContent(playlistId, contentId, userDetails.getId());
+      @AuthenticationPrincipal UUID userId) {
+    playlistService.addContent(playlistId, contentId, userId);
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 
@@ -108,8 +105,8 @@ public class PlaylistController {
   public ResponseEntity<Void> removeContent(
       @PathVariable UUID playlistId,
       @PathVariable UUID contentId,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    playlistService.removeContent(playlistId, contentId, userDetails.getId());
+      @AuthenticationPrincipal UUID userId) {
+    playlistService.removeContent(playlistId, contentId, userId);
     return ResponseEntity.noContent().build();
   }
 
@@ -117,8 +114,8 @@ public class PlaylistController {
   @PostMapping("/{playlistId}/subscription")
   public ResponseEntity<Void> subscribe(
       @PathVariable UUID playlistId,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    playlistService.subscribe(playlistId, userDetails.getId());
+      @AuthenticationPrincipal UUID userId) {
+    playlistService.subscribe(playlistId, userId);
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 
@@ -126,8 +123,8 @@ public class PlaylistController {
   @DeleteMapping("/{playlistId}/subscription")
   public ResponseEntity<Void> unsubscribe(
       @PathVariable UUID playlistId,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    playlistService.unsubscribe(playlistId, userDetails.getId());
+      @AuthenticationPrincipal UUID userId) {
+    playlistService.unsubscribe(playlistId, userId);
     return ResponseEntity.noContent().build();
   }
 }
