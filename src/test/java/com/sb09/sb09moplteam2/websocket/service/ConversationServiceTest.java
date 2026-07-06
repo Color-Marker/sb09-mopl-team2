@@ -10,7 +10,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
+import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
+import com.sb09.sb09moplteam2.user.service.UserService;
 import com.sb09.sb09moplteam2.websocket.dto.ConversationDto;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
@@ -39,6 +41,8 @@ class ConversationServiceTest {
   private ConversationParticipantRepository conversationParticipantRepository;
   @Mock
   private ConversationMapper conversationMapper;
+  @Mock
+  private UserService userService;
 
   @InjectMocks
   private ConversationService conversationService;
@@ -215,40 +219,45 @@ class ConversationServiceTest {
 
   @Test
   void keywordLike가_있으면_상대방_이름으로_필터링된다() {
-    ConversationParticipant participant = ConversationParticipant.of(conversation, withUserId);
-
-    // 매칭되는 dto
-    ConversationDto matchingDto = new ConversationDto(
-        conversationId,
-        new com.sb09.sb09moplteam2.dto.UserSummary(withUserId, "우디", null),
-        null,
-        false
-    );
-    // 매칭 안 되는 dto
-    ConversationDto nonMatchingDto = new ConversationDto(
-        UUID.randomUUID(),
-        new com.sb09.sb09moplteam2.dto.UserSummary(UUID.randomUUID(), "버즈", null),
-        null,
-        false
-    );
+    UUID otherUserId1 = withUserId;
+    UUID otherUserId2 = UUID.randomUUID();
 
     Conversation conversation2 = Conversation.createDirect();
-    ReflectionTestUtils.setField(conversation2, "id", UUID.randomUUID());
+    UUID conversationId2 = UUID.randomUUID();
+    ReflectionTestUtils.setField(conversation2, "id", conversationId2);
 
-    given(conversationRepository.findAllByParticipantUserId(eq(myUserId), any(Pageable.class)))
+    ConversationParticipant participant1 = ConversationParticipant.of(conversation, otherUserId1);
+    ConversationParticipant participant2 = ConversationParticipant.of(conversation2, otherUserId2);
+
+    UserSummary matchingSummary = new UserSummary(otherUserId1, "우디", null);
+    UserSummary nonMatchingSummary = new UserSummary(otherUserId2, "버즈", null);
+
+    ConversationDto matchingDto = new ConversationDto(conversationId, matchingSummary, null, false);
+
+    // 전체 조회 (커서 없는 목록 - 키워드 검색 시 사용)
+    given(conversationRepository.findAllByParticipantUserIdNoPaging(myUserId))
         .willReturn(List.of(conversation, conversation2));
-    given(conversationParticipantRepository.findByConversationIdIn(any()))
-        .willReturn(List.of(participant));
+
+    // findByConversationIdIn은 필터링/응답 빌드에 공용으로 딱 한 번 호출됨
+    given(conversationParticipantRepository.findByConversationIdIn(List.of(conversationId, conversationId2)))
+        .willReturn(List.of(participant1, participant2));
+
+    // 이름 필터링에 쓰이는 userService 호출
+    given(userService.getUserSummary(otherUserId1)).willReturn(matchingSummary);
+    given(userService.getUserSummary(otherUserId2)).willReturn(nonMatchingSummary);
+
     given(conversationMapper.toDto(eq(conversation), eq(myUserId), any()))
         .willReturn(matchingDto);
-    given(conversationMapper.toDto(eq(conversation2), eq(myUserId), any()))
-        .willReturn(nonMatchingDto);
 
     CursorResponse<ConversationDto> result = conversationService.findAll(
         myUserId, "우디", null, null, 10, "lastMessageAt", "DESCENDING");
 
     assertThat(result.data()).hasSize(1);
     assertThat(result.data().get(0).with().name()).isEqualTo("우디");
+    assertThat(result.hasNext()).isFalse();
+
+    // 한 번만 호출됐는지 확인 (효율성 검증 겸)
+    verify(conversationParticipantRepository, times(1)).findByConversationIdIn(any());
   }
 
   // ───────────────────────────── 헬퍼 메서드 ─────────────────────────────
