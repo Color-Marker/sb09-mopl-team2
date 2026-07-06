@@ -9,6 +9,7 @@ import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import java.util.List;
+import java.util.UUID;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -136,4 +137,73 @@ class ContentRepositoryTest {
     assertThat(result.data()).hasSize(1);
     assertThat(result.data().get(0).title()).isEqualTo("액션 영화");
   }
+
+  @Test
+  @DisplayName("createdAt 커서로 다음 페이지를 조회한다")
+  void findContentsWithCursor_createdAt_커서로_다음_페이지를_조회한다() {
+    Content content1 = em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명").build());
+    em.flush();
+    em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
+    em.flush();
+
+    String cursor = content1.getCreatedAt().toString();
+    UUID idAfter = content1.getId();
+
+    CursorResponseContentDto result = contentRepository.findContentsWithCursor(
+        null, null, null, cursor, idAfter, 10, "ASCENDING", "createdAt"
+    );
+
+    assertThat(result.data()).hasSize(1);
+    assertThat(result.data().get(0).title()).isEqualTo("영화2");
+  }
+
+  @Test
+  @DisplayName("watchedCount 커서로 다음 페이지를 조회한다")
+  void findContentsWithCursor_watchedCount_커서로_다음_페이지를_조회한다() {
+    Content content1 = em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명").build());
+    Content content2 = em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
+
+    content1.updateWatcherCount(100L);
+    content2.updateWatcherCount(200L);
+    em.flush();
+
+    String cursor = "100";
+    UUID idAfter = content1.getId();
+
+    CursorResponseContentDto result = contentRepository.findContentsWithCursor(
+        null, null, null, cursor, idAfter, 10, "ASCENDING", "watchedCount"
+    );
+
+    assertThat(result.data()).hasSize(1);
+    assertThat(result.data().get(0).title()).isEqualTo("영화2");
+  }
+
+  @Test
+  @DisplayName("rate 커서로 다음 페이지를 조회한다")
+  void findContentsWithCursor_rate_커서로_다음_페이지를_조회한다() {
+    Content content1 = em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명").build());
+    Content content2 = em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
+
+    content1.updateReviewStats(3.0, 1);
+    content2.updateReviewStats(4.0, 1);
+    em.flush();
+
+    String cursor = "3.0";
+    UUID idAfter = content1.getId();
+
+    CursorResponseContentDto result = contentRepository.findContentsWithCursor(
+        null, null, null, cursor, idAfter, 10, "ASCENDING", "rate"
+    );
+
+    assertThat(result.data()).hasSize(1);
+    assertThat(result.data().get(0).title()).isEqualTo("영화2");
+  }
+
+
 }
