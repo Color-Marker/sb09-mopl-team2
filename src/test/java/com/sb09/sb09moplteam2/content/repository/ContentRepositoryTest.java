@@ -8,6 +8,7 @@ import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
@@ -143,12 +144,15 @@ class ContentRepositoryTest {
   void findContentsWithCursor_createdAt_커서로_다음_페이지를_조회한다() {
     Content content1 = em.persist(Content.builder()
         .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명").build());
-    em.flush();
-    em.persist(Content.builder()
+    Content content2 = em.persist(Content.builder()
         .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
     em.flush();
 
-    String cursor = content1.getCreatedAt().toString();
+    LocalDateTime base = LocalDateTime.now();
+    forceCreatedAt(content1, base.minusMinutes(1));
+    forceCreatedAt(content2, base);
+
+    String cursor = base.minusMinutes(1).toString();
     UUID idAfter = content1.getId();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
@@ -157,6 +161,16 @@ class ContentRepositoryTest {
 
     assertThat(result.data()).hasSize(1);
     assertThat(result.data().get(0).title()).isEqualTo("영화2");
+  }
+
+  private void forceCreatedAt(Content content, LocalDateTime time) {
+    em.getEntityManager().createQuery(
+            "update Content c set c.createdAt = :t where c.id = :id")
+        .setParameter("t", time)
+        .setParameter("id", content.getId())
+        .executeUpdate();
+    em.flush();
+    em.clear();
   }
 
   @Test
