@@ -67,6 +67,15 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat = "full"
+        showStandardStreams = true
+    }
+}
+
 jacoco {
     toolVersion = "0.8.12"
 }
