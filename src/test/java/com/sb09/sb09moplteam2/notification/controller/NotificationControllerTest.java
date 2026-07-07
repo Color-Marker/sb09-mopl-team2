@@ -76,12 +76,12 @@ class NotificationControllerTest {
 
 
   @Test
-  void list_인증없음_401() throws Exception {
+  void list_인증없음_302() throws Exception {
     mockMvc.perform(get("/api/notifications")
             .param("sortBy", "createdAt")
             .param("sortDirection", "ASCENDING")
             .param("limit", "10"))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isFound());
   }
 
   @Test
@@ -120,11 +120,11 @@ class NotificationControllerTest {
   }
 
   @Test
-  void delete_인증없음_401() throws Exception {
+  void delete_인증없음_302() throws Exception {
     UUID notificationId = UUID.randomUUID();
 
     mockMvc.perform(delete("/api/notifications/{notificationId}", notificationId)
             .with(csrf()))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isFound());
   }
 }

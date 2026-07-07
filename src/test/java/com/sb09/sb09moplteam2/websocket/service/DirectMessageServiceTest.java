@@ -5,11 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
+import com.sb09.sb09moplteam2.user.entity.User;
+import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
@@ -29,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -40,9 +44,13 @@ class DirectMessageServiceTest {
   @Mock
   private ConversationRepository conversationRepository;
   @Mock
+  private UserRepository userRepository;
+  @Mock
   private ConversationParticipantRepository conversationParticipantRepository;
   @Mock
   private DirectMessageMapper directMessageMapper;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks
   private DirectMessageService directMessageService;
@@ -53,6 +61,8 @@ class DirectMessageServiceTest {
   private Conversation conversation;
   private ConversationParticipant myParticipant;
   private ConversationParticipant otherParticipant;
+  private User sender;
+  private User receiver;
 
   @BeforeEach
   void setUp() {
@@ -65,6 +75,12 @@ class DirectMessageServiceTest {
 
     myParticipant = ConversationParticipant.of(conversation, myUserId);
     otherParticipant = ConversationParticipant.of(conversation, otherUserId);
+
+    sender = new User("보낸사람", "sender@test.com", "password");
+    ReflectionTestUtils.setField(sender, "id", myUserId);
+
+    receiver = new User("받는사람", "receiver@test.com", "password");
+    ReflectionTestUtils.setField(receiver, "id", otherUserId);
   }
 
   // ───────────────────────────── findAll ─────────────────────────────
@@ -177,6 +193,10 @@ class DirectMessageServiceTest {
         .willReturn(true);
     given(directMessageRepository.save(any(DirectMessage.class)))
         .willAnswer(invocation -> invocation.getArgument(0));
+    given(userRepository.findById(myUserId)).willReturn(Optional.of(sender));
+    given(conversationParticipantRepository.findOtherParticipants(conversationId, myUserId))
+        .willReturn(Optional.of(otherParticipant));
+    given(userRepository.findById(otherUserId)).willReturn(Optional.of(receiver));
 
     DirectMessageResponse response = directMessageService.send(conversationId, myUserId, content);
 
@@ -197,6 +217,10 @@ class DirectMessageServiceTest {
         .willReturn(true);
     given(directMessageRepository.save(any(DirectMessage.class)))
         .willAnswer(invocation -> invocation.getArgument(0));
+    given(userRepository.findById(myUserId)).willReturn(Optional.of(sender));
+    given(conversationParticipantRepository.findOtherParticipants(conversationId, myUserId))
+        .willReturn(Optional.of(otherParticipant));
+    given(userRepository.findById(otherUserId)).willReturn(Optional.of(receiver));
 
     directMessageService.send(conversationId, myUserId, content);
 

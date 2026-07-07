@@ -83,7 +83,7 @@ class ConversationControllerTest {
   }
 
   @Test
-  void create_인증없음_401() throws Exception {
+  void create_인증없음_302() throws Exception {
     String requestBody = """
         {"withUserId": "%s"}
         """.formatted(UUID.randomUUID());
@@ -92,7 +92,7 @@ class ConversationControllerTest {
             .with(csrf())
             .contentType(MediaType.APPLICATION_JSON)
             .content(requestBody))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isFound());
   }
 
   @Test
@@ -142,12 +142,12 @@ class ConversationControllerTest {
   }
 
   @Test
-  void findAll_인증없음_401() throws Exception {
+  void findAll_인증없음_302() throws Exception {
     mockMvc.perform(get("/api/conversations")
             .param("limit", "10")
             .param("sortBy", "lastMessageAt")
             .param("sortDirection", "DESCENDING"))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isFound());
   }
 
   // ───────────────────────────── findById ─────────────────────────────
@@ -173,9 +173,9 @@ class ConversationControllerTest {
   }
 
   @Test
-  void findById_인증없음_401() throws Exception {
+  void findById_인증없음_302() throws Exception {
     mockMvc.perform(get("/api/conversations/{conversationId}", conversationId))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isFound());
   }
 
   // ───────────────────────────── findWithUser ─────────────────────────────
@@ -262,9 +262,9 @@ class ConversationControllerTest {
   }
 
   @Test
-  void read_인증없음_401() throws Exception {
+  void read_인증없음_302() throws Exception {
     mockMvc.perform(post("/api/conversations/{conversationId}/read", conversationId)
             .with(csrf()))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isFound());
   }
 }
