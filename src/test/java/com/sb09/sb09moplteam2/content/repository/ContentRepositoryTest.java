@@ -175,7 +175,7 @@ class ContentRepositoryTest {
     UUID idAfter = content1.getId();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        null, null, null, cursor, idAfter, 10, "ASCENDING", "watchedCount"
+        null, null, null, cursor, idAfter, 10, "ASCENDING", "watcherCount"
     );
 
     assertThat(result.data()).hasSize(1);
