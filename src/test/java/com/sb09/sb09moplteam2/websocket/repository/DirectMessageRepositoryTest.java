@@ -115,11 +115,16 @@ class DirectMessageRepositoryTest {
     em.persist(dm1);
     em.persist(dm2);
     em.flush();
+    em.clear(); // 영속성 컨텍스트 비우기 - DB에 실제 저장된 값을 가져오도록
+
+    DirectMessage dm1Reloaded = em.find(DirectMessage.class, dm1.getId());
+    DirectMessage dm2Reloaded = em.find(DirectMessage.class, dm2.getId());
+    Instant persistedSentAt = dm1Reloaded.getSentAt(); // DB에 실제 저장된(반올림된) 값
 
     List<DirectMessage> resultWithDm1AsCursor = directMessageRepository.findByConversationWithCursor(
-        conversation, sameTime, dm1.getId(), PageRequest.of(0, 10));
+        conversation, persistedSentAt, dm1Reloaded.getId(), PageRequest.of(0, 10));
     List<DirectMessage> resultWithDm2AsCursor = directMessageRepository.findByConversationWithCursor(
-        conversation, sameTime, dm2.getId(), PageRequest.of(0, 10));
+        conversation, persistedSentAt, dm2Reloaded.getId(), PageRequest.of(0, 10));
 
     assertThat(resultWithDm1AsCursor).extracting(DirectMessage::getId).doesNotContain(dm1.getId());
     assertThat(resultWithDm2AsCursor).extracting(DirectMessage::getId).doesNotContain(dm2.getId());

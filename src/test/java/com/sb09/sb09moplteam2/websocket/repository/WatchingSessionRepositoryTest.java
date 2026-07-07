@@ -147,9 +147,12 @@ class WatchingSessionRepositoryTest {
     WatchingSession cursorTarget = persistSessionWithStartedAt(UUID.randomUUID(), contentId, now.minusSeconds(60));
     persistSessionWithStartedAt(UUID.randomUUID(), contentId, now); // 커서보다 최신 - 제외되어야 함
     em.flush();
+    em.clear(); // 영속성 컨텍스트 비우기 - DB에 실제 저장된 값을 가져오도록
+
+    WatchingSession cursorTargetReloaded = em.find(WatchingSession.class, cursorTarget.getId());
 
     List<WatchingSession> result = watchingSessionRepository.findByContentIdWithCursor(
-        contentId, cursorTarget.getStartedAt(), cursorTarget.getId(), PageRequest.of(0, 10));
+        contentId, cursorTargetReloaded.getStartedAt(), cursorTargetReloaded.getId(), PageRequest.of(0, 10));
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getId()).isEqualTo(older.getId());

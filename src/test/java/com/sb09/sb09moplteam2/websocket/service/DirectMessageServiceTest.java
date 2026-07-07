@@ -5,11 +5,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
+import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
@@ -43,6 +45,10 @@ class DirectMessageServiceTest {
   private ConversationParticipantRepository conversationParticipantRepository;
   @Mock
   private DirectMessageMapper directMessageMapper;
+  @Mock
+  private org.springframework.context.ApplicationEventPublisher eventPublisher;
+  @Mock
+  private com.sb09.sb09moplteam2.user.repository.UserRepository userRepository;
 
   @InjectMocks
   private DirectMessageService directMessageService;
@@ -171,12 +177,21 @@ class DirectMessageServiceTest {
   @Test
   void DM을_전송하면_저장되고_response를_반환한다() {
     String content = "안녕하세요";
+    User sender = mock(User.class);
+    User receiver = mock(User.class);
+    given(sender.getName()).willReturn("sender");
+    given(receiver.getName()).willReturn("receiver");
+    given(receiver.getId()).willReturn(otherUserId);
 
     given(conversationRepository.findById(conversationId)).willReturn(Optional.of(conversation));
     given(conversationParticipantRepository.existsByConversationAndUserId(conversation, myUserId))
         .willReturn(true);
     given(directMessageRepository.save(any(DirectMessage.class)))
         .willAnswer(invocation -> invocation.getArgument(0));
+    given(userRepository.findById(myUserId)).willReturn(Optional.of(sender));
+    given(conversationParticipantRepository.findOtherParticipants(conversationId, myUserId))
+        .willReturn(Optional.of(otherParticipant));
+    given(userRepository.findById(otherUserId)).willReturn(Optional.of(receiver));
 
     DirectMessageResponse response = directMessageService.send(conversationId, myUserId, content);
 
@@ -191,12 +206,21 @@ class DirectMessageServiceTest {
   void DM_전송_시_conversation의_lastMessageAt이_갱신된다() {
     String content = "갱신 테스트";
     Instant before = conversation.getLastMessageAt();
+    User sender = mock(User.class);
+    User receiver = mock(User.class);
+    given(sender.getName()).willReturn("sender");
+    given(receiver.getName()).willReturn("receiver");
+    given(receiver.getId()).willReturn(otherUserId);
 
     given(conversationRepository.findById(conversationId)).willReturn(Optional.of(conversation));
     given(conversationParticipantRepository.existsByConversationAndUserId(conversation, myUserId))
         .willReturn(true);
     given(directMessageRepository.save(any(DirectMessage.class)))
         .willAnswer(invocation -> invocation.getArgument(0));
+    given(userRepository.findById(myUserId)).willReturn(Optional.of(sender));
+    given(conversationParticipantRepository.findOtherParticipants(conversationId, myUserId))
+        .willReturn(Optional.of(otherParticipant));
+    given(userRepository.findById(otherUserId)).willReturn(Optional.of(receiver));
 
     directMessageService.send(conversationId, myUserId, content);
 

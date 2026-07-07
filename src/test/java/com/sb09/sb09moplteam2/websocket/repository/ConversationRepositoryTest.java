@@ -81,9 +81,12 @@ class ConversationRepositoryTest {
     Conversation cursorTarget = createConversationWithParticipants(myUserId, UUID.randomUUID(), now.minusSeconds(60));
     createConversationWithParticipants(myUserId, UUID.randomUUID(), now); // 커서보다 최신 - 제외되어야 함
     em.flush();
+    em.clear(); // 영속성 컨텍스트 비우기 - DB에 실제 저장된 값을 가져오도록
+
+    Conversation cursorTargetReloaded = em.find(Conversation.class, cursorTarget.getId());
 
     List<Conversation> result = conversationRepository.findAllByParticipantUserIdWithCursor(
-        myUserId, cursorTarget.getLastMessageAt(), cursorTarget.getId(), PageRequest.of(0, 10));
+        myUserId, cursorTargetReloaded.getLastMessageAt(), cursorTargetReloaded.getId(), PageRequest.of(0, 10));
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getId()).isEqualTo(older.getId());

@@ -29,6 +29,9 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -64,6 +67,12 @@ public class SecurityConfig {
             .csrfTokenRepository(csrfTokenRepository)
             .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .exceptionHandling(exception -> exception
+            .defaultAuthenticationEntryPointFor(
+                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                (RequestMatcher) request -> request.getRequestURI().startsWith(request.getContextPath() + "/api/")
+            )
+        )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/", "/index.html", "/favicon.svg", "/assets/**", "/error").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
