@@ -62,7 +62,12 @@ public class SecurityConfig {
     http
         .csrf(csrf -> csrf
             .csrfTokenRepository(csrfTokenRepository)
-            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            .ignoringRequestMatchers(request -> {
+              String authHeader = request.getHeader("Authorization");
+              return authHeader != null && authHeader.startsWith("Bearer ");
+            })
+        )
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/", "/index.html", "/favicon.svg", "/assets/**", "/error").permitAll()
