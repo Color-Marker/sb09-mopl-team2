@@ -9,6 +9,7 @@ import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
@@ -148,12 +149,14 @@ class ContentRepositoryTest {
         .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
     em.flush();
 
-    LocalDateTime base = LocalDateTime.now();
+    LocalDateTime base = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
     forceCreatedAt(content1, base.minusMinutes(1));
     forceCreatedAt(content2, base);
 
-    String cursor = base.minusMinutes(1).toString();
-    UUID idAfter = content1.getId();
+    // DB에 실제로 반영된 값을 다시 조회해서 커서로 사용
+    Content refetchedContent1 = contentRepository.findById(content1.getId()).orElseThrow();
+    String cursor = refetchedContent1.getCreatedAt().toString();
+    UUID idAfter = refetchedContent1.getId();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
         null, null, null, cursor, idAfter, 10, "ASCENDING", "createdAt"

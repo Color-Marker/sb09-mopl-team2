@@ -63,12 +63,9 @@ dependencies {
 
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport //test 후 jacocoReport 자동으로 생성
     testLogging {
         events "passed", "skipped", "failed"
         exceptionFormat = "full"
