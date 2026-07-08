@@ -12,6 +12,7 @@ import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
 import com.sb09.sb09moplteam2.user.entity.User;
+import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
@@ -42,8 +43,6 @@ class DirectMessageServiceTest {
   private DirectMessageRepository directMessageRepository;
   @Mock
   private ConversationRepository conversationRepository;
-  @Mock
-  private UserRepository userRepository;
   @Mock
   private ConversationParticipantRepository conversationParticipantRepository;
   @Mock
