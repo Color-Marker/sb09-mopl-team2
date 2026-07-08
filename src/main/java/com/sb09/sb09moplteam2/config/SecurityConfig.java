@@ -64,7 +64,8 @@ public class SecurityConfig {
     http
         .csrf(csrf -> csrf
             .csrfTokenRepository(csrfTokenRepository)
-            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            .sessionAuthenticationStrategy((authentication, request, response) -> {}))
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .sessionAuthenticationStrategy((authentication, request, response) -> {})
