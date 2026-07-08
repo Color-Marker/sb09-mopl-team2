@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sb09.sb09moplteam2.security.jwt.CsrfCookieFilter;
+import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import com.sb09.sb09moplteam2.security.oauth.CustomOAuth2UserService;
 import com.sb09.sb09moplteam2.security.jwt.JwtAuthenticationFilter;
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
@@ -46,6 +47,7 @@ public class SecurityConfig {
   private final CustomOAuth2UserService customOAuth2UserService;
   private final OAuth2SignInSuccessHandler oAuth2SignInSuccessHandler;
   private final OAuth2SignInFailureHandler oAuth2SignInFailureHandler;
+  private final SessionBlacklistService sessionBlacklistService;
 
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -59,18 +61,23 @@ public class SecurityConfig {
     csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
 
     JwtSignInFilter jwtSignInFilter = new JwtSignInFilter(
-        authenticationManager, jwtProvider, jwtSessionRepository, userRepository, userMapper, objectMapper
+        authenticationManager, jwtProvider, jwtSessionRepository, userRepository, userMapper, objectMapper, sessionBlacklistService
     );
 
     http
         .csrf(csrf -> csrf
             .csrfTokenRepository(csrfTokenRepository)
             .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            .sessionAuthenticationStrategy((authentication, request, response) -> {})
             .ignoringRequestMatchers(request -> {
               String authHeader = request.getHeader("Authorization");
               return authHeader != null && authHeader.startsWith("Bearer ");
-            })
+            }))
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .sessionAuthenticationStrategy((authentication, request, response) -> {})
         )
+
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .exceptionHandling(exception -> exception
             .defaultAuthenticationEntryPointFor(
@@ -78,8 +85,9 @@ public class SecurityConfig {
                 (RequestMatcher) request -> request.getRequestURI().startsWith(request.getContextPath() + "/api/")
             )
         )
+
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/index.html", "/favicon.svg", "/assets/**", "/error").permitAll()
+            .requestMatchers("/", "/index.html", "/favicon.svg", "/assets/**", "/error", "/files/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -99,7 +107,7 @@ public class SecurityConfig {
         )
         .addFilterAt(jwtSignInFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
-        .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(new JwtAuthenticationFilter(jwtProvider, sessionBlacklistService), UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }
 }
