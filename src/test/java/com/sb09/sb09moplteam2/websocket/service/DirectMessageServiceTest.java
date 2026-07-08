@@ -31,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -42,6 +43,8 @@ class DirectMessageServiceTest {
   @Mock
   private ConversationRepository conversationRepository;
   @Mock
+  private UserRepository userRepository;
+  @Mock
   private ConversationParticipantRepository conversationParticipantRepository;
   @Mock
   private DirectMessageMapper directMessageMapper;
@@ -49,6 +52,7 @@ class DirectMessageServiceTest {
   private org.springframework.context.ApplicationEventPublisher eventPublisher;
   @Mock
   private com.sb09.sb09moplteam2.user.repository.UserRepository userRepository;
+
 
   @InjectMocks
   private DirectMessageService directMessageService;
@@ -59,6 +63,8 @@ class DirectMessageServiceTest {
   private Conversation conversation;
   private ConversationParticipant myParticipant;
   private ConversationParticipant otherParticipant;
+  private User sender;
+  private User receiver;
 
   @BeforeEach
   void setUp() {
@@ -71,6 +77,12 @@ class DirectMessageServiceTest {
 
     myParticipant = ConversationParticipant.of(conversation, myUserId);
     otherParticipant = ConversationParticipant.of(conversation, otherUserId);
+
+    sender = new User("보낸사람", "sender@test.com", "password");
+    ReflectionTestUtils.setField(sender, "id", myUserId);
+
+    receiver = new User("받는사람", "receiver@test.com", "password");
+    ReflectionTestUtils.setField(receiver, "id", otherUserId);
   }
 
   // ───────────────────────────── findAll ─────────────────────────────

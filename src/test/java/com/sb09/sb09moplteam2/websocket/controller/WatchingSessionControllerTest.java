@@ -50,7 +50,9 @@ class WatchingSessionControllerTest {
     given(watchingSessionService.findActiveByUserId(watcherId)).willReturn(response);
 
     mockMvc.perform(get("/api/users/{watcherId}/watching-sessions", watcherId)
+
             .with(user("testUser").roles("USER")))
+
         .andExpect(status().isOk());
   }
 
@@ -60,6 +62,7 @@ class WatchingSessionControllerTest {
 
     mockMvc.perform(get("/api/users/{watcherId}/watching-sessions", watcherId)
             .with(user("testUser").roles("USER")))
+
         .andExpect(status().isOk())
         .andExpect(content().string(""));
   }
@@ -75,7 +78,9 @@ class WatchingSessionControllerTest {
         .willReturn(response);
 
     mockMvc.perform(get("/api/contents/{contentId}/watching-sessions", contentId)
+
             .with(user("testUser").roles("USER"))
+
             .param("limit", "20")
             .param("sortBy", "startedAt")
             .param("sortDirection", "DESCENDING"))
@@ -86,6 +91,7 @@ class WatchingSessionControllerTest {
   void findByContent_limit_누락시_400() throws Exception {
     mockMvc.perform(get("/api/contents/{contentId}/watching-sessions", contentId)
             .with(user("testUser").roles("USER"))
+
             .param("sortBy", "startedAt")
             .param("sortDirection", "DESCENDING"))
         .andExpect(status().isBadRequest());
@@ -94,7 +100,9 @@ class WatchingSessionControllerTest {
   @Test
   void findByContent_limit_범위초과시_400() throws Exception {
     mockMvc.perform(get("/api/contents/{contentId}/watching-sessions", contentId)
+
             .with(user("testUser").roles("USER"))
+
             .param("limit", "101")
             .param("sortBy", "startedAt")
             .param("sortDirection", "DESCENDING"))
@@ -104,7 +112,9 @@ class WatchingSessionControllerTest {
   @Test
   void findByContent_limit_0이하이면_400() throws Exception {
     mockMvc.perform(get("/api/contents/{contentId}/watching-sessions", contentId)
+
             .with(user("testUser").roles("USER"))
+
             .param("limit", "0")
             .param("sortBy", "startedAt")
             .param("sortDirection", "DESCENDING"))
@@ -114,7 +124,9 @@ class WatchingSessionControllerTest {
   @Test
   void findByContent_sortBy_누락시_400() throws Exception {
     mockMvc.perform(get("/api/contents/{contentId}/watching-sessions", contentId)
+
             .with(user("testUser").roles("USER"))
+
             .param("limit", "20")
             .param("sortDirection", "DESCENDING"))
         .andExpect(status().isBadRequest());
@@ -123,7 +135,9 @@ class WatchingSessionControllerTest {
   @Test
   void findByContent_sortBy_공백이면_400() throws Exception {
     mockMvc.perform(get("/api/contents/{contentId}/watching-sessions", contentId)
+
             .with(user("testUser").roles("USER"))
+
             .param("limit", "20")
             .param("sortBy", "   ")
             .param("sortDirection", "DESCENDING"))
