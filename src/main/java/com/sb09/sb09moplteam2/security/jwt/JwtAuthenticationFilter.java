@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (token != null && jwtProvider.isValid(token)) {
       UUID sessionId = jwtProvider.getSessionId(token);
       if (sessionId != null && sessionBlacklistService.isBlacklisted(sessionId)) {
-        filterChain.doFilter(request, response);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         return;
       }
       List<SimpleGrantedAuthority> authorities = List.of(
