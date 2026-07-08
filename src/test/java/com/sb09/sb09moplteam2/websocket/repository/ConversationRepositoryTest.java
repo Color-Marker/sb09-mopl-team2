@@ -101,16 +101,18 @@ class ConversationRepositoryTest {
     Conversation c1 = createConversationWithParticipants(myUserId, UUID.randomUUID(), sameTime);
     Conversation c2 = createConversationWithParticipants(myUserId, UUID.randomUUID(), sameTime);
     em.flush();
+    em.clear();
 
-    // c1을 커서로 조회했을 때와 c2를 커서로 조회했을 때를 각각 확인
+    Conversation c1Reloaded = em.find(Conversation.class, c1.getId());
+    Conversation c2Reloaded = em.find(Conversation.class, c2.getId());
+
     List<Conversation> resultWithC1AsCursor = conversationRepository.findAllByParticipantUserIdWithCursor(
-        myUserId, sameTime, c1.getId(), PageRequest.of(0, 10));
+        myUserId, c1Reloaded.getLastMessageAt(), c1Reloaded.getId(), PageRequest.of(0, 10));
     List<Conversation> resultWithC2AsCursor = conversationRepository.findAllByParticipantUserIdWithCursor(
-        myUserId, sameTime, c2.getId(), PageRequest.of(0, 10));
+        myUserId, c2Reloaded.getLastMessageAt(), c2Reloaded.getId(), PageRequest.of(0, 10));
 
-    // 둘 중 정확히 하나는 "나머지 하나만" 반환해야 하고, 자기 자신은 포함하면 안 됨
-    assertThat(resultWithC1AsCursor).doesNotContain(c1);
-    assertThat(resultWithC2AsCursor).doesNotContain(c2);
+    assertThat(resultWithC1AsCursor).doesNotContain(c1Reloaded);
+    assertThat(resultWithC2AsCursor).doesNotContain(c2Reloaded);
 
     // 둘의 합집합 크기가 정확히 1이어야 함 (DB가 실제로 정렬한 순서상 "더 작은" 쪽 하나만 나옴)
     int matchedCount = resultWithC1AsCursor.size() + resultWithC2AsCursor.size();

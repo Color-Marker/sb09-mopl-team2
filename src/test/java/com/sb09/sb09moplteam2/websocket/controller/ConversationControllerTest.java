@@ -1,9 +1,17 @@
 package com.sb09.sb09moplteam2.websocket.controller;
 
+import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
+import com.sb09.sb09moplteam2.config.SecurityConfig;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.exception.GlobalExceptionHandler;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
+import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.oauth.CustomOAuth2UserService;
+import com.sb09.sb09moplteam2.security.oauth.OAuth2SignInFailureHandler;
+import com.sb09.sb09moplteam2.security.oauth.OAuth2SignInSuccessHandler;
+import com.sb09.sb09moplteam2.user.mapper.UserMapper;
+import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import com.sb09.sb09moplteam2.websocket.dto.ConversationDto;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.service.ConversationService;
@@ -36,7 +44,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ConversationController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
 class ConversationControllerTest {
 
   @Autowired
@@ -46,6 +54,22 @@ class ConversationControllerTest {
   private ConversationService conversationService;
   @MockitoBean
   private DirectMessageService directMessageService;
+
+  @MockitoBean
+  private JwtProvider jwtProvider;
+  @MockitoBean
+  private JwtSessionRepository jwtSessionRepository;
+  @MockitoBean
+  private UserRepository userRepository;
+  @MockitoBean
+  private UserMapper userMapper;
+  @MockitoBean
+  private CustomOAuth2UserService customOAuth2UserService;
+  @MockitoBean
+  private OAuth2SignInSuccessHandler oAuth2SignInSuccessHandler;
+  @MockitoBean
+  private OAuth2SignInFailureHandler oAuth2SignInFailureHandler;
+
 
   private UUID myUserId;
   private UUID conversationId;
