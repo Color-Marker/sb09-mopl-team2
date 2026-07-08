@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.follow.repository;
 
 import com.sb09.sb09moplteam2.follow.entity.Follow;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -16,5 +17,8 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
 
   // 3. 특정 유저의 팔로워 수 카운트
   long countByFolloweeId(UUID followeeId);
+
+  // 4. 특정 유저를 팔로우한 이력 조회
+  List<Follow> findAllByFollowee_Id(UUID followeeId);
 
 }
