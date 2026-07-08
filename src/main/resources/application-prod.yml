@@ -41,7 +41,5 @@ management:
       enabled: false
 
 mopl:
-  mail:
-    type: smtp
   storage:
     type: s3

@@ -1,5 +1,7 @@
 package com.sb09.sb09moplteam2.config;
 
+import com.sb09.sb09moplteam2.batch.listener.GlobalStepExceptionListener;
+import com.sb09.sb09moplteam2.batch.monitoring.BatchJobMetricsListener;
 import com.sb09.sb09moplteam2.content.batch.sport.SportClient;
 import com.sb09.sb09moplteam2.content.batch.sport.SportProcessor;
 import com.sb09.sb09moplteam2.content.batch.sport.SportReader;
@@ -11,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.context.annotation.Bean;
@@ -25,10 +28,15 @@ public class SportBatchConfig {
   private final PlatformTransactionManager transactionManager;
   private final SportClient sportClient;
   private final ContentRepository contentRepository;
+  private final BatchJobMetricsListener batchJobMetricsListener;
+  private final GlobalStepExceptionListener globalStepExceptionListener;
+  private final RunIdIncrementer globalRunIdIncrementer;
 
   @Bean
   public Job sportsJob() {
     return new JobBuilder("sportsJob", jobRepository)
+        .incrementer(globalRunIdIncrementer)
+        .listener(batchJobMetricsListener)
         .start(sportsStep())
         .build();
   }
@@ -40,6 +48,7 @@ public class SportBatchConfig {
         .reader(sportsReader())
         .processor(sportsProcessor())
         .writer(sportsWriter())
+        .listener(globalStepExceptionListener)
         .build();
   }
 
