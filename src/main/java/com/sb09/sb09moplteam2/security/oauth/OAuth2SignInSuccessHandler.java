@@ -3,6 +3,7 @@ package com.sb09.sb09moplteam2.security.oauth;
 import com.sb09.sb09moplteam2.auth.entity.JwtSession;
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +22,7 @@ public class OAuth2SignInSuccessHandler implements AuthenticationSuccessHandler 
 
   private final JwtProvider jwtProvider;
   private final JwtSessionRepository jwtSessionRepository;
+  private final SessionBlacklistService sessionBlacklistService;
 
   @Value("${mopl.frontend.base-url}")
   private String frontendBaseUrl;
@@ -34,7 +36,10 @@ public class OAuth2SignInSuccessHandler implements AuthenticationSuccessHandler 
     CustomOAuth2User principal = (CustomOAuth2User) authentication.getPrincipal();
 
     List<JwtSession> activeSessions = jwtSessionRepository.findAllByUserIdAndRevokedFalse(principal.getUserId());
-    activeSessions.forEach(JwtSession::revoke);
+    activeSessions.forEach(session -> {
+      session.revoke();
+      sessionBlacklistService.blacklist(session.getId());
+    });
     jwtSessionRepository.saveAll(activeSessions);
 
     String refreshToken = jwtProvider.generateRefreshToken(principal.getUserId());

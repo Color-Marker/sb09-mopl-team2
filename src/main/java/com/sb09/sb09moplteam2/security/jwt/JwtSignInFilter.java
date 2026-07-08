@@ -30,6 +30,7 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
   private final ObjectMapper objectMapper;
+  private final SessionBlacklistService sessionBlacklistService;
 
   public JwtSignInFilter(
       AuthenticationManager authenticationManager,
@@ -37,7 +38,8 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
       JwtSessionRepository jwtSessionRepository,
       UserRepository userRepository,
       UserMapper userMapper,
-      ObjectMapper objectMapper
+      ObjectMapper objectMapper,
+      SessionBlacklistService sessionBlacklistService
   ) {
     super(authenticationManager);
     this.jwtProvider = jwtProvider;
@@ -45,6 +47,7 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
     this.userRepository = userRepository;
     this.userMapper = userMapper;
     this.objectMapper = objectMapper;
+    this.sessionBlacklistService = sessionBlacklistService;
     setFilterProcessesUrl("/api/auth/sign-in");
   }
 
@@ -59,20 +62,23 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
     User user = userRepository.findById(principal.getId())
         .orElseThrow(() -> new IllegalStateException("인증된 사용자를 찾을 수 없습니다."));
 
-    // 기존에 로그인된 세션이 있으면 강제 로그아웃 처리
+    // 기존 세션 revoke + blacklist
     List<JwtSession> activeSessions = jwtSessionRepository.findAllByUserIdAndRevokedFalse(user.getId());
-    activeSessions.forEach(JwtSession::revoke);
+    activeSessions.forEach(session -> {
+      session.revoke();
+      sessionBlacklistService.blacklist(session.getId());
+    });
     jwtSessionRepository.saveAll(activeSessions);
 
-    String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole());
+    // 새 세션 먼저 저장 → sessionId를 access token에 포함
     String refreshToken = jwtProvider.generateRefreshToken(user.getId());
-
-    JwtSession session = new JwtSession(
+    JwtSession newSession = new JwtSession(
         user.getId(),
         refreshToken,
         Instant.now().plusMillis(jwtProvider.getRefreshTokenExpirationMs())
     );
-    jwtSessionRepository.save(session);
+    jwtSessionRepository.save(newSession);
+    String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole(), newSession.getId());
 
     Cookie refreshCookie = new Cookie("REFRESH_TOKEN", refreshToken);
     refreshCookie.setHttpOnly(true);

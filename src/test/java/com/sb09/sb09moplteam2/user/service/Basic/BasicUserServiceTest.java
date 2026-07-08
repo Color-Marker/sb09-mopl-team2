@@ -24,6 +24,7 @@ import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
+import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -62,6 +63,9 @@ class BasicUserServiceTest {
 
   @Mock
   private ApplicationEventPublisher eventPublisher;
+
+  @Mock
+  private SessionBlacklistService sessionBlacklistService;
 
   @InjectMocks
   private BasicUserService basicUserService;
