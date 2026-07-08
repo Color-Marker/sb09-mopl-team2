@@ -65,7 +65,11 @@ public class SecurityConfig {
         .csrf(csrf -> csrf
             .csrfTokenRepository(csrfTokenRepository)
             .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-            .sessionAuthenticationStrategy((authentication, request, response) -> {}))
+            .sessionAuthenticationStrategy((authentication, request, response) -> {})
+            .ignoringRequestMatchers(request -> {
+              String authHeader = request.getHeader("Authorization");
+              return authHeader != null && authHeader.startsWith("Bearer ");
+            }))
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .sessionAuthenticationStrategy((authentication, request, response) -> {})
