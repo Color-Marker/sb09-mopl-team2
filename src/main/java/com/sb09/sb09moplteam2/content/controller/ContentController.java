@@ -16,7 +16,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,7 +27,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -37,13 +41,15 @@ public class ContentController {
   private final ContentService contentService;
 
   @Operation(summary = "[어드민] 콘텐츠 생성")
-  @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<ContentDto> create(
-      @RequestBody @Valid ContentCreateRequest request
+      @RequestPart("request") @Valid ContentCreateRequest request,
+      @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail
   ) {
     log.info("POST /api/contents - type: {}, title: {}", request.type(), request.title());
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(contentService.create(request));
+        .body(contentService.create(request, thumbnail));
   }
 
   @Operation(summary = "콘텐츠 단건 조회")
@@ -56,16 +62,19 @@ public class ContentController {
   }
 
   @Operation(summary = "[어드민] 콘텐츠 수정")
-  @PatchMapping("/{contentId}")
+  @PreAuthorize("hasRole('ADMIN')")
+  @PatchMapping(value = "/{contentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<ContentDto> update(
       @PathVariable UUID contentId,
-      @RequestBody @Valid ContentUpdateRequest request
+      @RequestPart("request") @Valid ContentUpdateRequest request,
+      @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail
   ) {
     log.info("PATCH /api/contents/{}", contentId);
-    return ResponseEntity.ok(contentService.update(contentId, request));
+    return ResponseEntity.ok(contentService.update(contentId, request, thumbnail));
   }
 
   @Operation(summary = "[어드민] 콘텐츠 삭제")
+  @PreAuthorize("hasRole('ADMIN')")
   @DeleteMapping("/{contentId}")
   public ResponseEntity<Void> delete(
       @PathVariable UUID contentId

@@ -12,12 +12,14 @@ import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
+import com.sb09.sb09moplteam2.storage.FileStorageService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Slf4j
@@ -29,16 +31,24 @@ public class ContentService {
   private final ContentRepository contentRepository;
   private final ContentTagRepository contentTagRepository;
   private final ContentMapper contentMapper;
+  private final FileStorageService fileStorageService;
 
   @Transactional
-  public ContentDto create(ContentCreateRequest request) {
+  public ContentDto create(ContentCreateRequest request, MultipartFile thumbnail) {
     log.info("콘텐츠 생성 요청 - type: {}, title: {}", request.type(), request.title());
 
+    String thumbnailUrl = null;
+    if (thumbnail != null && !thumbnail.isEmpty()) {
+      thumbnailUrl = fileStorageService.store(thumbnail);
+    }
     Content content = Content.builder()
         .type(request.type())
+        .externalId("manual-" + UUID.randomUUID())
         .title(request.title())
         .description(request.description())
+        .thumbnailUrl(thumbnailUrl)
         .build();
+
     contentRepository.save(content);
 
     List<ContentTag> tags = request.tags().stream()
@@ -76,7 +86,7 @@ public class ContentService {
   }
 
   @Transactional
-  public ContentDto update(UUID contentId, ContentUpdateRequest request) {
+  public ContentDto update(UUID contentId, ContentUpdateRequest request, MultipartFile thumbnail) {
     log.info("콘텐츠 수정 요청 - contentId: {}", contentId);
 
     Content content = contentRepository.findById(contentId)
@@ -85,7 +95,12 @@ public class ContentService {
           return new ContentNotFoundException();
         });
 
-    content.update(request.title(), request.description());
+    String thumbnailUrl = null;
+    if (thumbnail != null && !thumbnail.isEmpty()) {
+      thumbnailUrl = fileStorageService.store(thumbnail);
+    }
+
+    content.update(request.title(), request.description(), thumbnailUrl);
 
     if (request.tags() != null) {
       contentTagRepository.deleteByContentId(contentId);
