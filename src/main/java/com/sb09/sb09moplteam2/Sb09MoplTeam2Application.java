@@ -14,7 +14,6 @@ public class Sb09MoplTeam2Application {
 
   public static void main(String[] args) {
     SpringApplication.run(Sb09MoplTeam2Application.class, args);
-    System.out.println(System.getenv("SPRING_DATASOURCE_URL"));
   }
 
 }
