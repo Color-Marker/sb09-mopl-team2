@@ -85,9 +85,12 @@ public class Content {
     this.watcherCount = 0L;
   }
 
-  public void update(String title, String description) {
-    if (title != null) this.title = title;
-    if (description != null) this.description = description;
+  public void update(String title, String description, String thumbnailUrl) {
+    this.title = title;
+    this.description = description;
+    if (thumbnailUrl != null) {
+      this.thumbnailUrl = thumbnailUrl;
+    }
   }
 
   public void updateReviewStats(double averageRating, int reviewCount) {

@@ -10,6 +10,7 @@ import com.sb09.sb09moplteam2.auth.service.MailService;
 import com.sb09.sb09moplteam2.exception.auth.InvalidTokenException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import com.sb09.sb09moplteam2.user.dto.response.JwtDto;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;
@@ -39,6 +40,7 @@ public class BasicAuthService implements AuthService {
   private final JwtProvider jwtProvider;
   private final JwtSessionRepository jwtSessionRepository;
   private final UserMapper userMapper;
+  private final SessionBlacklistService sessionBlacklistService;
 
   @Override
   @Transactional
@@ -69,6 +71,9 @@ public class BasicAuthService implements AuthService {
 
     JwtSession session = jwtSessionRepository.findByRefreshTokenAndRevokedFalse(refreshToken)
         .orElseThrow(InvalidTokenException::new);
+
+    // 이전 세션 blacklist 후 revoke
+    sessionBlacklistService.blacklist(session.getId());
     session.revoke();
     jwtSessionRepository.save(session);
 
@@ -76,15 +81,15 @@ public class BasicAuthService implements AuthService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
-    String newAccessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole());
+    // 새 세션 먼저 저장 → sessionId를 access token에 포함
     String newRefreshToken = jwtProvider.generateRefreshToken(user.getId());
-
     JwtSession newSession = new JwtSession(
         user.getId(),
         newRefreshToken,
         Instant.now().plusMillis(jwtProvider.getRefreshTokenExpirationMs())
     );
     jwtSessionRepository.save(newSession);
+    String newAccessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole(), newSession.getId());
 
     JwtDto jwtDto = new JwtDto(userMapper.toDto(user), newAccessToken);
     return new TokenRefreshResult(jwtDto, newRefreshToken);

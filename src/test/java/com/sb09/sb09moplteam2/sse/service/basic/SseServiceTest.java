@@ -106,6 +106,137 @@ class SseServiceTest {
   }
 
   @Test
+  void connectionCheck_모든_emitter에게_핑_전송() throws IOException {
+    SseEmitter emitter1 = mock(SseEmitter.class);
+    SseEmitter emitter2 = mock(SseEmitter.class);
+    given(sseEmitterRepository.findAll()).willReturn(List.of(emitter1, emitter2));
+
+    sseService.connectionCheck();
+
+    verify(emitter1, times(1)).send(anySet());
+    verify(emitter2, times(1)).send(anySet());
+  }
+
+  @Test
+  void connect_lastEventId_없음_핑_전송_실패해도_예외_전파되지_않음() {
+    UUID receiverId = UUID.randomUUID();
+
+    try (MockedConstruction<SseEmitter> mocked = mockConstruction(SseEmitter.class,
+        (mock, context) -> {
+          try {
+            doThrow(new IOException("연결 끊김")).when(mock).send(anySet());
+          } catch (IOException ignored) {
+          }
+        })) {
+
+      SseEmitter result = sseService.connect(receiverId, null);
+
+      assertThat(result).isNotNull();
+      verify(sseEmitterRepository).save(receiverId, result);
+    }
+  }
+
+  @Test
+  void connect_lastEventId_있음_메시지_전송중_예외_발생해도_나머지_메시지_계속_전송() {
+    UUID receiverId = UUID.randomUUID();
+    UUID lastEventId = UUID.randomUUID();
+
+    SseMessage missedMessage1 = mock(SseMessage.class);
+    SseMessage missedMessage2 = mock(SseMessage.class);
+    given(missedMessage1.toEvent()).willReturn(Set.of());
+    given(missedMessage2.toEvent()).willReturn(Set.of());
+
+    given(sseMessageRepository.findAllByEventIdAfterAndReceiverId(lastEventId, receiverId))
+        .willReturn(List.of(missedMessage1, missedMessage2));
+
+    try (MockedConstruction<SseEmitter> mocked = mockConstruction(SseEmitter.class,
+        (mock, context) -> {
+          try {
+            doThrow(new IOException("전송 실패")).when(mock).send(anySet());
+          } catch (IOException ignored) {
+          }
+        })) {
+
+      sseService.connect(receiverId, lastEventId);
+
+      SseEmitter createdEmitter = mocked.constructed().get(0);
+      verify(createdEmitter, times(2)).send(anySet());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+    @Test
+  void send_일부_emitter_전송실패해도_나머지_emitter는_정상_전송() throws IOException {
+    UUID eventId = UUID.randomUUID();
+    UUID receiverId1 = UUID.randomUUID();
+    UUID receiverId2 = UUID.randomUUID();
+    Set<UUID> receiverIds = Set.of(receiverId1, receiverId2);
+    SseMessage payload = new SseMessage(eventId, receiverIds, "notifications", "hello");
+
+    SseEmitter failingEmitter = mock(SseEmitter.class);
+    SseEmitter workingEmitter = mock(SseEmitter.class);
+    doThrow(new IOException("실패")).when(failingEmitter).send(anySet());
+
+    given(sseEmitterRepository.findAllByReceiverIdsIn(receiverIds))
+        .willReturn(List.of(failingEmitter, workingEmitter));
+
+    sseService.send(payload);
+
+    verify(failingEmitter).send(anySet());
+    verify(workingEmitter).send(anySet());
+  }
+
+  @Test
+  void connect_onCompletion_콜백_실행시_emitter_삭제() {
+    UUID receiverId = UUID.randomUUID();
+
+    try (MockedConstruction<SseEmitter> mocked = mockConstruction(SseEmitter.class)) {
+      SseEmitter result = sseService.connect(receiverId, null);
+      SseEmitter createdEmitter = mocked.constructed().get(0);
+
+      ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+      verify(createdEmitter).onCompletion(captor.capture());
+      captor.getValue().run();
+
+      verify(sseEmitterRepository).delete(receiverId, result);
+    }
+  }
+
+  @Test
+  void connect_onTimeout_콜백_실행시_emitter_삭제() {
+    UUID receiverId = UUID.randomUUID();
+
+    try (MockedConstruction<SseEmitter> mocked = mockConstruction(SseEmitter.class)) {
+      SseEmitter result = sseService.connect(receiverId, null);
+      SseEmitter createdEmitter = mocked.constructed().get(0);
+
+      ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+      verify(createdEmitter).onTimeout(captor.capture());
+      captor.getValue().run();
+
+      verify(sseEmitterRepository).delete(receiverId, result);
+    }
+  }
+
+  @Test
+  void connect_onError_콜백_실행시_emitter_삭제() {
+    UUID receiverId = UUID.randomUUID();
+
+    try (MockedConstruction<SseEmitter> mocked = mockConstruction(SseEmitter.class)) {
+      SseEmitter result = sseService.connect(receiverId, null);
+      SseEmitter createdEmitter = mocked.constructed().get(0);
+
+      ArgumentCaptor<java.util.function.Consumer<Throwable>> captor =
+          ArgumentCaptor.forClass(java.util.function.Consumer.class);
+      verify(createdEmitter).onError(captor.capture());
+      captor.getValue().accept(new RuntimeException("test"));
+
+      verify(sseEmitterRepository).delete(receiverId, result);
+    }
+  }
+
+  @Test
   void send_메시지_저장_redis_발행() throws IOException {
     UUID receiverId1 = UUID.randomUUID();
     UUID receiverId2 = UUID.randomUUID();

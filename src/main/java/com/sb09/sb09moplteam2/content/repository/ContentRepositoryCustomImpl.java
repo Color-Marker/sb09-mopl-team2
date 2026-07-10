@@ -67,16 +67,16 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
               ? content.createdAt.gt(cursorValue)
               .or(content.createdAt.eq(cursorValue).and(content.id.gt(idAfter)))
               : content.createdAt.lt(cursorValue)
-                  .or(content.createdAt.eq(cursorValue).and(content.id.lt(idAfter)))
+                  .or(content.createdAt.eq(cursorValue).and(content.id.gt(idAfter)))
           );
         }
-        case "watchedCount" -> {
+        case "watcherCount" -> {
           Long cursorValue = Long.parseLong(cursor);
           builder.and(isAsc
               ? content.watcherCount.gt(cursorValue)
               .or(content.watcherCount.eq(cursorValue).and(content.id.gt(idAfter)))
               : content.watcherCount.lt(cursorValue)
-                  .or(content.watcherCount.eq(cursorValue).and(content.id.lt(idAfter)))
+                  .or(content.watcherCount.eq(cursorValue).and(content.id.gt(idAfter)))
           );
         }
         case "rate" -> {
@@ -85,7 +85,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
               ? content.averageRating.gt(cursorValue)
               .or(content.averageRating.eq(cursorValue).and(content.id.gt(idAfter)))
               : content.averageRating.lt(cursorValue)
-                  .or(content.averageRating.eq(cursorValue).and(content.id.lt(idAfter)))
+                  .or(content.averageRating.eq(cursorValue).and(content.id.gt(idAfter)))
           );
         }
       }
@@ -94,7 +94,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
     // 정렬
     boolean isAsc = "ASCENDING".equals(sortDirection);
     OrderSpecifier<?> orderSpecifier = switch (sortBy) {
-      case "watchedCount" -> isAsc ? content.watcherCount.asc() : content.watcherCount.desc();
+      case "watcherCount" -> isAsc ? content.watcherCount.asc() : content.watcherCount.desc();
       case "rate" -> isAsc ? content.averageRating.asc() : content.averageRating.desc();
       default -> isAsc ? content.createdAt.asc() : content.createdAt.desc();
     };
@@ -152,7 +152,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
     if (hasNext) {
       Content last = contents.get(contents.size() - 1);
       nextCursor = switch (sortBy) {
-        case "watchedCount" -> String.valueOf(last.getWatcherCount());
+        case "watcherCount" -> String.valueOf(last.getWatcherCount());
         case "rate" -> String.valueOf(last.getAverageRating());
         default -> last.getCreatedAt().toString();
       };

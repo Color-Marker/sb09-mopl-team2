@@ -22,12 +22,12 @@ public class JwtProvider {
 
   private final JwtProperties jwtProperties;
 
-  public String generateAccessToken(UUID userId, Role role) {
-    return generateToken(userId, role, jwtProperties.getAccessToken().getSecret(), jwtProperties.getAccessToken().getExpirationMs());
+  public String generateAccessToken(UUID userId, Role role, UUID sessionId) {
+    return generateToken(userId, role, sessionId, jwtProperties.getAccessToken().getSecret(), jwtProperties.getAccessToken().getExpirationMs());
   }
 
   public String generateRefreshToken(UUID userId) {
-    return generateToken(userId, null, jwtProperties.getRefreshToken().getSecret(), jwtProperties.getRefreshToken().getExpirationMs());
+    return generateToken(userId, null, null, jwtProperties.getRefreshToken().getSecret(), jwtProperties.getRefreshToken().getExpirationMs());
   }
 
   public UUID getUserId(String accessToken) {
@@ -37,6 +37,15 @@ public class JwtProvider {
   public Role getRole(String accessToken) {
     try {
       return Role.valueOf(getClaims(accessToken, jwtProperties.getAccessToken().getSecret()).getStringClaim("role"));
+    } catch (ParseException e) {
+      throw new IllegalStateException("토큰 파싱에 실패했습니다.", e);
+    }
+  }
+
+  public UUID getSessionId(String accessToken) {
+    try {
+      String sessionId = getClaims(accessToken, jwtProperties.getAccessToken().getSecret()).getStringClaim("sessionId");
+      return sessionId != null ? UUID.fromString(sessionId) : null;
     } catch (ParseException e) {
       throw new IllegalStateException("토큰 파싱에 실패했습니다.", e);
     }
@@ -58,7 +67,7 @@ public class JwtProvider {
     return jwtProperties.getRefreshToken().getExpirationMs();
   }
 
-  private String generateToken(UUID userId, Role role, String secret, long expirationMs) {
+  private String generateToken(UUID userId, Role role, UUID sessionId, String secret, long expirationMs) {
     try {
       JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
           .subject(userId.toString())
@@ -66,6 +75,9 @@ public class JwtProvider {
           .expirationTime(Date.from(Instant.now().plusMillis(expirationMs)));
       if (role != null) {
         claimsBuilder.claim("role", role.name());
+      }
+      if (sessionId != null) {
+        claimsBuilder.claim("sessionId", sessionId.toString());
       }
       SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsBuilder.build());
       signedJWT.sign(new MACSigner(secret.getBytes()));

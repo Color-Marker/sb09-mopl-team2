@@ -5,10 +5,8 @@ import com.sb09.sb09moplteam2.exception.ErrorCode;
 import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.exception.follow.*;
 import com.sb09.sb09moplteam2.follow.dto.data.FollowDto;
-import com.sb09.sb09moplteam2.follow.dto.request.FollowRequest;
 import com.sb09.sb09moplteam2.follow.entity.Follow;
 import com.sb09.sb09moplteam2.follow.repository.FollowRepository;
-import com.sb09.sb09moplteam2.notification.service.NotificationService;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +24,6 @@ public class FollowService {
   private final FollowRepository followRepository;
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher;
-  private final NotificationService notificationService;
 
   // 1. 팔로우 하기
   @Transactional
@@ -48,7 +45,6 @@ public class FollowService {
     Follow follow = new Follow(follower, followee);
     Follow savedFollow = followRepository.save(follow);
 
-    notificationService.createFollowNotification(followeeId, followerId);
 
     eventPublisher.publishEvent(
         new FollowedEvent(followeeId, followerId)

@@ -99,4 +99,41 @@ class CustomOAuth2UserServiceTest {
     assertThatThrownBy(() -> customOAuth2UserService.resolveUser("naver", Map.of()))
         .isInstanceOf(OAuth2AuthenticationException.class);
   }
+
+  @Test
+  void 잠긴_계정으로_구글_로그인_시도하면_OAuth2AuthenticationException을_던진다() {
+    User lockedUser = new User("잠긴유저", "locked@gmail.com", "providerId123", Provider.GOOGLE);
+    ReflectionTestUtils.setField(lockedUser, "id", UUID.randomUUID());
+    lockedUser.changeLocked(true);
+
+    given(userRepository.findByEmail("locked@gmail.com")).willReturn(Optional.of(lockedUser));
+
+    Map<String, Object> attributes = Map.of(
+        "sub", "1234567890",
+        "email", "locked@gmail.com",
+        "name", "잠긴유저"
+    );
+
+    assertThatThrownBy(() -> customOAuth2UserService.resolveUser("google", attributes))
+        .isInstanceOf(OAuth2AuthenticationException.class);
+  }
+
+  @Test
+  void 카카오_로그인시_properties가_null이면_이름이_카카오사용자로_설정된다() {
+    given(userRepository.findByEmail(any(String.class))).willReturn(Optional.empty());
+    given(userRepository.save(any(User.class))).willAnswer(invocation -> {
+      User user = invocation.getArgument(0);
+      ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+      return user;
+    });
+
+    Map<String, Object> attributes = new java.util.HashMap<>();
+    attributes.put("id", 999L);
+    attributes.put("properties", null);
+
+    OAuth2User result = customOAuth2UserService.resolveUser("kakao", attributes);
+
+    assertThat(result).isNotNull();
+    verify(userRepository).findByEmail("카카오사용자_999@kakao.com");
+  }
 }

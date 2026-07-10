@@ -31,7 +31,6 @@ class FollowServiceTest {
 
   @Mock private FollowRepository followRepository;
   @Mock private UserRepository userRepository;
-  @Mock private NotificationService notificationService;
   @Mock private ApplicationEventPublisher eventPublisher;
 
   // 테스트에 사용할 고정 가짜 ID들
@@ -66,7 +65,6 @@ class FollowServiceTest {
     assertThat(result.getFollowerId()).isEqualTo(followerId);
     assertThat(result.getFolloweeId()).isEqualTo(followeeId);
 
-    verify(notificationService, times(1)).createFollowNotification(followeeId, followerId);
     verify(eventPublisher, times(1)).publishEvent(any(Object.class));
   }
 

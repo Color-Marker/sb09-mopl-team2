@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.content.dto.data.ContentDto;
@@ -20,6 +21,7 @@ import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
+import com.sb09.sb09moplteam2.storage.FileStorageService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 class ContentServiceTest {
@@ -44,6 +47,9 @@ class ContentServiceTest {
 
   @Mock
   private ContentMapper contentMapper;
+
+  @Mock
+  private FileStorageService fileStorageService;
 
   @Test
   @DisplayName("콘텐츠 생성 성공")
@@ -61,12 +67,39 @@ class ContentServiceTest {
     );
     given(contentMapper.toDto(any(Content.class), anyList())).willReturn(expectedDto);
 
-    ContentDto result = contentService.create(request);
+    ContentDto result = contentService.create(request, null);
 
     assertThat(result.title()).isEqualTo("테스트 영화");
     verify(contentRepository).save(any(Content.class));
     verify(contentTagRepository).saveAll(anyList());
+    verify(fileStorageService, never()).store(any());
   }
+
+  @Test
+  @DisplayName("썸네일 파일이 있으면 스토리지에 업로드하고 URL을 저장한다")
+  void 콘텐츠_생성시_썸네일이_있으면_업로드된다() {
+    ContentCreateRequest request = new ContentCreateRequest(
+        ContentType.movie, "테스트 영화", "설명", List.of("액션")
+    );
+    MockMultipartFile thumbnail = new MockMultipartFile(
+        "thumbnail", "poster.jpg", "image/jpeg", "dummy-image-content".getBytes());
+
+    given(fileStorageService.store(thumbnail)).willReturn("/files/poster.jpg");
+    given(contentRepository.save(any(Content.class))).willAnswer(invocation -> invocation.getArgument(0));
+    given(contentTagRepository.saveAll(anyList())).willReturn(List.of());
+
+    ContentDto expectedDto = new ContentDto(
+        UUID.randomUUID(), ContentType.movie, "테스트 영화", "설명",
+        "/files/poster.jpg", List.of("액션"), 0.0, 0, 0L
+    );
+    given(contentMapper.toDto(any(Content.class), anyList())).willReturn(expectedDto);
+
+    ContentDto result = contentService.create(request, thumbnail);
+
+    assertThat(result.thumbnailUrl()).isEqualTo("/files/poster.jpg");
+    verify(fileStorageService).store(thumbnail);
+  }
+
 
   @Test
   @DisplayName("콘텐츠 목록 조회 성공")
@@ -130,12 +163,37 @@ class ContentServiceTest {
     );
     given(contentMapper.toDto(content, List.of())).willReturn(expectedDto);
 
-    ContentDto result = contentService.update(contentId, request);
+    ContentDto result = contentService.update(contentId, request, null);
 
     assertThat(result.title()).isEqualTo("수정된 제목");
-    verify(content).update("수정된 제목", "수정된 설명");
+    verify(content).update("수정된 제목", "수정된 설명", null);
     verify(contentTagRepository).deleteByContentId(contentId);
     verify(contentTagRepository).saveAll(anyList());
+    verify(fileStorageService, never()).store(any());
+  }
+
+  @Test
+  @DisplayName("수정 시 새 썸네일 파일이 있으면 업로드 후 교체한다")
+  void 콘텐츠_수정시_썸네일이_있으면_교체된다() {
+    UUID contentId = UUID.randomUUID();
+    Content content = mock(Content.class);
+    ContentUpdateRequest request = new ContentUpdateRequest("수정된 제목", "수정된 설명", List.of());
+    MockMultipartFile thumbnail = new MockMultipartFile(
+        "thumbnail", "new-poster.jpg", "image/jpeg", "dummy".getBytes());
+
+    given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
+    given(fileStorageService.store(thumbnail)).willReturn("/files/new-poster.jpg");
+    given(contentTagRepository.findByContentId(contentId)).willReturn(List.of());
+    ContentDto expectedDto = new ContentDto(
+        contentId, ContentType.movie, "수정된 제목", "수정된 설명",
+        "/files/new-poster.jpg", List.of(), 0.0, 0, 0L
+    );
+    given(contentMapper.toDto(content, List.of())).willReturn(expectedDto);
+
+    ContentDto result = contentService.update(contentId, request, thumbnail);
+
+    assertThat(result.thumbnailUrl()).isEqualTo("/files/new-poster.jpg");
+    verify(content).update("수정된 제목", "수정된 설명", "/files/new-poster.jpg");
   }
 
   @Test
@@ -146,10 +204,9 @@ class ContentServiceTest {
 
     given(contentRepository.findById(contentId)).willReturn(Optional.empty());
 
-    assertThatThrownBy(() -> contentService.update(contentId, request))
+    assertThatThrownBy(() -> contentService.update(contentId, request, null))
         .isInstanceOf(ContentNotFoundException.class);
   }
-
   @Test
   @DisplayName("콘텐츠 삭제 성공")
   void 콘텐츠_삭제에_성공하면_콘텐츠가_삭제된다() {
