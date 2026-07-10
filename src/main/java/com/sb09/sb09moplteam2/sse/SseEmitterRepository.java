@@ -3,7 +3,6 @@ package com.sb09.sb09moplteam2.sse;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,11 +25,6 @@ public class SseEmitterRepository {
     });
     return sseEmitter;
   }
-
-  public Optional<List<SseEmitter>> findByReceiverId(UUID receiverId) {
-    return Optional.ofNullable(data.get(receiverId));
-  }
-
   public List<SseEmitter> findAllByReceiverIdsIn(Collection<UUID> receiverIds) {
     return data.entrySet().stream()
         .filter(entry -> receiverIds.contains(entry.getKey()))
