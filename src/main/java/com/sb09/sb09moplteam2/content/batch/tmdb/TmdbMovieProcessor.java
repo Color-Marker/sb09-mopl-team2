@@ -1,31 +1,33 @@
 package com.sb09.sb09moplteam2.content.batch.tmdb;
 
+import com.sb09.sb09moplteam2.content.batch.ContentAndTags;
 import com.sb09.sb09moplteam2.content.batch.tmdb.dto.TmdbEventResponse;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
 
 @Slf4j
 @RequiredArgsConstructor
-public class TmdbMovieProcessor implements ItemProcessor<TmdbEventResponse, Content> {
+public class TmdbMovieProcessor implements ItemProcessor<TmdbEventResponse, ContentAndTags> {
 
   private final ContentRepository contentRepository;
   private final ContentType contentType;
 
 
   @Override
-  public Content process(TmdbEventResponse item) {
+  public ContentAndTags process(TmdbEventResponse item) {
     if (contentRepository.findByTypeAndExternalId(
         contentType, String.valueOf(item.id())).isPresent()) {
       log.info("이미 존재하는 콘텐츠 skip - externalId: {}", item.id());
       return null;
     }
 
-    return Content.builder()
+    Content content = Content.builder()
         .type(contentType)
         .externalId(String.valueOf(item.id()))
         .title(contentType == ContentType.movie ? item.title() : item.name())
@@ -36,6 +38,10 @@ public class TmdbMovieProcessor implements ItemProcessor<TmdbEventResponse, Cont
         .releaseDate(parseDate(item.releaseDate()))
         .status("RELEASE")
         .build();
+
+    List<String> tags = TmdbGenreMapper.toTagNames(item.genreIds());
+
+    return new ContentAndTags(content, tags);
   }
 
   private LocalDate parseDate(String date) {
