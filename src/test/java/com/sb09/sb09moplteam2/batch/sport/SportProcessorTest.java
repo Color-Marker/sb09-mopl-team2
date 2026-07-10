@@ -3,6 +3,7 @@ package com.sb09.sb09moplteam2.batch.sport;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
+import com.sb09.sb09moplteam2.content.batch.ContentAndTags;
 import com.sb09.sb09moplteam2.content.batch.sport.SportProcessor;
 import com.sb09.sb09moplteam2.content.batch.sport.dto.SportsEventResponse;
 import com.sb09.sb09moplteam2.content.entity.Content;
@@ -35,7 +36,7 @@ class SportProcessorTest {
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
-    Content result = processor.process(item);
+    ContentAndTags result = processor.process(item);
 
     assertThat(result).isNull();
   }
@@ -49,14 +50,14 @@ class SportProcessorTest {
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
-    Content result = processor.process(item);
+    ContentAndTags result = processor.process(item);
 
     assertThat(result).isNotNull();
-    assertThat(result.getType()).isEqualTo(ContentType.sport);
-    assertThat(result.getExternalId()).isEqualTo("2001");
-    assertThat(result.getTitle()).isEqualTo("결승전");
-    assertThat(result.getDescription()).isEqualTo("설명입니다");
-    assertThat(result.getThumbnailUrl()).isEqualTo("thumb.jpg");
+    assertThat(result.content().getType()).isEqualTo(ContentType.sport);
+    assertThat(result.content().getExternalId()).isEqualTo("2001");
+    assertThat(result.content().getTitle()).isEqualTo("결승전");
+    assertThat(result.content().getDescription()).isEqualTo("설명입니다");
+    assertThat(result.content().getThumbnailUrl()).isEqualTo("thumb.jpg");
   }
 
   @Test
@@ -69,10 +70,10 @@ class SportProcessorTest {
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
-    Content result = processor.process(item);
+    ContentAndTags result = processor.process(item);
 
-    assertThat(result.getStatus()).isEqualTo("UPCOMING");
-    assertThat(result.getReleaseDate()).isEqualTo(LocalDate.parse(futureDate));
+    assertThat(result.content().getStatus()).isEqualTo("UPCOMING");
+    assertThat(result.content().getReleaseDate()).isEqualTo(LocalDate.parse(futureDate));
   }
 
   @Test
@@ -85,10 +86,10 @@ class SportProcessorTest {
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
-    Content result = processor.process(item);
+    ContentAndTags result = processor.process(item);
 
-    assertThat(result.getStatus()).isEqualTo("RELEASE");
-    assertThat(result.getReleaseDate()).isEqualTo(LocalDate.parse(pastDate));
+    assertThat(result.content().getStatus()).isEqualTo("RELEASE");
+    assertThat(result.content().getReleaseDate()).isEqualTo(LocalDate.parse(pastDate));
   }
 
   @Test
@@ -101,9 +102,9 @@ class SportProcessorTest {
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
-    Content result = processor.process(item);
+    ContentAndTags result = processor.process(item);
 
-    assertThat(result.getStatus()).isEqualTo("RELEASE");
+    assertThat(result.content().getStatus()).isEqualTo("RELEASE");
   }
 
   @Test
@@ -115,10 +116,10 @@ class SportProcessorTest {
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
-    Content result = processor.process(item);
+    ContentAndTags result = processor.process(item);
 
-    assertThat(result.getReleaseDate()).isNull();
-    assertThat(result.getStatus()).isEqualTo("RELEASE");
+    assertThat(result.content().getReleaseDate()).isNull();
+    assertThat(result.content().getStatus()).isEqualTo("RELEASE");
   }
 
   @Test
@@ -130,10 +131,10 @@ class SportProcessorTest {
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
-    Content result = processor.process(item);
+    ContentAndTags result = processor.process(item);
 
-    assertThat(result.getReleaseDate()).isNull();
-    assertThat(result.getStatus()).isEqualTo("RELEASE");
+    assertThat(result.content().getReleaseDate()).isNull();
+    assertThat(result.content().getStatus()).isEqualTo("RELEASE");
   }
 
   @Test
@@ -145,9 +146,37 @@ class SportProcessorTest {
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
-    Content result = processor.process(item);
+    ContentAndTags result = processor.process(item);
 
-    assertThat(result.getReleaseDate()).isNull();
-    assertThat(result.getStatus()).isEqualTo("RELEASE");
+    assertThat(result.content().getReleaseDate()).isNull();
+    assertThat(result.content().getStatus()).isEqualTo("RELEASE");
+  }
+
+  @Test
+  void league가_있으면_태그로_변환된다() {
+    SportsEventResponse item = new SportsEventResponse(
+        "6001", "경기", "설명", "thumb.jpg", "2026-08-01", "축구");
+    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "6001"))
+        .willReturn(Optional.empty());
+
+    SportProcessor processor = new SportProcessor(contentRepository);
+
+    ContentAndTags result = processor.process(item);
+
+    assertThat(result.tags()).containsExactly("축구");
+  }
+
+  @Test
+  void league가_없으면_빈_태그_목록을_반환한다() {
+    SportsEventResponse item = new SportsEventResponse(
+        "6002", "경기", "설명", "thumb.jpg", "2026-08-01", null);
+    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "6002"))
+        .willReturn(Optional.empty());
+
+    SportProcessor processor = new SportProcessor(contentRepository);
+
+    ContentAndTags result = processor.process(item);
+
+    assertThat(result.tags()).isEmpty();
   }
 }
