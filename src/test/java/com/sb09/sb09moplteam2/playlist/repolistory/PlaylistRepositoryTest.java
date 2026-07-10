@@ -227,4 +227,47 @@ class PlaylistRepositoryTest {
 
     assertThat(result).hasSize(3);
   }
+
+  @Test
+  void updatedAt_커서_기준으로_다음_페이지를_오름차순으로_조회한다() {
+    User owner = saveUser("우디", "woody@mopl.io");
+    Playlist p1 = savePlaylist("첫번째", "설명", owner);
+    Playlist p2 = savePlaylist("두번째", "설명", owner);
+    Playlist p3 = savePlaylist("세번째", "설명", owner);
+
+    Instant now = Instant.now();
+    forceUpdatedAt(p1, now.minus(3, ChronoUnit.MINUTES));
+    forceUpdatedAt(p2, now.minus(2, ChronoUnit.MINUTES));
+    forceUpdatedAt(p3, now.minus(1, ChronoUnit.MINUTES));
+
+    List<Playlist> result = playlistRepository.findPlaylistsWithCursor(
+        null, null, null,
+        now.minus(3, ChronoUnit.MINUTES).toString(), p1.getId(),
+        10, "ASCENDING", "updatedAt");
+
+    assertThat(result).extracting(Playlist::getTitle)
+        .containsExactly("두번째", "세번째");
+  }
+
+  @Test
+  void subscriberCount_커서_기준으로_다음_페이지를_오름차순으로_조회한다() {
+    User owner = saveUser("우디", "woody@mopl.io");
+    Playlist p1 = savePlaylist("첫번째", "설명", owner);
+    Playlist p2 = savePlaylist("두번째", "설명", owner);
+    Playlist p3 = savePlaylist("세번째", "설명", owner);
+
+    p2.incrementSubscriberCount();
+    p3.incrementSubscriberCount();
+    p3.incrementSubscriberCount();
+    entityManager.flush();
+    entityManager.clear();
+
+    p1 = playlistRepository.findById(p1.getId()).orElseThrow();
+
+    List<Playlist> result = playlistRepository.findPlaylistsWithCursor(
+        null, null, null, "0", p1.getId(), 10, "ASCENDING", "subscriberCount");
+
+    assertThat(result).extracting(Playlist::getTitle)
+        .containsExactly("두번째", "세번째");
+  }
 }

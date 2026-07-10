@@ -12,10 +12,13 @@ import static org.mockito.Mockito.never;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
+import com.sb09.sb09moplteam2.exception.content.Duplicate_Content;
 import com.sb09.sb09moplteam2.exception.playlist.DuplicateSubscribeException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistForbiddenException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistNotFoundException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
+import com.sb09.sb09moplteam2.follow.repository.FollowRepository;
 import com.sb09.sb09moplteam2.playlist.dto.data.PlaylistDto;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistCreatedRequest;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistUpdateRequest;
@@ -38,6 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class PlaylistServiceTest {
@@ -54,6 +58,10 @@ class PlaylistServiceTest {
   private UserRepository userRepository;
   @Mock
   private PlaylistMapper playlistMapper;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
+  @Mock
+  private FollowRepository followRepository;
 
   @InjectMocks
   private PlaylistService playlistService;
@@ -355,7 +363,7 @@ class PlaylistServiceTest {
         .willReturn(true);
 
     assertThatThrownBy(() -> playlistService.addContent(playlistId, contentId, ownerId))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(Duplicate_Content.class);
   }
 
   @Test
@@ -374,7 +382,7 @@ class PlaylistServiceTest {
     given(contentRepository.findById(contentId)).willReturn(Optional.empty());
 
     assertThatThrownBy(() -> playlistService.addContent(playlistId, contentId, ownerId))
-        .isInstanceOf(NoSuchElementException.class);
+        .isInstanceOf(ContentNotFoundException.class);
   }
 
   @Test
