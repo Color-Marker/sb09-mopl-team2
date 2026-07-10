@@ -3,6 +3,7 @@ package com.sb09.sb09moplteam2.playlist.service;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.event.message.FollowUserWorkEvent;
 import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
 import com.sb09.sb09moplteam2.exception.content.Duplicate_Content;
 import com.sb09.sb09moplteam2.event.message.SubsPlaylistWorkEvent;
@@ -11,6 +12,8 @@ import com.sb09.sb09moplteam2.exception.playlist.DuplicateSubscribeException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistForbiddenException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistNotFoundException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
+import com.sb09.sb09moplteam2.follow.entity.Follow;
+import com.sb09.sb09moplteam2.follow.repository.FollowRepository;
 import com.sb09.sb09moplteam2.playlist.dto.data.PlaylistDto;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistCreatedRequest;
 import com.sb09.sb09moplteam2.playlist.dto.request.PlaylistUpdateRequest;
@@ -28,6 +31,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,6 +48,7 @@ public class PlaylistService {
   private final PlaylistItemRepository playlistItemRepository;
   private final PlaylistSubscriptionRepository playlistSubscriptionRepository;
   private final ContentRepository contentRepository;
+  private final FollowRepository followRepository;
   private final UserRepository userRepository;
   private final PlaylistMapper playlistMapper;
   private final ApplicationEventPublisher eventPublisher;
@@ -60,6 +65,15 @@ public class PlaylistService {
     playlistRepository.save(playlist);
     log.info("플레이리스트 생성 완료 - playlistId: {}", playlist.getId());
     List<PlaylistItem> items = playlistItemRepository.findByPlaylistIdOrderByOrderIndex(playlist.getId());
+
+    List<Follow> followList = followRepository.findAllByFollowee_Id(ownerId);
+    Set<UUID> followerIds = followList.stream()
+        .map(follow -> follow.getFollower().getId())
+        .collect(Collectors.toSet());
+    eventPublisher.publishEvent(
+        new FollowUserWorkEvent(followerIds, ownerId, playlist.getId())
+    );
+
     return playlistMapper.toDto(playlist, items, false);
   }
 
