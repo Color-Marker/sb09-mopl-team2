@@ -174,7 +174,7 @@ class PlaylistRepositoryTest {
     Playlist p2 = savePlaylist("두번째", "설명", owner);
     Playlist p3 = savePlaylist("세번째", "설명", owner);
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
     forceUpdatedAt(p1, now.minus(3, ChronoUnit.MINUTES));
     forceUpdatedAt(p2, now.minus(2, ChronoUnit.MINUTES));
     forceUpdatedAt(p3, now.minus(1, ChronoUnit.MINUTES));
