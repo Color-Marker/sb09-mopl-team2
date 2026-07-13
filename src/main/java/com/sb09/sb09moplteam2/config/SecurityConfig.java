@@ -30,6 +30,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -74,11 +75,13 @@ public class SecurityConfig {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .sessionAuthenticationStrategy((authentication, request, response) -> {})
         )
+
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/", "/index.html", "/favicon.svg", "/assets/**", "/error", "/files/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+            .requestMatchers("/actuator/**").permitAll()
             .anyRequest().authenticated()
         )
         .logout(logout -> logout

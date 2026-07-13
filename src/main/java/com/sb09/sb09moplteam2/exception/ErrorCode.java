@@ -48,6 +48,7 @@ public enum ErrorCode {
   DIRECT_MESSAGE_NOT_FOUND("존재하지 않는 메시지입니다.", HttpStatus.NOT_FOUND),
   WATCHING_SESSION_NOT_FOUND("존재하지 않는 시청 세션입니다.", HttpStatus.NOT_FOUND),
 
+
   // content 에러 코드
   CONTENT_NOT_FOUND("콘텐츠를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   DUPLICATE_CONTENT("이미 추가된 콘텐츠입니다", HttpStatus.CONFLICT),
