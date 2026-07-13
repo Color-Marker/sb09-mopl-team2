@@ -24,10 +24,9 @@ class TmdbMovieReaderTest {
   @Test
   @DisplayName("movie 데이터를 순서대로 읽는다")
   void read_movie_데이터를_순서대로_읽는다() {
-    TmdbEventResponse item1 = new TmdbEventResponse(1L, "영화1", null, "줄거리1", null, null);
-    TmdbEventResponse item2 = new TmdbEventResponse(2L, "영화2", null, "줄거리2", null, null);
+    TmdbEventResponse item1 = new TmdbEventResponse(1L, "영화1", null, "줄거리1", null, null, List.of(28));
+    TmdbEventResponse item2 = new TmdbEventResponse(2L, "영화2", null, "줄거리2", null, null, List.of(35));
     TmdbPageResponse<TmdbEventResponse> page = new TmdbPageResponse<>(List.of(item1, item2), 1, 1);
-//                                                                  results              page totalPages
     given(tmdbClient.fetchMovies(1)).willReturn(page);
 
     TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.movie);
@@ -44,7 +43,7 @@ class TmdbMovieReaderTest {
   @Test
   @DisplayName("tvSeries 데이터를 순서대로 읽는다")
   void read_tvSeries_데이터를_순서대로_읽는다() {
-    TmdbEventResponse item = new TmdbEventResponse(1L, null, "드라마1", "줄거리", null, null);
+    TmdbEventResponse item = new TmdbEventResponse(1L, null, "드라마1", "줄거리", null, null, List.of(18));
     TmdbPageResponse<TmdbEventResponse> page = new TmdbPageResponse<>(List.of(item), 1, 1);
 
     given(tmdbClient.fetchTvSeries(1)).willReturn(page);
