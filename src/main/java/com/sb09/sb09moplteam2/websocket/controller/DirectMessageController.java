@@ -49,7 +49,7 @@ public class DirectMessageController {
 
     // 대화방 구독자 전체에게 브로드캐스트
     messagingTemplate.convertAndSend(
-        "/topic/conversations/" + conversationId,
+        "/sub/conversations/" + conversationId,
         response
     );
   }
