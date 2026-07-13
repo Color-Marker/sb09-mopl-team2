@@ -81,6 +81,10 @@ public class BasicAuthService implements AuthService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
+    if (user.isLocked()) {
+      throw new InvalidTokenException();
+    }
+
     // 새 세션 먼저 저장 → sessionId를 access token에 포함
     String newRefreshToken = jwtProvider.generateRefreshToken(user.getId());
     JwtSession newSession = new JwtSession(
