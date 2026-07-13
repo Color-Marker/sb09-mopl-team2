@@ -19,6 +19,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -100,9 +101,13 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
       HttpServletResponse response,
       AuthenticationException failed
   ) throws IOException {
+    String message = failed instanceof LockedException
+        ? "잠긴 계정입니다. 관리자에게 문의해주세요."
+        : "이메일 또는 비밀번호가 올바르지 않습니다.";
+
     ErrorResponse errorResponse = new ErrorResponse(
         failed.getClass().getSimpleName(),
-        "이메일 또는 비밀번호가 올바르지 않습니다.",
+        message,
         Map.of()
     );
 
