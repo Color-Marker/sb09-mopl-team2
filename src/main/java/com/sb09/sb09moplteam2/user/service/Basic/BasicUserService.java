@@ -7,6 +7,8 @@ import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.event.message.RoleUpdatedEvent;
+import com.sb09.sb09moplteam2.exception.ErrorCode;
+import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
@@ -81,6 +83,12 @@ public class BasicUserService implements UserService {
 
   @Override
   public CursorResponse<UserDto> findUsers(UserSearchCondition condition) {
+    if (condition.getLimit() < 1) {
+      MoplException exception = new MoplException(ErrorCode.INVALID_REQUEST);
+      exception.addDetail("limit", "limit는 1 이상이어야 합니다");
+      throw exception;
+    }
+
     List<User> users = userRepository.searchUsers(condition);
 
     boolean hasNext = users.size() > condition.getLimit();
