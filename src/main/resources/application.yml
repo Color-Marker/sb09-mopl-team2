@@ -1,6 +1,11 @@
 spring:
   application:
     name: mopl
+  session:
+    store-type: redis
+    redis:
+      namespace: mopl:session
+
   servlet:
     multipart:
       maxFileSize: 10MB # 파일 하나의 최대 크기
@@ -18,7 +23,7 @@ spring:
     import: optional:file:.env[.properties]
   cache:
     type: redis
-    cache-names:
+    # cache-names:
       # - 쓸 캐시 이름들
     redis:
       enable-statistics: true
