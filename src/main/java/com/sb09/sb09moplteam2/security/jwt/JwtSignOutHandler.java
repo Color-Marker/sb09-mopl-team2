@@ -12,6 +12,7 @@ import org.springframework.security.web.authentication.logout.LogoutHandler;
 public class JwtSignOutHandler implements LogoutHandler {
 
   private final JwtSessionRepository jwtSessionRepository;
+  private final SessionBlacklistService sessionBlacklistService;
 
   @Override
   public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
@@ -26,6 +27,7 @@ public class JwtSignOutHandler implements LogoutHandler {
             .ifPresent(session -> {
               session.revoke();
               jwtSessionRepository.save(session);
+              sessionBlacklistService.blacklist(session.getId());
             });
       }
     }

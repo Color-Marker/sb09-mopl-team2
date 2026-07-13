@@ -86,7 +86,7 @@ public class SecurityConfig {
         )
         .logout(logout -> logout
             .logoutUrl("/api/auth/sign-out")
-            .addLogoutHandler(new JwtSignOutHandler(jwtSessionRepository))
+            .addLogoutHandler(new JwtSignOutHandler(jwtSessionRepository, sessionBlacklistService))
             .logoutSuccessHandler((request, response, authentication) ->
                 response.setStatus(HttpStatus.NO_CONTENT.value()))
             .deleteCookies("REFRESH_TOKEN")
