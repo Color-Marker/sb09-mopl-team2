@@ -1,9 +1,17 @@
 package com.sb09.sb09moplteam2.websocket.controller;
 
+import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
+import com.sb09.sb09moplteam2.config.SecurityConfig;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.exception.GlobalExceptionHandler;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
+import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.oauth.CustomOAuth2UserService;
+import com.sb09.sb09moplteam2.security.oauth.OAuth2SignInFailureHandler;
+import com.sb09.sb09moplteam2.security.oauth.OAuth2SignInSuccessHandler;
+import com.sb09.sb09moplteam2.user.mapper.UserMapper;
+import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import com.sb09.sb09moplteam2.websocket.dto.ConversationDto;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.service.ConversationService;
@@ -12,15 +20,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
-
 import java.util.List;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -29,15 +44,28 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ConversationController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, ConversationControllerTest.TestSecurityConfig.class})
 class ConversationControllerTest {
+
+  @TestConfiguration
+  static class TestSecurityConfig {
+    @Bean
+    SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+      http
+          .csrf(csrf -> csrf.disable())
+          .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+          .exceptionHandling(exception -> exception
+              .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+          );
+      return http.build();
+    }
+  }
 
   @Autowired
   private MockMvc mockMvc;
@@ -46,6 +74,22 @@ class ConversationControllerTest {
   private ConversationService conversationService;
   @MockitoBean
   private DirectMessageService directMessageService;
+
+  @MockitoBean
+  private JwtProvider jwtProvider;
+  @MockitoBean
+  private JwtSessionRepository jwtSessionRepository;
+  @MockitoBean
+  private UserRepository userRepository;
+  @MockitoBean
+  private UserMapper userMapper;
+  @MockitoBean
+  private CustomOAuth2UserService customOAuth2UserService;
+  @MockitoBean
+  private OAuth2SignInSuccessHandler oAuth2SignInSuccessHandler;
+  @MockitoBean
+  private OAuth2SignInFailureHandler oAuth2SignInFailureHandler;
+
 
   private UUID myUserId;
   private UUID conversationId;
@@ -83,18 +127,17 @@ class ConversationControllerTest {
   }
 
   @Test
-  void create_인증없음_302() throws Exception {
+  void create_인증없음_401() throws Exception {
     String requestBody = """
-        {"withUserId": "%s"}
-        """.formatted(UUID.randomUUID());
+      {"withUserId": "%s"}
+      """.formatted(UUID.randomUUID());
 
     mockMvc.perform(post("/api/conversations")
             .with(csrf())
             .contentType(MediaType.APPLICATION_JSON)
             .content(requestBody))
-        .andExpect(status().isFound());
+        .andExpect(status().isUnauthorized());
   }
-
   @Test
   void create_withUserId_누락시_400() throws Exception {
     mockMvc.perform(post("/api/conversations")
@@ -142,12 +185,12 @@ class ConversationControllerTest {
   }
 
   @Test
-  void findAll_인증없음_302() throws Exception {
+  void findAll_인증없음_401() throws Exception {
     mockMvc.perform(get("/api/conversations")
             .param("limit", "10")
             .param("sortBy", "lastMessageAt")
             .param("sortDirection", "DESCENDING"))
-        .andExpect(status().isFound());
+        .andExpect(status().isUnauthorized());
   }
 
   // ───────────────────────────── findById ─────────────────────────────
@@ -173,9 +216,9 @@ class ConversationControllerTest {
   }
 
   @Test
-  void findById_인증없음_302() throws Exception {
+  void findById_인증없음_401() throws Exception {
     mockMvc.perform(get("/api/conversations/{conversationId}", conversationId))
-        .andExpect(status().isFound());
+        .andExpect(status().isUnauthorized());
   }
 
   // ───────────────────────────── findWithUser ─────────────────────────────
@@ -262,9 +305,10 @@ class ConversationControllerTest {
   }
 
   @Test
-  void read_인증없음_302() throws Exception {
+  void read_인증없음_401() throws Exception {
     mockMvc.perform(post("/api/conversations/{conversationId}/read", conversationId)
             .with(csrf()))
-        .andExpect(status().isFound());
+        .andExpect(status().isUnauthorized());
   }
+
 }

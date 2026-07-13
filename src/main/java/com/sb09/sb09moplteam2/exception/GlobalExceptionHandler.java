@@ -13,6 +13,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 @Slf4j
 @RestControllerAdvice
@@ -88,22 +89,6 @@ public class GlobalExceptionHandler {
         .body(response);
   }
 
-  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-  public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex) {
-    log.error("요청 파라미터 타입 변환 실패: {}", ex.getMessage());
-    Map<String, Object> validationErrors = new HashMap<>();
-    String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "알 수 없음";
-    validationErrors.put(ex.getName(), String.format("%s 타입으로 변환할 수 없는 값입니다", requiredType));
-    ErrorResponse response = new ErrorResponse(
-        ex.getClass().getSimpleName(),
-        "요청 파라미터 형식이 올바르지 않습니다",
-        validationErrors
-    );
-    return ResponseEntity
-        .status(HttpStatus.BAD_REQUEST)
-        .body(response);
-  }
-
   @ExceptionHandler(MissingServletRequestParameterException.class)
   public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
       MissingServletRequestParameterException ex) {
@@ -113,6 +98,22 @@ public class GlobalExceptionHandler {
     ErrorResponse response = new ErrorResponse(
         ex.getClass().getSimpleName(),
         "필수 요청 파라미터가 누락되었습니다",
+        validationErrors
+    );
+    return ResponseEntity
+        .status(HttpStatus.BAD_REQUEST)
+        .body(response);
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+    log.error("요청 파라미터 타입 변환 실패: {}", ex.getMessage());
+    Map<String, Object> validationErrors = new HashMap<>();
+    String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "알 수 없음";
+    validationErrors.put(ex.getName(), String.format("%s 타입으로 변환할 수 없는 값입니다", requiredType));
+    ErrorResponse response = new ErrorResponse(
+        ex.getClass().getSimpleName(),
+        "요청 파라미터 형식이 올바르지 않습니다",
         validationErrors
     );
     return ResponseEntity
