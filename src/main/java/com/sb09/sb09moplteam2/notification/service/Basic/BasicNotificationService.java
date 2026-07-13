@@ -96,7 +96,7 @@ public class BasicNotificationService implements NotificationService {
 
     String title = follower.getName() + "님이 나를 팔로우했어요.";
 
-    create(userId, title);
+    create(userId, title, null);
   }
 
   @Override
@@ -119,9 +119,10 @@ public class BasicNotificationService implements NotificationService {
 
     UUID userId = playlist.getOwner().getId();
 
-    String title = subscriber.getName() + "님이 나의 플레이리스트 [" + playlist.getTitle() + "]를 구독했어요.";
+    String title = subscriber.getName() + "님이 나의 플레이리스트를 구독했어요.";
+    String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
 
-    create(userId, title);
+    create(userId, title, content);
   }
 
   @Override
@@ -129,9 +130,10 @@ public class BasicNotificationService implements NotificationService {
 
     Playlist playlist = playlistRepository.findById(playlistId).orElseThrow(() -> new PlaylistNotFoundException());
 
-    String title = "구독 중인 플레이리스트 [" + playlist.getTitle() + "]가  업데이트됐어요.";
+    String title = "구독 중인 플레이리스트가  업데이트됐어요.";
+    String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
 
-    createMany(userIds, title, null);
+    createMany(userIds, title, content);
   }
 
   @Override
@@ -164,9 +166,9 @@ public class BasicNotificationService implements NotificationService {
     eventPublisher.publishEvent(new NotificationDmEvent(dto, Instant.now()));
   }
 
-  private void create(UUID receiverId, String title) {
+  private void create(UUID receiverId, String title, String content) {
     User receiver = userRepository.findById(receiverId).orElseThrow(() -> UserNotFoundException.withId(receiverId));
-    Notification notification = new Notification(receiver, title, null, NotificationLevel.INFO);
+    Notification notification = new Notification(receiver, title, content, NotificationLevel.INFO);
     notificationRepository.save(notification);
     NotificationDto dto = notificationMapper.toDto(notification);
     eventPublisher.publishEvent(new NotificationCreatedEvent(List.of(dto), Instant.now()));
