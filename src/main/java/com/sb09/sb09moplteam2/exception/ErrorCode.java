@@ -47,6 +47,7 @@ public enum ErrorCode {
   CONVERSATION_PARTICIPANT_ALREADY_EXISTS("이미 참여 중인 대화방입니다.", HttpStatus.CONFLICT),
   DIRECT_MESSAGE_NOT_FOUND("존재하지 않는 메시지입니다.", HttpStatus.NOT_FOUND),
   WATCHING_SESSION_NOT_FOUND("존재하지 않는 시청 세션입니다.", HttpStatus.NOT_FOUND),
+  WATCHING_SESSION_CONTENT_MISMATCH("해당 콘텐츠의 시청 세션이 아닙니다.", HttpStatus.FORBIDDEN),
 
 
   // content 에러 코드
