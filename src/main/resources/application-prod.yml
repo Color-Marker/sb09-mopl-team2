@@ -43,3 +43,5 @@ management:
 mopl:
   storage:
     type: s3
+  cookie:
+    secure: ${COOKIE_SECURE:true} # https 배포 기본 true, 로컬 docker-compose(http)는 false로 오버라이드

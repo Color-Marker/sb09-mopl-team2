@@ -9,7 +9,6 @@ import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,6 +31,7 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
   private final UserMapper userMapper;
   private final ObjectMapper objectMapper;
   private final SessionBlacklistService sessionBlacklistService;
+  private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
   public JwtSignInFilter(
       AuthenticationManager authenticationManager,
@@ -40,7 +40,8 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
       UserRepository userRepository,
       UserMapper userMapper,
       ObjectMapper objectMapper,
-      SessionBlacklistService sessionBlacklistService
+      SessionBlacklistService sessionBlacklistService,
+      RefreshTokenCookieFactory refreshTokenCookieFactory
   ) {
     super(authenticationManager);
     this.jwtProvider = jwtProvider;
@@ -49,6 +50,7 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
     this.userMapper = userMapper;
     this.objectMapper = objectMapper;
     this.sessionBlacklistService = sessionBlacklistService;
+    this.refreshTokenCookieFactory = refreshTokenCookieFactory;
     setFilterProcessesUrl("/api/auth/sign-in");
   }
 
@@ -81,11 +83,7 @@ public class JwtSignInFilter extends UsernamePasswordAuthenticationFilter {
     jwtSessionRepository.save(newSession);
     String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getRole(), newSession.getId());
 
-    Cookie refreshCookie = new Cookie("REFRESH_TOKEN", refreshToken);
-    refreshCookie.setHttpOnly(true);
-    refreshCookie.setPath("/");
-    refreshCookie.setMaxAge((int) (jwtProvider.getRefreshTokenExpirationMs() / 1000));
-    response.addCookie(refreshCookie);
+    refreshTokenCookieFactory.addRefreshTokenCookie(response, refreshToken);
 
     JwtDto jwtDto = new JwtDto(userMapper.toDto(user), accessToken);
 

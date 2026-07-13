@@ -17,6 +17,7 @@ import com.sb09.sb09moplteam2.exception.GlobalExceptionHandler;
 import com.sb09.sb09moplteam2.exception.auth.InvalidTokenException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.RefreshTokenCookieFactory;
 import com.sb09.sb09moplteam2.user.dto.data.UserDto;
 import com.sb09.sb09moplteam2.user.dto.response.JwtDto;
 import com.sb09.sb09moplteam2.user.entity.Role;
@@ -40,7 +41,7 @@ import org.springframework.test.web.servlet.MockMvc;
         classes = {QuerydslConfig.class, JpaAuditingConfig.class}
     )
 )
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, RefreshTokenCookieFactory.class})
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 

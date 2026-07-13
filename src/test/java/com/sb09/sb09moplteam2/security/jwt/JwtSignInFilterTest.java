@@ -49,7 +49,8 @@ class JwtSignInFilterTest {
   void setUp() {
     filter = new JwtSignInFilter(
         authenticationManager, jwtProvider, jwtSessionRepository,
-        userRepository, userMapper, objectMapper, sessionBlacklistService
+        userRepository, userMapper, objectMapper, sessionBlacklistService,
+        new RefreshTokenCookieFactory(false, jwtProvider)
     );
   }
 

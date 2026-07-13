@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import com.sb09.sb09moplteam2.auth.entity.JwtSession;
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.RefreshTokenCookieFactory;
 import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import java.util.List;
@@ -35,7 +36,10 @@ class OAuth2SignInSuccessHandlerTest {
 
   @BeforeEach
   void setUp() {
-    handler = new OAuth2SignInSuccessHandler(jwtProvider, jwtSessionRepository, sessionBlacklistService);
+    handler = new OAuth2SignInSuccessHandler(
+        jwtProvider, jwtSessionRepository, sessionBlacklistService,
+        new RefreshTokenCookieFactory(false, jwtProvider)
+    );
     ReflectionTestUtils.setField(handler, "frontendBaseUrl", "http://localhost:3000");
   }
 
