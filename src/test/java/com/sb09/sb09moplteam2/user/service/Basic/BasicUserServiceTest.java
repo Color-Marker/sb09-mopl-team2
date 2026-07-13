@@ -24,6 +24,7 @@ import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
+import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -62,6 +63,9 @@ class BasicUserServiceTest {
 
   @Mock
   private ApplicationEventPublisher eventPublisher;
+
+  @Mock
+  private SessionBlacklistService sessionBlacklistService;
 
   @InjectMocks
   private BasicUserService basicUserService;
@@ -258,5 +262,199 @@ class BasicUserServiceTest {
     assertThat(result.hasNext()).isFalse();
     assertThat(result.nextCursor()).isNull();
     assertThat(result.nextIdAfter()).isNull();
+  }
+
+  @Test
+  void getUserSummary는_존재하지_않는_userId이면_UserNotFoundException을_던진다() {
+    UUID userId = UUID.randomUUID();
+    given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> basicUserService.getUserSummary(userId))
+        .isInstanceOf(com.sb09.sb09moplteam2.exception.user.UserNotFoundException.class);
+  }
+
+  @Test
+  void changePassword는_존재하지_않는_userId이면_UserNotFoundException을_던진다() {
+    UUID userId = UUID.randomUUID();
+    given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> basicUserService.changePassword(userId, "newPassword123"))
+        .isInstanceOf(com.sb09.sb09moplteam2.exception.user.UserNotFoundException.class);
+  }
+
+  @Test
+  void findUser는_userId로_UserDto를_반환한다() {
+    User user = createUser();
+    given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+    given(userMapper.toDto(user)).willReturn(
+        new UserDto(user.getId(), null, user.getEmail(), user.getName(), null, Role.USER, false));
+
+    UserDto result = basicUserService.findUser(user.getId());
+
+    assertThat(result.id()).isEqualTo(user.getId());
+    assertThat(result.email()).isEqualTo(user.getEmail());
+  }
+
+  @Test
+  void findUser는_존재하지_않는_userId이면_UserNotFoundException을_던진다() {
+    UUID userId = UUID.randomUUID();
+    given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> basicUserService.findUser(userId))
+        .isInstanceOf(com.sb09.sb09moplteam2.exception.user.UserNotFoundException.class);
+  }
+
+  @Test
+  void updateRole은_존재하지_않는_userId이면_UserNotFoundException을_던진다() {
+    UUID userId = UUID.randomUUID();
+    given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> basicUserService.updateRole(userId, Role.ADMIN))
+        .isInstanceOf(com.sb09.sb09moplteam2.exception.user.UserNotFoundException.class);
+  }
+
+  @Test
+  void updateRole은_세션_blacklist를_등록한다() {
+    User user = createUser();
+    JwtSession session = new JwtSession(user.getId(), "refresh1", Instant.now().plusSeconds(60));
+    UUID sessionId = UUID.randomUUID();
+    ReflectionTestUtils.setField(session, "id", sessionId);
+
+    given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+    given(jwtSessionRepository.findAllByUserIdAndRevokedFalse(user.getId()))
+        .willReturn(List.of(session));
+
+    basicUserService.updateRole(user.getId(), Role.ADMIN);
+
+    verify(sessionBlacklistService).blacklist(sessionId);
+  }
+
+  @Test
+  void updateLocked_true이면_blacklist를_등록한다() {
+    User user = createUser();
+    JwtSession session = new JwtSession(user.getId(), "refresh1", Instant.now().plusSeconds(60));
+    UUID sessionId = UUID.randomUUID();
+    ReflectionTestUtils.setField(session, "id", sessionId);
+
+    given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+    given(jwtSessionRepository.findAllByUserIdAndRevokedFalse(user.getId()))
+        .willReturn(List.of(session));
+
+    basicUserService.updateLocked(user.getId(), true);
+
+    verify(sessionBlacklistService).blacklist(sessionId);
+  }
+
+  @Test
+  void updateLocked는_존재하지_않는_userId이면_UserNotFoundException을_던진다() {
+    UUID userId = UUID.randomUUID();
+    given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> basicUserService.updateLocked(userId, true))
+        .isInstanceOf(com.sb09.sb09moplteam2.exception.user.UserNotFoundException.class);
+  }
+
+  @Test
+  void updateUser는_존재하지_않는_userId이면_UserNotFoundException을_던진다() {
+    UUID userId = UUID.randomUUID();
+    given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> basicUserService.updateUser(userId, new UserUpdateRequest("새이름"), null))
+        .isInstanceOf(com.sb09.sb09moplteam2.exception.user.UserNotFoundException.class);
+  }
+
+  @Test
+  void findUsers는_sortBy_email이면_nextCursor가_이메일이다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .limit(1)
+        .sortBy("email")
+        .sortDirection("ASCENDING")
+        .build();
+
+    User user1 = createUser();
+    User user2 = createUser();
+
+    given(userRepository.searchUsers(condition)).willReturn(List.of(user1, user2));
+    given(userRepository.countUsers(condition)).willReturn(2L);
+    given(userMapper.toDto(any(User.class))).willAnswer(invocation -> {
+      User u = invocation.getArgument(0);
+      return new UserDto(u.getId(), null, u.getEmail(), u.getName(), null, Role.USER, false);
+    });
+
+    CursorResponse<UserDto> result = basicUserService.findUsers(condition);
+
+    assertThat(result.hasNext()).isTrue();
+    assertThat(result.nextCursor()).isEqualTo(user1.getEmail());
+  }
+
+  @Test
+  void findUsers는_sortBy_role이면_nextCursor가_role_이름이다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .limit(1)
+        .sortBy("role")
+        .sortDirection("ASCENDING")
+        .build();
+
+    User user1 = createUser();
+    User user2 = createUser();
+
+    given(userRepository.searchUsers(condition)).willReturn(List.of(user1, user2));
+    given(userRepository.countUsers(condition)).willReturn(2L);
+    given(userMapper.toDto(any(User.class))).willAnswer(invocation -> {
+      User u = invocation.getArgument(0);
+      return new UserDto(u.getId(), null, u.getEmail(), u.getName(), null, Role.USER, false);
+    });
+
+    CursorResponse<UserDto> result = basicUserService.findUsers(condition);
+
+    assertThat(result.nextCursor()).isEqualTo(Role.USER.name());
+  }
+
+  @Test
+  void findUsers는_sortBy_isLocked이면_nextCursor가_locked_값이다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .limit(1)
+        .sortBy("isLocked")
+        .sortDirection("ASCENDING")
+        .build();
+
+    User user1 = createUser();
+    User user2 = createUser();
+
+    given(userRepository.searchUsers(condition)).willReturn(List.of(user1, user2));
+    given(userRepository.countUsers(condition)).willReturn(2L);
+    given(userMapper.toDto(any(User.class))).willAnswer(invocation -> {
+      User u = invocation.getArgument(0);
+      return new UserDto(u.getId(), null, u.getEmail(), u.getName(), null, Role.USER, false);
+    });
+
+    CursorResponse<UserDto> result = basicUserService.findUsers(condition);
+
+    assertThat(result.nextCursor()).isEqualTo("false");
+  }
+
+  @Test
+  void findUsers는_sortBy_createdAt이면_nextCursor가_createdAt_문자열이다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .limit(1)
+        .sortBy("createdAt")
+        .sortDirection("ASCENDING")
+        .build();
+
+    User user1 = createUser();
+    User user2 = createUser();
+    Instant now = Instant.now();
+    ReflectionTestUtils.setField(user1, "createdAt", now);
+
+    given(userRepository.searchUsers(condition)).willReturn(List.of(user1, user2));
+    given(userRepository.countUsers(condition)).willReturn(2L);
+    given(userMapper.toDto(any(User.class))).willAnswer(invocation -> {
+      User u = invocation.getArgument(0);
+      return new UserDto(u.getId(), null, u.getEmail(), u.getName(), null, Role.USER, false);
+    });
+
+    CursorResponse<UserDto> result = basicUserService.findUsers(condition);
+
+    assertThat(result.nextCursor()).isEqualTo(now.toString());
   }
 }

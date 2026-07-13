@@ -1,5 +1,7 @@
 package com.sb09.sb09moplteam2.config;
 
+import com.sb09.sb09moplteam2.batch.listener.GlobalStepExceptionListener;
+import com.sb09.sb09moplteam2.batch.monitoring.BatchJobMetricsListener;
 import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbClient;
 import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbMovieProcessor;
 import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbMovieReader;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.context.annotation.Bean;
@@ -28,10 +31,15 @@ public class TmdbBatchConfig {
   private final PlatformTransactionManager transactionManager;
   private final TmdbClient tmdbClient;
   private final ContentRepository contentRepository;
+  private final BatchJobMetricsListener batchJobMetricsListener;
+  private final GlobalStepExceptionListener globalStepExceptionListener;
+  private final RunIdIncrementer globalRunIdIncrementer;
 
   @Bean
   public Job tmdbEventJob() {
     return new JobBuilder("tmdbEventJob", jobRepository)
+        .incrementer(globalRunIdIncrementer)
+        .listener(batchJobMetricsListener)
         .start(tmdbMovieStep())
         .next(tmdbTvSeriesStep())
         .build();
@@ -44,6 +52,7 @@ public class TmdbBatchConfig {
         .reader(new TmdbMovieReader(tmdbClient, ContentType.movie))
         .processor(new TmdbMovieProcessor(contentRepository, ContentType.movie))
         .writer(new TmdbMovieWriter(contentRepository))
+        .listener(globalStepExceptionListener)
         .build();
   }
 
@@ -54,6 +63,7 @@ public class TmdbBatchConfig {
         .reader(new TmdbMovieReader(tmdbClient, ContentType.tvSeries))
         .processor(new TmdbMovieProcessor(contentRepository, ContentType.tvSeries))
         .writer(new TmdbMovieWriter(contentRepository))
+        .listener(globalStepExceptionListener)
         .build();
   }
 }

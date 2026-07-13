@@ -30,7 +30,7 @@ class JwtProviderTest {
   @Test
   void 액세스_토큰을_발급하고_검증하면_userId와_role을_그대로_꺼낼_수_있다() {
     UUID userId = UUID.randomUUID();
-    String token = jwtProvider.generateAccessToken(userId, Role.USER);
+    String token = jwtProvider.generateAccessToken(userId, Role.USER, UUID.randomUUID());
 
     assertThat(jwtProvider.isValid(token)).isTrue();
     assertThat(jwtProvider.getUserId(token)).isEqualTo(userId);
@@ -49,7 +49,7 @@ class JwtProviderTest {
   @Test
   void 만료시간이_지난_토큰은_유효하지_않다() {
     jwtProperties.getAccessToken().setExpirationMs(-1000); // 발급 즉시 과거로 만료
-    String expiredToken = jwtProvider.generateAccessToken(UUID.randomUUID(), Role.USER);
+    String expiredToken = jwtProvider.generateAccessToken(UUID.randomUUID(), Role.USER, UUID.randomUUID());
 
     assertThat(jwtProvider.isValid(expiredToken)).isFalse();
   }
@@ -62,7 +62,7 @@ class JwtProviderTest {
   @Test
   void 다른_시크릿으로_서명된_토큰은_검증에_실패한다() {
     UUID userId = UUID.randomUUID();
-    String token = jwtProvider.generateAccessToken(userId, Role.USER);
+    String token = jwtProvider.generateAccessToken(userId, Role.USER, UUID.randomUUID());
 
     JwtProperties otherProperties = new JwtProperties();
     otherProperties.getAccessToken().setSecret("completely-different-secret-key-1234567890-xyz");

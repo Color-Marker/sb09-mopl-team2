@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +51,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     User user = userRepository.findByEmail(email)
         .orElseGet(() -> userRepository.save(new User(name, email, providerId, provider)));
+
+    if (user.isLocked()) {
+      throw new OAuth2AuthenticationException(new OAuth2Error("locked_account"), "잠긴 계정입니다.");
+    }
 
     return new CustomOAuth2User(user.getId(), user.getRole(), attributes);
   }

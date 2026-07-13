@@ -13,7 +13,7 @@ spring:
     open-in-view: false
   profiles:
     active:
-      - prod
+      - dev
   config:
     import: optional:file:.env[.properties]
   cache:
@@ -40,7 +40,7 @@ spring:
     jdbc:
       initialize-schema: always
     job:
-      enabled: false # 서버 켜면 자동으로 배치 돌려야 하는 경우 true 이용 
+      enabled: false # 서버 켜면 자동으로 배치 돌려야 하는 경우 true 이용
   security:
     oauth2:
       client:
@@ -63,7 +63,6 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
-
 
 management:
   endpoints:
@@ -121,6 +120,18 @@ mopl:
       expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 days
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:8080}
+  mail:
+    type: smtp
+
+tmdb:
+  api:
+    key: ${TMDB_API_KEY}
+    base-url: https://api.themoviedb.org
+
+Sports:
+  api:
+    key: ${SPORTS_API_KEY}
+    base-url: https://www.thesportsdb.com/api/v1/json
 
 
 logging:

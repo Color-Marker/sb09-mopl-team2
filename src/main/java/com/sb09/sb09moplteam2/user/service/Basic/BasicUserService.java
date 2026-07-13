@@ -9,6 +9,7 @@ import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.event.message.RoleUpdatedEvent;
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
+import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import com.sb09.sb09moplteam2.storage.FileStorageService;
 import com.sb09.sb09moplteam2.user.dto.UserSearchCondition;
 import com.sb09.sb09moplteam2.user.dto.data.UserDto;
@@ -42,6 +43,7 @@ public class BasicUserService implements UserService {
   private final FileStorageService fileStorageService;
   private final JwtSessionRepository jwtSessionRepository;
   private final ApplicationEventPublisher eventPublisher;
+  private final SessionBlacklistService sessionBlacklistService;
 
   @Override
   @Transactional
@@ -160,7 +162,10 @@ public class BasicUserService implements UserService {
 
     log.info("userId {} 의 권한이 변경되었습니다.", userId);
     jwtSessionRepository.findAllByUserIdAndRevokedFalse(userId)
-        .forEach(JwtSession::revoke);
+        .forEach(session -> {
+          session.revoke();
+          sessionBlacklistService.blacklist(session.getId());
+        });
   }
 
   @Override
@@ -173,7 +178,10 @@ public class BasicUserService implements UserService {
 
     if (locked) {
       jwtSessionRepository.findAllByUserIdAndRevokedFalse(userId)
-          .forEach(JwtSession::revoke);
+          .forEach(session -> {
+            session.revoke();
+            sessionBlacklistService.blacklist(session.getId());
+          });
     }
   }
 }
