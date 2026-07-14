@@ -92,7 +92,7 @@ CREATE TABLE contents
     id uuid PRIMARY KEY,
     type varchar(20) not null,
     external_id varchar(1024) not null,
-    title varchar(50) not null,
+    title varchar(255) not null,
     description text,
     thumbnail_url varchar(255),
     release_date date,
