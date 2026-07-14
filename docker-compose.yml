@@ -11,6 +11,19 @@ services:
     volumes:
       - ./src/main/resources/static:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    networks:
+      - mopl-network
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
 
   backend:
     build:
@@ -20,6 +33,7 @@ services:
       - db
       - redis
       - broker
+      - elasticsearch
     env_file:
       - .env
     environment:
@@ -30,6 +44,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=broker:29092
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - ELASTICSEARCH_URIS=http://elasticsearch:9200
     expose:
       - 8080
     networks:
@@ -100,6 +115,7 @@ volumes:
   postgres-data:
   binary-content-storage:
   redis-data:
+  elasticsearch-data:
 
 networks:
   mopl-network:
