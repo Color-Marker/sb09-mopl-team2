@@ -6,11 +6,10 @@ import static org.mockito.BDDMockito.given;
 import com.sb09.sb09moplteam2.content.batch.ContentAndTags;
 import com.sb09.sb09moplteam2.content.batch.sport.SportProcessor;
 import com.sb09.sb09moplteam2.content.batch.sport.dto.SportsEventResponse;
-import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import java.time.LocalDate;
-import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -26,13 +25,8 @@ class SportProcessorTest {
   void 이미_존재하는_콘텐츠는_스킵하고_null을_반환한다() {
     SportsEventResponse item = new SportsEventResponse(
         "1001", "결승전", "설명", "thumb.jpg", "2026-08-01", "축구");
-    Content existing = Content.builder()
-        .type(ContentType.sport)
-        .externalId("1001")
-        .title("결승전")
-        .build();
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "1001"))
-        .willReturn(Optional.of(existing));
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of("1001"));
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -45,8 +39,8 @@ class SportProcessorTest {
   void 존재하지_않는_콘텐츠는_Content로_변환된다() {
     SportsEventResponse item = new SportsEventResponse(
         "2001", "결승전", "설명입니다", "thumb.jpg", "2026-08-01", "축구");
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "2001"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -65,8 +59,8 @@ class SportProcessorTest {
     String futureDate = LocalDate.now().plusDays(10).toString();
     SportsEventResponse item = new SportsEventResponse(
         "3001", "미래경기", "설명", "thumb.jpg", futureDate, "축구");
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "3001"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -81,8 +75,8 @@ class SportProcessorTest {
     String pastDate = LocalDate.now().minusDays(10).toString();
     SportsEventResponse item = new SportsEventResponse(
         "4001", "과거경기", "설명", "thumb.jpg", pastDate, "축구");
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "4001"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -97,8 +91,8 @@ class SportProcessorTest {
     String today = LocalDate.now().toString();
     SportsEventResponse item = new SportsEventResponse(
         "4002", "오늘경기", "설명", "thumb.jpg", today, "축구");
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "4002"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -111,8 +105,8 @@ class SportProcessorTest {
   void 날짜가_null인_경우_releaseDate는_null이고_RELEASE_상태이다() {
     SportsEventResponse item = new SportsEventResponse(
         "5001", "경기", "설명", "thumb.jpg", null, "축구");
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "5001"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -126,8 +120,8 @@ class SportProcessorTest {
   void 날짜가_빈문자열인_경우_releaseDate는_null이고_RELEASE_상태이다() {
     SportsEventResponse item = new SportsEventResponse(
         "5002", "경기", "설명", "thumb.jpg", "  ", "축구");
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "5002"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -141,8 +135,8 @@ class SportProcessorTest {
   void 날짜_형식이_잘못된_경우_releaseDate는_null이고_RELEASE_상태이다() {
     SportsEventResponse item = new SportsEventResponse(
         "5003", "경기", "설명", "thumb.jpg", "잘못된날짜", "축구");
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "5003"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -156,8 +150,8 @@ class SportProcessorTest {
   void league가_있으면_태그로_변환된다() {
     SportsEventResponse item = new SportsEventResponse(
         "6001", "경기", "설명", "thumb.jpg", "2026-08-01", "축구");
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "6001"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
@@ -170,13 +164,29 @@ class SportProcessorTest {
   void league가_없으면_빈_태그_목록을_반환한다() {
     SportsEventResponse item = new SportsEventResponse(
         "6002", "경기", "설명", "thumb.jpg", "2026-08-01", null);
-    given(contentRepository.findByTypeAndExternalId(ContentType.sport, "6002"))
-        .willReturn(Optional.empty());
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
 
     SportProcessor processor = new SportProcessor(contentRepository);
 
     ContentAndTags result = processor.process(item);
 
     assertThat(result.tags()).isEmpty();
+  }
+
+  @Test
+  void 이번_실행_중_같은_externalId가_다시_나오면_두번째부터_스킵된다() {
+    SportsEventResponse item = new SportsEventResponse(
+        "7001", "경기", "설명", "thumb.jpg", "2026-08-01", "축구");
+    given(contentRepository.findAllExternalIdsByType(ContentType.sport))
+        .willReturn(Set.of());
+
+    SportProcessor processor = new SportProcessor(contentRepository);
+
+    ContentAndTags first = processor.process(item);
+    ContentAndTags second = processor.process(item);
+
+    assertThat(first).isNotNull();
+    assertThat(second).isNull();
   }
 }
