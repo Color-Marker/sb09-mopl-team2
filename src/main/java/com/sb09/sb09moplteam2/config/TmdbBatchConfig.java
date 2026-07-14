@@ -51,7 +51,7 @@ public class TmdbBatchConfig {
   @Bean
   public Step tmdbMovieStep() {
     return new StepBuilder("tmdbMovieStep", jobRepository)
-        .<TmdbEventResponse, ContentAndTags>chunk(100, transactionManager)
+        .<TmdbEventResponse, ContentAndTags>chunk(200, transactionManager)
         .reader(new TmdbMovieReader(tmdbClient, ContentType.movie))
         .processor(new TmdbMovieProcessor(contentRepository, ContentType.movie))
         .writer(new TmdbMovieWriter(contentRepository, contentTagRepository))
@@ -62,7 +62,7 @@ public class TmdbBatchConfig {
   @Bean
   public Step tmdbTvSeriesStep() {
     return new StepBuilder("tmdbTvSeriesStep", jobRepository)
-        .<TmdbEventResponse, ContentAndTags>chunk(100, transactionManager)
+        .<TmdbEventResponse, ContentAndTags>chunk(200, transactionManager)
         .reader(new TmdbMovieReader(tmdbClient, ContentType.tvSeries))
         .processor(new TmdbMovieProcessor(contentRepository, ContentType.tvSeries))
         .writer(new TmdbMovieWriter(contentRepository, contentTagRepository))
