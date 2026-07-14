@@ -2,10 +2,11 @@ package com.sb09.sb09moplteam2.websocket.controller;
 
 import com.sb09.sb09moplteam2.exception.ErrorResponse;
 import com.sb09.sb09moplteam2.exception.MoplException;
-import com.sb09.sb09moplteam2.websocket.dto.request.DirectMessageRequest;
-import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
-import com.sb09.sb09moplteam2.websocket.service.DirectMessageService;
+import com.sb09.sb09moplteam2.websocket.dto.request.WatchingSessionChatRequest;
+import com.sb09.sb09moplteam2.websocket.dto.response.WatchingSessionChatResponse;
+import com.sb09.sb09moplteam2.websocket.service.WatchingSessionChatService;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -17,39 +18,35 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
-import java.util.UUID;
-
+/**
+ * 컨텐츠 같이보기 실시간 채팅
+ *
+ * 클라이언트 전송 경로:   /pub/contents/{contentId}/chat
+ * 브로드캐스트 경로:      /sub/contents/{contentId}/chat
+ *
+ * 메시지는 DB에 저장하지 않고 접속 중인 구독자에게만 실시간으로 전달합니다.
+ */
 @Slf4j
 @Controller
 @RequiredArgsConstructor
-public class DirectMessageController {
+public class WatchingSessionChatController {
 
-  private final DirectMessageService directMessageService;
+  private final WatchingSessionChatService watchingSessionChatService;
   private final SimpMessagingTemplate messagingTemplate;
 
-  /**
-   * DM 전송
-   *
-   * 클라이언트 전송 경로: /app/dm/{conversationId}
-   * 브로드캐스트 경로:    /topic/conversations/{conversationId}
-   *
-   * 클라이언트는 CONNECT 후 /topic/conversations/{conversationId} 를 구독하고,
-   * 메시지를 보낼 때는 /app/dm/{conversationId} 로 전송합니다.
-   */
-  @MessageMapping("/dm/{conversationId}")
-  public void sendDirectMessage(
-      @DestinationVariable UUID conversationId,
-      @Payload @Valid DirectMessageRequest request,
+  @MessageMapping("/contents/{contentId}/chat")
+  public void sendMessage(
+      @DestinationVariable UUID contentId,
+      @Payload @Valid WatchingSessionChatRequest request,
       @AuthenticationPrincipal UUID senderId
   ) {
-    log.debug("STOMP DM 수신: conversationId={}, senderId={}", conversationId, senderId);
+    log.debug("STOMP 컨텐츠 채팅 수신: contentId={}, senderId={}", contentId, senderId);
 
-    DirectMessageResponse response = directMessageService.send(
-        conversationId, senderId, request.content());
+    WatchingSessionChatResponse response = watchingSessionChatService.sendMessage(
+        contentId, senderId, request.content());
 
-    // 대화방 구독자 전체에게 브로드캐스트
     messagingTemplate.convertAndSend(
-        "/sub/conversations/" + conversationId,
+        "/sub/contents/" + contentId + "/chat",
         response
     );
   }
@@ -57,14 +54,14 @@ public class DirectMessageController {
   @MessageExceptionHandler(MoplException.class)
   @SendToUser("/queue/errors")
   public ErrorResponse handleMoplException(MoplException e) {
-    log.warn("STOMP DM 처리 실패 (도메인 예외): {}", e.getMessage());
+    log.warn("STOMP 컨텐츠 채팅 처리 실패 (도메인 예외): {}", e.getMessage());
     return new ErrorResponse(e);
   }
 
   @MessageExceptionHandler(Exception.class)
   @SendToUser("/queue/errors")
   public ErrorResponse handleException(Exception e) {
-    log.error("STOMP DM 처리 실패 (예상치 못한 예외)", e);
+    log.error("STOMP 컨텐츠 채팅 처리 실패 (예상치 못한 예외)", e);
     return new ErrorResponse(e);
   }
 }
