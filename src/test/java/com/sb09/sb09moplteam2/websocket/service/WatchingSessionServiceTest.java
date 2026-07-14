@@ -154,9 +154,19 @@ class WatchingSessionServiceTest {
   void join_기존_활성_세션이_없으면_새_세션을_생성하고_JOIN을_브로드캐스트한다() {
     WatchingSessionDto dto = makeWatchingSessionDto(activeSession);
 
-    given(watchingSessionRepository.findByUserIdAndStatus(watcherId, WatchingSessionStatus.ACTIVE))
+    given(watchingSessionRepository.findByUserIdAndStatus(
+        watcherId, WatchingSessionStatus.ACTIVE))
         .willReturn(Optional.empty());
-    given(watchingSessionMapper.toDto(any(WatchingSession.class))).willReturn(dto);
+
+    given(watchingSessionRepository.save(any(WatchingSession.class)))
+        .willAnswer(invocation -> {
+          WatchingSession session = invocation.getArgument(0);
+          ReflectionTestUtils.setField(session, "id", UUID.randomUUID());
+          return session;
+        });
+
+    given(watchingSessionMapper.toDto(any(WatchingSession.class)))
+        .willReturn(dto);
 
     UUID resultId = watchingSessionService.join(contentId, watcherId);
 
@@ -184,11 +194,17 @@ class WatchingSessionServiceTest {
 
     given(watchingSessionRepository.findByUserIdAndStatus(watcherId, WatchingSessionStatus.ACTIVE))
         .willReturn(Optional.of(activeSession));
-    given(watchingSessionMapper.toDto(activeSession)).willReturn(existingDto);
     given(watchingSessionMapper.toDto(any(WatchingSession.class)))
         .willAnswer(invocation -> {
           WatchingSession session = invocation.getArgument(0);
           return session == activeSession ? existingDto : newDto;
+        });
+
+    given(watchingSessionRepository.save(any(WatchingSession.class)))
+        .willAnswer(invocation -> {
+          WatchingSession session = invocation.getArgument(0);
+          ReflectionTestUtils.setField(session, "id", UUID.randomUUID());
+          return session;
         });
 
     UUID resultId = watchingSessionService.join(contentId, watcherId);
@@ -196,8 +212,8 @@ class WatchingSessionServiceTest {
     assertThat(resultId).isNotNull();
     assertThat(activeSession.getStatus()).isEqualTo(WatchingSessionStatus.ENDED);
 
-    // 기존 세션 종료 저장 + 새 세션 저장, 총 2번 save 호출
-    verify(watchingSessionRepository, times(2)).save(any(WatchingSession.class));
+    verify(watchingSessionRepository, times(1))
+        .save(any(WatchingSession.class));
 
     ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
     verify(messagingTemplate, times(2))
