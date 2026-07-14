@@ -6,7 +6,9 @@ import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
@@ -17,10 +19,19 @@ public class TmdbMovieProcessor implements ItemProcessor<TmdbEventResponse, Cont
 
   private final ContentRepository contentRepository;
   private final ContentType contentType;
+  private final Set<String> processedInThisRun = new HashSet<>();
 
 
   @Override
   public ContentAndTags process(TmdbEventResponse item) {
+    String externalId = String.valueOf(item.id());
+
+    if(!processedInThisRun.add(externalId)) {
+      log.info("이번 실 내 중복 감지, skip - externalId={}", externalId );
+      return null;
+    }
+
+
     if (contentRepository.findByTypeAndExternalId(
         contentType, String.valueOf(item.id())).isPresent()) {
       log.info("이미 존재하는 콘텐츠 skip - externalId: {}", item.id());
