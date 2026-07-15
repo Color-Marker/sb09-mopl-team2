@@ -35,3 +35,45 @@ jobs:
         with:
           files: build/reports/jacoco/test/jacocoTestReport.xml
           token: ${{ secrets.CODECOV_TOKEN }}
+deploy:
+  needs: build
+  if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: 코드 체크아웃
+      uses: actions/checkout@v4
+
+    - name: AWS 자격 증명 설정 (IAM)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-2
+
+    - name: Amazon ECR 로그인
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Docker 이미지 빌드 및 ECR에 푸시
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: mopl-private
+        IMAGE_TAG: latest
+      run: |
+        # 1. 도커 이미지 빌드
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        
+        # 2. ECR로 이미지 업로드(Push)
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Amazon ECS 서비스 강제 재배포 (새 이미지 업데이트)
+      env:
+        ECS_CLUSTER: mopl
+        ECS_SERVICE: mopl-backend-task-service
+      run: |
+        # 최신 latest 이미지가 ECR에 올라갔으니, ECS에게 컨테이너를 다시 띄우라고 명령!
+        aws ecs update-service \
+          --cluster $ECS_CLUSTER \
+          --service $ECS_SERVICE \
+          --force-new-deployment
