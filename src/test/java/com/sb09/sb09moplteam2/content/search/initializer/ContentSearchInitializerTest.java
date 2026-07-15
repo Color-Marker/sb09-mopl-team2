@@ -11,6 +11,7 @@ import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.search.ContentDocument;
 import com.sb09.sb09moplteam2.content.search.ContentSearchInitializer;
+import com.sb09.sb09moplteam2.content.search.ContentSearchRepository;
 import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import java.util.List;
 import java.util.UUID;
@@ -33,9 +34,14 @@ class ContentSearchInitializerTest {
   @InjectMocks
   private ContentSearchInitializer contentSearchInitializer;
 
+  @Mock
+  private ContentSearchRepository contentSearchRepository;
+
   @Test
-  @DisplayName("모든 콘텐츠를 조회하여 각각 색인한다")
-  void reindexAll_모든_콘텐츠를_색인한다() {
+  @DisplayName("색인된 데이터가 없으면 전체 콘텐츠를 색인한다")
+  void reindexAll_색인된_데이터가_없으면_전체_콘텐츠를_색인한다() {
+    given(contentSearchRepository.count()).willReturn(0L);
+
     Content content1 = mock(Content.class);
     given(content1.getId()).willReturn(UUID.randomUUID());
     given(content1.getType()).willReturn(ContentType.movie);
@@ -50,6 +56,7 @@ class ContentSearchInitializerTest {
 
     contentSearchInitializer.reindexAll();
 
+    then(contentRepository).should().findAll();
     then(contentSearchService).should(times(2)).index(any(ContentDocument.class));
   }
 
