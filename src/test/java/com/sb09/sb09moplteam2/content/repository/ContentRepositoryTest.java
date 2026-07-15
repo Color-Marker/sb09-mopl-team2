@@ -8,6 +8,7 @@ import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -32,6 +34,9 @@ class ContentRepositoryTest {
 
   @Autowired
   private TestEntityManager em;
+
+  @Mock
+  private ContentSearchService contentSearchService;
 
   @Test
   @DisplayName("type과 externalId로 콘텐츠를 조회한다")
