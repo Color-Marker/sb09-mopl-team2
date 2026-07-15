@@ -5,12 +5,14 @@ import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
 
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
+import com.sb09.sb09moplteam2.websocket.event.WatchingSessionEvent;
 import com.sb09.sb09moplteam2.websocket.mapper.WatchingSessionMapper;
 import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ public class WatchingSessionService {
 
   private final WatchingSessionRepository watchingSessionRepository;
   private final WatchingSessionMapper watchingSessionMapper;
+  private final SimpMessagingTemplate messagingTemplate;
 
   // GET /api/users/{watcherId}/watching-sessions
   // 특정 유저의 활성 세션 단건 조회 (없으면 null 반환 - nullable)
@@ -94,6 +97,49 @@ public class WatchingSessionService {
         data.size(),
         sortBy,
         sortDirection
+    );
+  }
+
+  @Transactional
+  public UUID join(UUID contentId, UUID userId) {
+    watchingSessionRepository.findByUserIdAndStatus(userId, WatchingSessionStatus.ACTIVE)
+        .ifPresent(existing -> {
+          existing.end(); // setStatus 대신 end() 사용
+          broadcastLeave(existing);
+        });
+
+    WatchingSession session = WatchingSession.create(userId, contentId); // builder 대신 create()
+    watchingSessionRepository.save(session);
+
+    WatchingSessionDto dto = watchingSessionMapper.toDto(session);
+    messagingTemplate.convertAndSend(
+        "/sub/contents/" + contentId + "/watch",
+        new WatchingSessionEvent("JOIN", dto)
+    );
+
+    log.debug("시청 세션 시작: sessionId={}, userId={}, contentId={}",
+        session.getId(), userId, contentId);
+
+    return session.getId();
+  }
+
+  @Transactional
+  public void leave(UUID watchingSessionId) {
+    watchingSessionRepository.findById(watchingSessionId).ifPresent(session -> {
+      if (session.getStatus() != WatchingSessionStatus.ACTIVE) {
+        return; // 이미 종료된 세션이면 중복 브로드캐스트 방지
+      }
+      session.end();
+      broadcastLeave(session);
+      log.debug("시청 세션 종료: sessionId={}, userId={}", session.getId(), session.getUserId());
+    });
+  }
+
+  private void broadcastLeave(WatchingSession session) {
+    WatchingSessionDto dto = watchingSessionMapper.toDto(session);
+    messagingTemplate.convertAndSend(
+        "/sub/contents/" + session.getContentId() + "/watch",
+        new WatchingSessionEvent("LEAVE", dto)
     );
   }
 }
