@@ -48,6 +48,9 @@ class PlaylistControllerTest {
   @MockitoBean
   private PlaylistService playlistService;
 
+  @MockitoBean
+  private ContentSearchService contentSearchService;
+
   private RequestPostProcessor mockUser() {
     return authentication(new UsernamePasswordAuthenticationToken(
         TEST_USER_ID, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
