@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sb09.sb09moplteam2.config.JpaAuditingConfig;
+import com.sb09.sb09moplteam2.config.MockSearchTestConfig;
 import com.sb09.sb09moplteam2.user.dto.UserSearchCondition;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
@@ -20,7 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 @DataJpaTest
-@Import({CustomUserRepositoryImplTest.QueryDslConfig.class, JpaAuditingConfig.class})
+@Import({CustomUserRepositoryImplTest.QueryDslConfig.class, JpaAuditingConfig.class, MockSearchTestConfig.class})
 class CustomUserRepositoryImplTest {
 
   static class QueryDslConfig {
