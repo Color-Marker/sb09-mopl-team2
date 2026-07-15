@@ -19,6 +19,7 @@ import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.mapper.ContentMapper;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
 import com.sb09.sb09moplteam2.storage.FileStorageService;
@@ -50,6 +51,9 @@ class ContentServiceTest {
 
   @Mock
   private FileStorageService fileStorageService;
+
+  @Mock
+  private ContentSearchService contentSearchService;
 
   @Test
   @DisplayName("콘텐츠 생성 성공")
