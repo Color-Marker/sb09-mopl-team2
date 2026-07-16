@@ -38,7 +38,7 @@ public class Content {
   @Column(name = "external_id", nullable = false, length = 1024)
   private String externalId;
 
-  @Column(nullable = false, length = 50)
+  @Column(nullable = false, length = 255)
   private String title;
 
   @Column(columnDefinition = "text")
