@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sb09.sb09moplteam2.common.SortDirection;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import com.sb09.sb09moplteam2.notification.dto.request.NotificationListRequest;
 import com.sb09.sb09moplteam2.notification.entity.Notification;
 import com.sb09.sb09moplteam2.notification.entity.NotificationLevel;
@@ -24,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @DataJpaTest
@@ -47,6 +49,9 @@ class NotificationRepositoryImplTest {
 
   @Autowired
   private JPAQueryFactory queryFactory;
+
+  @MockitoBean
+  private ContentSearchService contentSearchService;
 
   private NotificationRepositoryImpl notificationRepository;
 

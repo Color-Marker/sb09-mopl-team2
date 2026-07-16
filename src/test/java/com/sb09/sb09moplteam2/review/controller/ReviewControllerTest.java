@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -46,6 +47,9 @@ class ReviewControllerTest {
 
   @Autowired
   private ObjectMapper objectMapper;
+
+  @MockitoBean
+  private ContentSearchService contentSearchService;
 
   private static final UUID TEST_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
