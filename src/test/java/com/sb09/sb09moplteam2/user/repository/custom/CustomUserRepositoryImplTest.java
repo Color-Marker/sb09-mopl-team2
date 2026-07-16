@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sb09.sb09moplteam2.config.JpaAuditingConfig;
-import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.config.MockSearchTestConfig;
+import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.user.dto.UserSearchCondition;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
