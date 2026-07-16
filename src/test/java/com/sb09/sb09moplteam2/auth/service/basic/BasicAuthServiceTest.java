@@ -157,6 +157,25 @@ class BasicAuthServiceTest {
   }
 
   @Test
+  void 잠긴_계정의_리프레시_토큰이면_InvalidTokenException을_던진다() {
+    User user = createUser();
+    user.changeLocked(true);
+    UUID sessionId = UUID.randomUUID();
+    JwtSession session = new JwtSession(user.getId(), "old-refresh", Instant.now().plusSeconds(3600));
+    ReflectionTestUtils.setField(session, "id", sessionId);
+
+    given(jwtProvider.isValidRefreshToken("old-refresh")).willReturn(true);
+    given(jwtSessionRepository.findByRefreshTokenAndRevokedFalse("old-refresh"))
+        .willReturn(Optional.of(session));
+    given(jwtProvider.getUserIdFromRefreshToken("old-refresh")).willReturn(user.getId());
+    given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+    given(jwtSessionRepository.save(any())).willReturn(session);
+
+    assertThatThrownBy(() -> basicAuthService.refresh("old-refresh"))
+        .isInstanceOf(InvalidTokenException.class);
+  }
+
+  @Test
   void 토큰_갱신_시_유저를_찾을_수_없으면_UserNotFoundException을_던진다() {
     UUID userId = UUID.randomUUID();
     UUID sessionId = UUID.randomUUID();

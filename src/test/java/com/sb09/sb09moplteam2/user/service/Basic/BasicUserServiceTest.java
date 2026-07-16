@@ -14,6 +14,7 @@ import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
+import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
 import com.sb09.sb09moplteam2.storage.FileStorageService;
 import com.sb09.sb09moplteam2.user.dto.UserSearchCondition;
@@ -96,6 +97,19 @@ class BasicUserServiceTest {
     assertThat(result.email()).isEqualTo("woody@mopl.io");
     assertThat(result.name()).isEqualTo("우디");
     verify(passwordEncoder).encode("mopl1!@#$");
+  }
+
+  @Test
+  void 사용자_목록_조회시_limit가_1미만이면_MoplException을_던진다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .limit(0)
+        .sortBy("createdAt")
+        .sortDirection("DESCENDING")
+        .build();
+
+    assertThatThrownBy(() -> basicUserService.findUsers(condition))
+        .isInstanceOf(MoplException.class);
+    verify(userRepository, never()).searchUsers(any());
   }
 
   @Test

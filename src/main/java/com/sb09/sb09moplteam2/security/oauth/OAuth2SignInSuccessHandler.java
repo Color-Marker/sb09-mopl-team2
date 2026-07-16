@@ -3,8 +3,8 @@ package com.sb09.sb09moplteam2.security.oauth;
 import com.sb09.sb09moplteam2.auth.entity.JwtSession;
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.RefreshTokenCookieFactory;
 import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -23,6 +23,7 @@ public class OAuth2SignInSuccessHandler implements AuthenticationSuccessHandler 
   private final JwtProvider jwtProvider;
   private final JwtSessionRepository jwtSessionRepository;
   private final SessionBlacklistService sessionBlacklistService;
+  private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
   @Value("${mopl.frontend.base-url}")
   private String frontendBaseUrl;
@@ -50,11 +51,7 @@ public class OAuth2SignInSuccessHandler implements AuthenticationSuccessHandler 
     );
     jwtSessionRepository.save(session);
 
-    Cookie refreshCookie = new Cookie("REFRESH_TOKEN", refreshToken);
-    refreshCookie.setHttpOnly(true);
-    refreshCookie.setPath("/");
-    refreshCookie.setMaxAge((int) (jwtProvider.getRefreshTokenExpirationMs() / 1000));
-    response.addCookie(refreshCookie);
+    refreshTokenCookieFactory.addRefreshTokenCookie(response, refreshToken);
 
     response.sendRedirect(frontendBaseUrl + "/");
   }

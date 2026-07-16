@@ -30,6 +30,7 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=broker:29092
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - COOKIE_SECURE=false # 로컬은 http라 Secure 쿠키 비활성화 (https 배포 환경에서는 true)
     expose:
       - 8080
     networks:
