@@ -13,20 +13,24 @@ public class TmdbMovieReader implements ItemReader<TmdbEventResponse> {
 
   private final TmdbClient tmdbClient;
   private final ContentType contentType;
-  private int currentPage = 1;
-  private int totalPages = 1;
+  private int currentPage;
+  private final int endPage;
+  private final String partitionName;
   private List<TmdbEventResponse> buffer = new ArrayList<>();
   private int bufferIndex = 0;
 
-  public TmdbMovieReader(TmdbClient tmdbClient, ContentType contentType) {
+  public TmdbMovieReader(TmdbClient tmdbClient, ContentType contentType, int startPage, int endPage, String partitionName) {
     this.tmdbClient = tmdbClient;
     this.contentType = contentType;
+    this.currentPage = startPage;
+    this.endPage = endPage;
+    this.partitionName = partitionName;
   }
 
   @Override
   public TmdbEventResponse read() {
     if (bufferIndex >= buffer.size()) {
-      if (currentPage > totalPages) {
+      if (currentPage > endPage) {
         return null;
       }
       fetchNextPage();
@@ -40,10 +44,9 @@ public class TmdbMovieReader implements ItemReader<TmdbEventResponse> {
         ? tmdbClient.fetchMovies(currentPage)
         : tmdbClient.fetchTvSeries(currentPage);
 
-    totalPages = Math.min(response.totalPages(), 5); // 가져 올 수 있는 외부 api의 페이지 양
     buffer = response.results();
     bufferIndex = 0;
+    log.info("TMDB {}데이터 {}페이지 로드 완 - {}건 (스레: {})", contentType, currentPage, buffer.size(), partitionName);
     currentPage++;
-    log.info("TMDB {} 데이터 {}페이지 로드 완료 - {}건", contentType, currentPage - 1, buffer.size());
   }
 }
