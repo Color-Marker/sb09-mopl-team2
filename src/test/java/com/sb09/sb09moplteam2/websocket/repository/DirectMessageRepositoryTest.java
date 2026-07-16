@@ -94,9 +94,17 @@ class DirectMessageRepositoryTest {
     Thread.sleep(5);
     persistMessage(conversation, senderId, "최신 메시지"); // 커서보다 최신 - 제외되어야 함
     em.flush();
+    em.clear(); // 영속성 컨텍스트 비우기 - DB에 실제 저장된(잘림 처리된) 값을 가져오도록
+
+    // Instant는 나노초 정밀도지만 DB 컬럼은 마이크로초 단위로 저장되어 truncate됨.
+    // flush 직후 메모리상의 원본 값을 그대로 커서로 쓰면, cursorTarget 자신의
+    // "sentAt < cursor" 조건을 통과해버려 자기 자신이 결과에 포함되는 버그가 있었음.
+    // 반드시 DB에 실제 저장된 값을 다시 읽어와서 커서로 사용해야 한다.
+    DirectMessage cursorTargetReloaded = em.find(DirectMessage.class, cursorTarget.getId());
 
     List<DirectMessage> result = directMessageRepository.findByConversationWithCursor(
-        conversation, cursorTarget.getSentAt(), cursorTarget.getId(), PageRequest.of(0, 10));
+        conversation, cursorTargetReloaded.getSentAt(), cursorTargetReloaded.getId(),
+        PageRequest.of(0, 10));
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getId()).isEqualTo(older.getId());

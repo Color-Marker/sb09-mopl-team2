@@ -18,10 +18,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
   @Override
   public void configureMessageBroker(MessageBrokerRegistry registry) {
-    // 클라이언트 구독 prefix: /topic (1:N 브로드캐스트)
-    registry.enableSimpleBroker("/topic");
+    // 클라이언트 구독 prefix: /sub (1:N 브로드캐스트)
+    registry.enableSimpleBroker("/sub");
     // 클라이언트 → 서버 전송 prefix
-    registry.setApplicationDestinationPrefixes("/app");
+    registry.setApplicationDestinationPrefixes("/pub");
   }
 
   @Override

@@ -1,5 +1,6 @@
 server:
   port: 8080
+  forward-headers-strategy: framework # 프록시(ALB/nginx)의 X-Forwarded-* 헤더로 외부 주소(https) 기준 URL 생성 (OAuth redirect_uri)
 
 spring:
   datasource:
@@ -43,3 +44,5 @@ management:
 mopl:
   storage:
     type: s3
+  cookie:
+    secure: ${COOKIE_SECURE:true} # https 배포 기본 true, 로컬 docker-compose(http)는 false로 오버라이드

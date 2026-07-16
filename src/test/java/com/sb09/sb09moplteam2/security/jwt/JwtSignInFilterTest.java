@@ -49,7 +49,8 @@ class JwtSignInFilterTest {
   void setUp() {
     filter = new JwtSignInFilter(
         authenticationManager, jwtProvider, jwtSessionRepository,
-        userRepository, userMapper, objectMapper, sessionBlacklistService
+        userRepository, userMapper, objectMapper, sessionBlacklistService,
+        new RefreshTokenCookieFactory(false, jwtProvider)
     );
   }
 
@@ -127,5 +128,21 @@ class JwtSignInFilterTest {
     assertThat(response.getContentType()).contains("application/json");
     String body = response.getContentAsString();
     assertThat(body).contains("이메일 또는 비밀번호가 올바르지 않습니다.");
+  }
+
+  @Test
+  void unsuccessfulAuthentication_잠긴계정이면_잠금_안내_메시지를_반환한다() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    org.springframework.security.authentication.LockedException exception =
+        new org.springframework.security.authentication.LockedException("잠긴 계정입니다.");
+
+    ReflectionTestUtils.invokeMethod(filter, "unsuccessfulAuthentication", request, response, exception);
+
+    assertThat(response.getStatus()).isEqualTo(401);
+    String body = response.getContentAsString();
+    assertThat(body).contains("잠긴 계정입니다");
+    assertThat(body).contains("LockedException");
   }
 }

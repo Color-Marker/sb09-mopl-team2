@@ -45,6 +45,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - ELASTICSEARCH_URIS=http://elasticsearch:9200
+      - COOKIE_SECURE=false # 로컬은 http라 Secure 쿠키 비활성화 (https 배포 환경에서는 true)
     expose:
       - 8080
     networks:

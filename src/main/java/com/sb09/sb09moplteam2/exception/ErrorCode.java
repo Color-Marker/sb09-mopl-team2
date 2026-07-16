@@ -8,7 +8,7 @@ public enum ErrorCode {
 
   // User 관련 에러 코드
   USER_NOT_FOUND("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-  DUPLICATE_USER("이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),
+  DUPLICATE_USER("이미 존재하는 사용자입니다.", HttpStatus.BAD_REQUEST),
   INVALID_USER_CREDENTIALS("잘못된 사용자 인증 정보입니다.", HttpStatus.UNAUTHORIZED),
   USER_FORBIDDEN("접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
 
@@ -47,6 +47,7 @@ public enum ErrorCode {
   CONVERSATION_PARTICIPANT_ALREADY_EXISTS("이미 참여 중인 대화방입니다.", HttpStatus.CONFLICT),
   DIRECT_MESSAGE_NOT_FOUND("존재하지 않는 메시지입니다.", HttpStatus.NOT_FOUND),
   WATCHING_SESSION_NOT_FOUND("존재하지 않는 시청 세션입니다.", HttpStatus.NOT_FOUND),
+  WATCHING_SESSION_CONTENT_MISMATCH("해당 콘텐츠의 시청 세션이 아닙니다.", HttpStatus.FORBIDDEN),
 
 
   // content 에러 코드
