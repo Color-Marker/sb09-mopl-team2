@@ -48,7 +48,7 @@ public class SportBatchConfig {
   @Bean
   public Step sportsStep() {
     return new StepBuilder("sportsStep", jobRepository)
-        .<SportsEventResponse, ContentAndTags>chunk(100, transactionManager)
+        .<SportsEventResponse, ContentAndTags>chunk(200, transactionManager)
         .reader(sportsReader())
         .processor(sportsProcessor())
         .writer(sportsWriter())

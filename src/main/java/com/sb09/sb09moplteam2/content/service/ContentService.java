@@ -10,6 +10,8 @@ import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.mapper.ContentMapper;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
+import com.sb09.sb09moplteam2.content.search.ContentDocument;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
 import com.sb09.sb09moplteam2.storage.FileStorageService;
@@ -32,6 +34,7 @@ public class ContentService {
   private final ContentTagRepository contentTagRepository;
   private final ContentMapper contentMapper;
   private final FileStorageService fileStorageService;
+  private final ContentSearchService contentSearchService;
 
   @Transactional
   public ContentDto create(ContentCreateRequest request, MultipartFile thumbnail) {
@@ -58,6 +61,8 @@ public class ContentService {
             .build())
         .toList();
     contentTagRepository.saveAll(tags);
+
+    contentSearchService.index(ContentDocument.from(content));
 
     log.info("콘텐츠 생성 완료 - id: {}", content.getId());
     return contentMapper.toDto(content, tags);
@@ -115,6 +120,8 @@ public class ContentService {
 
     List<ContentTag> tags = contentTagRepository.findByContentId(contentId);
 
+    contentSearchService.index(ContentDocument.from(content));
+
     log.info("콘텐츠 수정 완료 - contentId: {}", contentId);
     return contentMapper.toDto(content, tags);
   }
@@ -129,6 +136,7 @@ public class ContentService {
           return new ContentNotFoundException();
         });
     contentRepository.delete(content);
+    contentSearchService.delete(contentId);
     log.info("콘텐츠 삭제 완료 - contentId: {}", contentId);
   }
 

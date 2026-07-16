@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.websocket.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sb09.sb09moplteam2.config.MockSearchTestConfig;
 import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import com.sb09.sb09moplteam2.config.TestJpaConfig;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
@@ -17,7 +18,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
 @DataJpaTest
-@Import({QuerydslConfig.class, TestJpaConfig.class})
+@Import({QuerydslConfig.class, TestJpaConfig.class, MockSearchTestConfig.class})
 class ConversationParticipantRepositoryTest {
 
   @Autowired
