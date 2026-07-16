@@ -36,8 +36,8 @@ jobs:
           files: build/reports/jacoco/test/jacocoTestReport.xml
           token: ${{ secrets.CODECOV_TOKEN }}
   deploy:
-    needs: build # ⭐ 중요: 앞선 CI(build) 단계가 '성공'해야만 배포가 시작됩니다!
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # ⭐ main 브랜치에 merge/push 될 때만 실행!
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -71,8 +71,8 @@ jobs:
       - name: Docker 이미지 빌드 및 ECR에 푸시 (Nginx & Backend)
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          NGINX_REPO: mopl-nginx        # Nginx ECR 리포지토리명
-          BACKEND_REPO: mopl-private    # 백엔드 ECR 리포지토리명
+          NGINX_REPO: mopl-nginx
+          BACKEND_REPO: mopl-private
           IMAGE_TAG: latest
         run: |
           # 1. Nginx 이미지 빌드 및 푸시
