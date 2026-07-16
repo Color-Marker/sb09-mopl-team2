@@ -1,10 +1,12 @@
 package com.sb09.sb09moplteam2.user.repository.custom;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sb09.sb09moplteam2.config.JpaAuditingConfig;
 import com.sb09.sb09moplteam2.config.MockSearchTestConfig;
+import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.user.dto.UserSearchCondition;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
@@ -272,5 +274,46 @@ class CustomUserRepositoryImplTest {
     long count = userRepository.countUsers(condition);
 
     assertThat(count).isZero();
+  }
+
+  @Test
+  void searchUsers_잘못된_형식의_cursor면_MoplException을_던진다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .cursor("not-an-instant")
+        .idAfter(UUID.randomUUID())
+        .limit(10)
+        .sortBy("createdAt")
+        .sortDirection("DESCENDING")
+        .build();
+
+    assertThatThrownBy(() -> userRepository.searchUsers(condition))
+        .isInstanceOf(MoplException.class);
+  }
+
+  @Test
+  void searchUsers_잘못된_role_cursor면_MoplException을_던진다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .cursor("NOT_A_ROLE")
+        .idAfter(UUID.randomUUID())
+        .limit(10)
+        .sortBy("role")
+        .sortDirection("ASCENDING")
+        .build();
+
+    assertThatThrownBy(() -> userRepository.searchUsers(condition))
+        .isInstanceOf(MoplException.class);
+  }
+
+  @Test
+  void searchUsers_cursor만_있고_idAfter가_없으면_MoplException을_던진다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .cursor("alice@mopl.io")
+        .limit(10)
+        .sortBy("email")
+        .sortDirection("ASCENDING")
+        .build();
+
+    assertThatThrownBy(() -> userRepository.searchUsers(condition))
+        .isInstanceOf(MoplException.class);
   }
 }

@@ -6,6 +6,7 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -15,7 +16,11 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "jwt_sessions")
+@Table(name = "jwt_sessions",
+    indexes = {
+        @Index(name = "idx_jwt_sessions_refresh_token", columnList = "refresh_token"),
+        @Index(name = "idx_jwt_sessions_user_id_revoked", columnList = "user_id, revoked")
+    })
 @Getter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)

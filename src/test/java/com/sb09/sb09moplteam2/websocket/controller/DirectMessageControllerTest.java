@@ -55,7 +55,7 @@ class DirectMessageControllerTest {
     directMessageController.sendDirectMessage(conversationId, request, senderId);
 
     verify(messagingTemplate).convertAndSend(
-        eq("/topic/conversations/" + conversationId), eq(response));
+        eq("/sub/conversations/" + conversationId), eq(response));
   }
 
   @Test

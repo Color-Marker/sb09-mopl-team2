@@ -4,11 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
+import com.sb09.sb09moplteam2.websocket.event.WatchingSessionEvent;
 import com.sb09.sb09moplteam2.websocket.mapper.WatchingSessionMapper;
 import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
 import java.time.Instant;
@@ -18,10 +22,12 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +37,8 @@ class WatchingSessionServiceTest {
   private WatchingSessionRepository watchingSessionRepository;
   @Mock
   private WatchingSessionMapper watchingSessionMapper;
+  @Mock
+  private SimpMessagingTemplate messagingTemplate;
 
   @InjectMocks
   private WatchingSessionService watchingSessionService;
@@ -138,6 +146,126 @@ class WatchingSessionServiceTest {
     assertThat(result.hasNext()).isTrue();
     assertThat(result.nextCursor()).isNotNull();
     assertThat(result.nextIdAfter()).isNotNull();
+  }
+
+  // ───────────────────────────── join ─────────────────────────────
+
+  @Test
+  void join_기존_활성_세션이_없으면_새_세션을_생성하고_JOIN을_브로드캐스트한다() {
+    WatchingSessionDto dto = makeWatchingSessionDto(activeSession);
+
+    given(watchingSessionRepository.findByUserIdAndStatus(
+        watcherId, WatchingSessionStatus.ACTIVE))
+        .willReturn(Optional.empty());
+
+    given(watchingSessionRepository.save(any(WatchingSession.class)))
+        .willAnswer(invocation -> {
+          WatchingSession session = invocation.getArgument(0);
+          ReflectionTestUtils.setField(session, "id", UUID.randomUUID());
+          return session;
+        });
+
+    given(watchingSessionMapper.toDto(any(WatchingSession.class)))
+        .willReturn(dto);
+
+    UUID resultId = watchingSessionService.join(contentId, watcherId);
+
+    assertThat(resultId).isNotNull();
+
+    ArgumentCaptor<WatchingSession> sessionCaptor = ArgumentCaptor.forClass(WatchingSession.class);
+    verify(watchingSessionRepository, times(1)).save(sessionCaptor.capture());
+    WatchingSession savedSession = sessionCaptor.getValue();
+    assertThat(savedSession.getUserId()).isEqualTo(watcherId);
+    assertThat(savedSession.getContentId()).isEqualTo(contentId);
+    assertThat(savedSession.getStatus()).isEqualTo(WatchingSessionStatus.ACTIVE);
+
+    ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
+    verify(messagingTemplate, times(1))
+        .convertAndSend(eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
+    assertThat(eventCaptor.getValue().type()).isEqualTo("JOIN");
+    assertThat(eventCaptor.getValue().watchingSession()).isEqualTo(dto);
+  }
+
+  @Test
+  void join_기존_활성_세션이_있으면_종료_후_LEAVE를_브로드캐스트하고_새_세션으로_JOIN을_브로드캐스트한다() {
+    WatchingSessionDto existingDto = makeWatchingSessionDto(activeSession);
+    WatchingSessionDto newDto = new WatchingSessionDto(
+        UUID.randomUUID(), Instant.now(), null, null);
+
+    given(watchingSessionRepository.findByUserIdAndStatus(watcherId, WatchingSessionStatus.ACTIVE))
+        .willReturn(Optional.of(activeSession));
+    given(watchingSessionMapper.toDto(any(WatchingSession.class)))
+        .willAnswer(invocation -> {
+          WatchingSession session = invocation.getArgument(0);
+          return session == activeSession ? existingDto : newDto;
+        });
+
+    given(watchingSessionRepository.save(any(WatchingSession.class)))
+        .willAnswer(invocation -> {
+          WatchingSession session = invocation.getArgument(0);
+          ReflectionTestUtils.setField(session, "id", UUID.randomUUID());
+          return session;
+        });
+
+    UUID resultId = watchingSessionService.join(contentId, watcherId);
+
+    assertThat(resultId).isNotNull();
+    assertThat(activeSession.getStatus()).isEqualTo(WatchingSessionStatus.ENDED);
+
+    verify(watchingSessionRepository, times(1))
+        .save(any(WatchingSession.class));
+
+    ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
+    verify(messagingTemplate, times(2))
+        .convertAndSend(eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
+
+    List<WatchingSessionEvent> events = eventCaptor.getAllValues();
+    assertThat(events).hasSize(2);
+    assertThat(events.get(0).type()).isEqualTo("LEAVE");
+    assertThat(events.get(1).type()).isEqualTo("JOIN");
+  }
+
+  // ───────────────────────────── leave ─────────────────────────────
+
+  @Test
+  void leave_활성_세션을_종료하고_LEAVE_이벤트를_브로드캐스트한다() {
+    WatchingSessionDto dto = makeWatchingSessionDto(activeSession);
+
+    given(watchingSessionRepository.findById(activeSession.getId()))
+        .willReturn(Optional.of(activeSession));
+    given(watchingSessionMapper.toDto(activeSession)).willReturn(dto);
+
+    watchingSessionService.leave(activeSession.getId());
+
+    assertThat(activeSession.getStatus()).isEqualTo(WatchingSessionStatus.ENDED);
+
+    ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
+    verify(messagingTemplate, times(1))
+        .convertAndSend(eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
+    assertThat(eventCaptor.getValue().type()).isEqualTo("LEAVE");
+    assertThat(eventCaptor.getValue().watchingSession()).isEqualTo(dto);
+  }
+
+  @Test
+  void leave_이미_종료된_세션이면_브로드캐스트하지_않는다() {
+    activeSession.end();
+
+    given(watchingSessionRepository.findById(activeSession.getId()))
+        .willReturn(Optional.of(activeSession));
+
+    watchingSessionService.leave(activeSession.getId());
+
+    verify(messagingTemplate, never()).convertAndSend(any(String.class), any(Object.class));
+  }
+
+  @Test
+  void leave_존재하지_않는_세션이면_아무것도_하지_않는다() {
+    UUID unknownId = UUID.randomUUID();
+    given(watchingSessionRepository.findById(unknownId)).willReturn(Optional.empty());
+
+    watchingSessionService.leave(unknownId);
+
+    verify(messagingTemplate, never()).convertAndSend(any(String.class), any(Object.class));
   }
 
   // ───────────────────────────── 헬퍼 메서드 ─────────────────────────────
