@@ -4,9 +4,8 @@ import com.sb09.sb09moplteam2.auth.controller.api.AuthApi;
 import com.sb09.sb09moplteam2.auth.dto.request.ResetPasswordRequest;
 import com.sb09.sb09moplteam2.auth.dto.response.TokenRefreshResult;
 import com.sb09.sb09moplteam2.auth.service.AuthService;
-import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.RefreshTokenCookieFactory;
 import com.sb09.sb09moplteam2.user.dto.response.JwtDto;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController implements AuthApi {
 
   private final AuthService authService;
-  private final JwtProvider jwtProvider;
+  private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
   @Override
   @PostMapping("/refresh")
@@ -34,11 +33,7 @@ public class AuthController implements AuthApi {
   ) {
     TokenRefreshResult result = authService.refresh(refreshToken);
 
-    Cookie refreshCookie = new Cookie("REFRESH_TOKEN", result.refreshToken());
-    refreshCookie.setHttpOnly(true);
-    refreshCookie.setPath("/");
-    refreshCookie.setMaxAge((int) (jwtProvider.getRefreshTokenExpirationMs() / 1000));
-    response.addCookie(refreshCookie);
+    refreshTokenCookieFactory.addRefreshTokenCookie(response, result.refreshToken());
 
     return ResponseEntity.ok(result.jwtDto());
   }

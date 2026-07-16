@@ -7,6 +7,8 @@ import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.event.message.RoleUpdatedEvent;
+import com.sb09.sb09moplteam2.exception.ErrorCode;
+import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.exception.user.DuplicateEmailException;
 import com.sb09.sb09moplteam2.exception.user.UserNotFoundException;
 import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
@@ -25,6 +27,8 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -81,6 +85,12 @@ public class BasicUserService implements UserService {
 
   @Override
   public CursorResponse<UserDto> findUsers(UserSearchCondition condition) {
+    if (condition.getLimit() < 1) {
+      MoplException exception = new MoplException(ErrorCode.INVALID_REQUEST);
+      exception.addDetail("limit", "limit는 1 이상이어야 합니다");
+      throw exception;
+    }
+
     List<User> users = userRepository.searchUsers(condition);
 
     boolean hasNext = users.size() > condition.getLimit();
@@ -124,6 +134,7 @@ public class BasicUserService implements UserService {
   }
 
   @Override
+  @Cacheable(cacheNames = "users", key = "#userId")
   public UserDto findUser(UUID userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
@@ -133,6 +144,7 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "users", key = "#userId")
   public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile image) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
@@ -148,6 +160,7 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "users", key = "#userId")
   public void updateRole(UUID userId, Role role) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
@@ -170,6 +183,7 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "users", key = "#userId")
   public void updateLocked(UUID userId, boolean locked) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
