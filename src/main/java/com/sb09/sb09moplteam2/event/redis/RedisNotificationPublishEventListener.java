@@ -1,10 +1,12 @@
 package com.sb09.sb09moplteam2.event.redis;
 
+import com.sb09.sb09moplteam2.event.message.DmEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationCreatedEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationDmEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
 import com.sb09.sb09moplteam2.notification.dto.data.NotificationDto;
 import com.sb09.sb09moplteam2.sse.SseService;
+import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,14 @@ public class RedisNotificationPublishEventListener {
     log.info(">>> NotificationDmEvent 리스너 진입: {}", event);
     NotificationDto dto = event.getData();
     sseService.publishToRedis(Set.of(dto.receiverId()),"notifications",dto);
+  }
+
+  @Async("eventTaskExecutor")
+  @TransactionalEventListener
+  public void on(DmEvent event) {
+    log.info(">>> DmEvent 리스너 진입: {}", event);
+    DirectMessageDto dto = event.getData();
+    sseService.publishToRedis(Set.of(dto.receiver().userId()),"direct-messages",dto);
   }
 
   @Async("eventTaskExecutor")
