@@ -7,22 +7,30 @@ import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
 
 @Slf4j
-@RequiredArgsConstructor
 public class SportProcessor implements ItemProcessor<SportsEventResponse, ContentAndTags> {
 
   private final ContentRepository contentRepository;
+  private final Set<String> existingExternalIds;
+
+  public SportProcessor(ContentRepository contentRepository) {
+    this.contentRepository = contentRepository;
+    this.existingExternalIds = new HashSet<>(
+        contentRepository.findAllExternalIdsByType(ContentType.sport));
+    log.info("기존 sport 콘텐츠 {}건 로드 완료", existingExternalIds.size());
+  }
 
   @Override
   public ContentAndTags process(SportsEventResponse item) {
-    if (contentRepository.findByTypeAndExternalId(
-        ContentType.sport, item.idEvent()).isPresent()) {
-      log.info("이미 존재하는 스포츠 콘텐츠 skip - externalId: {}", item.idEvent());
+    if (!existingExternalIds.add(item.idEvent())) {
+      log.info("이미 처리된 스포츠 콘텐츠 skip - externalId: {}", item.idEvent());
       return null;
     }
 

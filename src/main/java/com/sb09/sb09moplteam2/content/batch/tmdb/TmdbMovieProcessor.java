@@ -6,24 +6,37 @@ import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
 
 @Slf4j
-@RequiredArgsConstructor
 public class TmdbMovieProcessor implements ItemProcessor<TmdbEventResponse, ContentAndTags> {
 
   private final ContentRepository contentRepository;
   private final ContentType contentType;
+  private final Set<String> existingExternalIds;
+  private final Set<String> processedInThisRun = new HashSet<>();
+
+
+  public TmdbMovieProcessor(ContentRepository contentRepository, ContentType contentType) {
+    this.contentRepository = contentRepository;
+    this.contentType = contentType;
+    this.existingExternalIds = new HashSet<>(
+        contentRepository.findAllExternalIdsByType(contentType));
+    log.info("기존 {} 콘텐츠 {}건 로드 완료", contentType, existingExternalIds.size());
+  }
 
 
   @Override
   public ContentAndTags process(TmdbEventResponse item) {
-    if (contentRepository.findByTypeAndExternalId(
-        contentType, String.valueOf(item.id())).isPresent()) {
-      log.info("이미 존재하는 콘텐츠 skip - externalId: {}", item.id());
+    String externalId = String.valueOf(item.id());
+
+    if (!existingExternalIds.add(externalId)) {
+      log.info("이미 처리된 콘텐츠 skip - externalId: {}", externalId);
       return null;
     }
 

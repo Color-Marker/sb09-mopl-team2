@@ -40,7 +40,7 @@ public class TmdbMovieReader implements ItemReader<TmdbEventResponse> {
         ? tmdbClient.fetchMovies(currentPage)
         : tmdbClient.fetchTvSeries(currentPage);
 
-    totalPages = Math.min(response.totalPages(), 5); // 최대 5페이지
+    totalPages = Math.min(response.totalPages(), 5); // 가져 올 수 있는 외부 api의 페이지 양
     buffer = response.results();
     bufferIndex = 0;
     currentPage++;
