@@ -125,6 +125,8 @@ mopl:
       expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 days
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:8080}
+  cookie:
+    secure: ${COOKIE_SECURE:false} # https 환경에서만 true (prod 프로필에서 활성화)
   mail:
     type: smtp
 
