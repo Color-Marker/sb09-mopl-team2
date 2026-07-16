@@ -3,6 +3,7 @@ package com.sb09.sb09moplteam2.websocket.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
+import com.sb09.sb09moplteam2.config.MockSearchTestConfig;
 import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import com.sb09.sb09moplteam2.config.TestJpaConfig;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
@@ -20,7 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 
 @DataJpaTest
-@Import({QuerydslConfig.class, TestJpaConfig.class})
+@Import({QuerydslConfig.class, TestJpaConfig.class, MockSearchTestConfig.class})
 class WatchingSessionRepositoryTest {
 
   @Autowired
