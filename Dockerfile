@@ -34,8 +34,8 @@ ENV PROJECT_NAME=mopl \
 # 빌드 스테이지에서 jar 파일만 복사
 COPY --from=builder /app/build/libs/*-SNAPSHOT.jar ./app.jar
 
-# 80 포트 노출
-EXPOSE 80
+# 8080 포트 노출
+EXPOSE 8080
 
 # jar 파일 실행
 ENTRYPOINT ["sh", "-c", "java ${JVM_OPTS} -jar app.jar"]
