@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.sb09.sb09moplteam2.auth.entity.JwtSession;
 import com.sb09.sb09moplteam2.config.JpaAuditingConfig;
+import com.sb09.sb09moplteam2.config.MockSearchTestConfig;
 import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import java.time.Instant;
 import java.util.UUID;
@@ -15,7 +16,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
 @DataJpaTest
-@Import({QuerydslConfig.class, JpaAuditingConfig.class})
+@Import({QuerydslConfig.class, JpaAuditingConfig.class, MockSearchTestConfig.class})
 class JwtSessionRepositoryTest {
 
   @Autowired

@@ -10,6 +10,7 @@ import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.entity.QContent;
 import com.sb09.sb09moplteam2.content.entity.QContentTag;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Repository;
 public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
 
   private final JPAQueryFactory queryFactory;
+  private final ContentSearchService contentSearchService;
 
   @Override
   public CursorResponseContentDto findContentsWithCursor(
@@ -45,9 +47,12 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
     if (typeEqual != null) {
       builder.and(content.type.eq(ContentType.valueOf(typeEqual)));
     }
-    if (keywordLike != null) {
-      builder.and(content.title.containsIgnoreCase(keywordLike)
-          .or(content.description.containsIgnoreCase(keywordLike)));
+    if (keywordLike != null && !keywordLike.isBlank()) {
+      List<UUID> matchedIds = contentSearchService.searchIds(keywordLike);
+      if(matchedIds.isEmpty()) {
+        return new CursorResponseContentDto(List.of(), null, null, false, 0L, sortBy, sortDirection);
+      }
+      builder.and(content.id.in(matchedIds));
     }
     if (tagsIn != null && !tagsIn.isEmpty()) {
       builder.and(content.id.in(
