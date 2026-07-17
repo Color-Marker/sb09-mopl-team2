@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.notification.service.Basic;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
+import com.sb09.sb09moplteam2.event.message.DmEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationCreatedEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationDmEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
@@ -164,6 +165,7 @@ public class BasicNotificationService implements NotificationService {
 
     NotificationDto dto = notificationMapper.toDto(notification);
     eventPublisher.publishEvent(new NotificationDmEvent(dto, Instant.now()));
+    eventPublisher.publishEvent(new DmEvent(messageDto, Instant.now()));
   }
 
   private void create(UUID receiverId, String title, String content) {
