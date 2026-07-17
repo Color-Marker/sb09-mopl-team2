@@ -137,6 +137,7 @@ Sports:
 logging:
   level:
     root: info
+    com.sb09.sb09moplteam2: debug
 
 sse:
   timeout: 300000

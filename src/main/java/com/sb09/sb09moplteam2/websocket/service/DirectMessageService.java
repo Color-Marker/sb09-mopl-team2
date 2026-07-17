@@ -119,7 +119,7 @@ public class DirectMessageService {
   // STOMP /app/dm/{conversationId}
   // DM 전송 → DB 저장 + conversation.lastMessageAt 갱신 → 브로드캐스트용 response 반환
   @Transactional
-  public DirectMessageResponse send(UUID conversationId, UUID senderId, String content) {
+  public DirectMessageDto send(UUID conversationId, UUID senderId, String content) {
     log.debug("DM 전송 요청: conversationId={}, senderId={}", conversationId, senderId);
 
     Conversation conversation = conversationRepository.findById(conversationId)
@@ -160,13 +160,7 @@ public class DirectMessageService {
         new MessageCreatedEvent(receiver.getId(),messageDto)
     );
 
-    return new DirectMessageResponse(
-        dm.getId(),
-        conversationId,
-        senderId,
-        dm.getContent(),
-        dm.getSentAt()
-    );
+    return messageDto;
   }
 
   // POST /api/conversations/{conversationId}/direct-messages/{directMessageId}/read
