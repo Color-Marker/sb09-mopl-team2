@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.content.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
 import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import com.sb09.sb09moplteam2.config.TestJpaConfig;
@@ -8,6 +9,7 @@ import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
 import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -19,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @DataJpaTest
 @Import({QuerydslConfig.class, TestJpaConfig.class})
@@ -32,6 +35,9 @@ class ContentRepositoryTest {
 
   @Autowired
   private TestEntityManager em;
+
+  @MockitoBean
+  private ContentSearchService contentSearchService;
 
   @Test
   @DisplayName("type과 externalId로 콘텐츠를 조회한다")
@@ -91,9 +97,12 @@ class ContentRepositoryTest {
   @Test
   @DisplayName("keywordLike 필터로 제목 검색이 된다")
   void findContentsWithCursor_keywordLike_필터로_제목_검색이_된다() {
-    em.persist(Content.builder().type(ContentType.movie).externalId("ext-001").title("어벤져스").description("마블 영화").build());
+    Content content1 = em.persist(Content.builder().type(ContentType.movie).externalId("ext-001").title("어벤져스").description("마블 영화").build());
     em.persist(Content.builder().type(ContentType.movie).externalId("ext-002").title("스파이더맨").description("마블 영화").build());
     em.flush();
+
+    given(contentSearchService.searchIds("어벤져스"))
+        .willReturn(List.of(content1.getId()));
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
         null, "어벤져스", null, null, null, 10, "DESCENDING", "createdAt"

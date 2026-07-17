@@ -80,7 +80,7 @@ class UserControllerTest {
   }
 
   @Test
-  void 이메일이_중복되면_409를_반환한다() throws Exception {
+  void 이메일이_중복되면_400을_반환한다() throws Exception {
     given(userService.createUser(any())).willThrow(DuplicateEmailException.withEmail("woody@mopl.io"));
 
     mockMvc.perform(post("/api/users")
@@ -92,7 +92,7 @@ class UserControllerTest {
                   "password": "mopl1!@#$"
                 }
                 """))
-        .andExpect(status().isConflict());
+        .andExpect(status().isBadRequest());
   }
 
   @Test

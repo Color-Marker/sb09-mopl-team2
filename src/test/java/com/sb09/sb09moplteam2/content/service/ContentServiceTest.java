@@ -19,6 +19,7 @@ import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.mapper.ContentMapper;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
 import com.sb09.sb09moplteam2.storage.FileStorageService;
@@ -32,6 +33,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class ContentServiceTest {
@@ -51,6 +53,9 @@ class ContentServiceTest {
   @Mock
   private FileStorageService fileStorageService;
 
+  @Mock
+  private ContentSearchService contentSearchService;
+
   @Test
   @DisplayName("콘텐츠 생성 성공")
   void 콘텐츠_생성에_성공하면_ContentDto를_반환한다() {
@@ -58,7 +63,11 @@ class ContentServiceTest {
         ContentType.movie, "테스트 영화", "설명", List.of("액션", "SF")
     );
 
-    given(contentRepository.save(any(Content.class))).willAnswer(invocation -> invocation.getArgument(0));
+    given(contentRepository.save(any(Content.class))).willAnswer(invocation -> {
+      Content c = invocation.getArgument(0);
+      ReflectionTestUtils.setField(c, "id", UUID.randomUUID());
+      return c;
+    });
     given(contentTagRepository.saveAll(anyList())).willReturn(List.of());
 
     ContentDto expectedDto = new ContentDto(
@@ -85,7 +94,11 @@ class ContentServiceTest {
         "thumbnail", "poster.jpg", "image/jpeg", "dummy-image-content".getBytes());
 
     given(fileStorageService.store(thumbnail)).willReturn("/files/poster.jpg");
-    given(contentRepository.save(any(Content.class))).willAnswer(invocation -> invocation.getArgument(0));
+    given(contentRepository.save(any(Content.class))).willAnswer(invocation -> {
+      Content c = invocation.getArgument(0);
+      ReflectionTestUtils.setField(c, "id", UUID.randomUUID());
+      return c;
+    });
     given(contentTagRepository.saveAll(anyList())).willReturn(List.of());
 
     ContentDto expectedDto = new ContentDto(
@@ -156,6 +169,10 @@ class ContentServiceTest {
     ContentUpdateRequest request = new ContentUpdateRequest("수정된 제목", "수정된 설명", List.of("드라마"));
 
     given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
+    given(content.getId()).willReturn(contentId);
+    given(content.getType()).willReturn(ContentType.movie);
+    given(content.getTitle()).willReturn("수정된 제목");
+    given(content.getDescription()).willReturn("수정된 설명");
     given(contentTagRepository.findByContentId(contentId)).willReturn(List.of());
     ContentDto expectedDto = new ContentDto(
         contentId, ContentType.movie, "수정된 제목", "수정된 설명",
@@ -182,6 +199,10 @@ class ContentServiceTest {
         "thumbnail", "new-poster.jpg", "image/jpeg", "dummy".getBytes());
 
     given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
+    given(content.getId()).willReturn(contentId);
+    given(content.getType()).willReturn(ContentType.movie);
+    given(content.getTitle()).willReturn("수정된 제목");
+    given(content.getDescription()).willReturn("수정된 설명");
     given(fileStorageService.store(thumbnail)).willReturn("/files/new-poster.jpg");
     given(contentTagRepository.findByContentId(contentId)).willReturn(List.of());
     ContentDto expectedDto = new ContentDto(

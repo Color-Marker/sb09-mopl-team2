@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.playlist.repolistory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sb09.sb09moplteam2.config.MockSearchTestConfig;
 import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import com.sb09.sb09moplteam2.config.TestJpaConfig;
 import com.sb09.sb09moplteam2.playlist.entity.Playlist;
@@ -19,7 +20,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 @DataJpaTest
-@Import({QuerydslConfig.class, TestJpaConfig.class})
+@Import({QuerydslConfig.class, TestJpaConfig.class, MockSearchTestConfig.class})
 class PlaylistRepositoryTest {
 
   @Autowired
@@ -235,7 +236,7 @@ class PlaylistRepositoryTest {
     Playlist p2 = savePlaylist("두번째", "설명", owner);
     Playlist p3 = savePlaylist("세번째", "설명", owner);
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
     forceUpdatedAt(p1, now.minus(3, ChronoUnit.MINUTES));
     forceUpdatedAt(p2, now.minus(2, ChronoUnit.MINUTES));
     forceUpdatedAt(p3, now.minus(1, ChronoUnit.MINUTES));

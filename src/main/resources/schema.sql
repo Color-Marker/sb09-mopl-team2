@@ -68,6 +68,10 @@ ALTER TABLE jwt_sessions
             REFERENCES users (id)
             ON DELETE CASCADE;
 
+-- jwt_sessions 조회용 인덱스 (refresh 시 토큰 조회, 강제 로그아웃 시 사용자별 활성 세션 조회)
+CREATE INDEX idx_jwt_sessions_refresh_token ON jwt_sessions (refresh_token);
+CREATE INDEX idx_jwt_sessions_user_id_revoked ON jwt_sessions (user_id, revoked);
+
 -- pasword_reset_tokens
 CREATE TABLE password_reset_tokens
 (
@@ -86,13 +90,16 @@ ALTER TABLE password_reset_tokens
             REFERENCES users (id)
             ON DELETE CASCADE;
 
+-- password_reset_tokens 조회용 인덱스 (로그인 시 사용자별 활성 임시 비밀번호 조회)
+CREATE INDEX idx_password_reset_tokens_user_id ON password_reset_tokens (user_id);
+
 -- contents
 CREATE TABLE contents
 (
     id uuid PRIMARY KEY,
     type varchar(20) not null,
     external_id varchar(1024) not null,
-    title varchar(50) not null,
+    title varchar(255) not null,
     description text,
     thumbnail_url varchar(255),
     release_date date,

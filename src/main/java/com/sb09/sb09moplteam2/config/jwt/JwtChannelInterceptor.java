@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.config.jwt;
 
 import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
+import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -25,6 +26,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
   private static final String BEARER_PREFIX = "Bearer ";
 
   private final JwtProvider jwtProvider;
+  private final SessionBlacklistService sessionBlacklistService;
 
   @Override
   public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -48,6 +50,12 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
 
       if (!jwtProvider.isValid(token)) {
         log.warn("WebSocket CONNECT 인증 실패 - 유효하지 않은 토큰");
+        throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+      }
+
+      UUID sessionId = jwtProvider.getSessionId(token);
+      if (sessionId != null && sessionBlacklistService.isBlacklisted(sessionId)) {
+        log.warn("WebSocket CONNECT 인증 실패 - 무효화된 세션의 토큰");
         throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
       }
 

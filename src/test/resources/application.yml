@@ -13,6 +13,8 @@ spring:
   batch:
     job:
       enabled: false
+  elasticsearch:
+    uris: http://localhost:9200
   security:
     oauth2:
       client:

@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sb09.sb09moplteam2.security.jwt.CsrfCookieFilter;
+import com.sb09.sb09moplteam2.security.jwt.RefreshTokenCookieFactory;
 import com.sb09.sb09moplteam2.security.jwt.SessionBlacklistService;
 import com.sb09.sb09moplteam2.security.oauth.CustomOAuth2UserService;
 import com.sb09.sb09moplteam2.security.jwt.JwtAuthenticationFilter;
@@ -46,6 +47,7 @@ public class SecurityConfig {
   private final OAuth2SignInSuccessHandler oAuth2SignInSuccessHandler;
   private final OAuth2SignInFailureHandler oAuth2SignInFailureHandler;
   private final SessionBlacklistService sessionBlacklistService;
+  private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -59,7 +61,7 @@ public class SecurityConfig {
     csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
 
     JwtSignInFilter jwtSignInFilter = new JwtSignInFilter(
-        authenticationManager, jwtProvider, jwtSessionRepository, userRepository, userMapper, objectMapper, sessionBlacklistService
+        authenticationManager, jwtProvider, jwtSessionRepository, userRepository, userMapper, objectMapper, sessionBlacklistService, refreshTokenCookieFactory
     );
 
     http
@@ -87,7 +89,7 @@ public class SecurityConfig {
         )
         .logout(logout -> logout
             .logoutUrl("/api/auth/sign-out")
-            .addLogoutHandler(new JwtSignOutHandler(jwtSessionRepository))
+            .addLogoutHandler(new JwtSignOutHandler(jwtSessionRepository, sessionBlacklistService))
             .logoutSuccessHandler((request, response, authentication) ->
                 response.setStatus(HttpStatus.NO_CONTENT.value()))
             .deleteCookies("REFRESH_TOKEN")

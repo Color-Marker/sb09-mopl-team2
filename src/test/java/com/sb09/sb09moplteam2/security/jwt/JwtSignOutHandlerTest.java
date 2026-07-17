@@ -25,6 +25,9 @@ class JwtSignOutHandlerTest {
   @Mock
   private JwtSessionRepository jwtSessionRepository;
 
+  @Mock
+  private SessionBlacklistService sessionBlacklistService;
+
   @InjectMocks
   private JwtSignOutHandler jwtSignOutHandler;
 
@@ -42,6 +45,7 @@ class JwtSignOutHandlerTest {
 
     assertThat(session.isRevoked()).isTrue();
     verify(jwtSessionRepository).save(session);
+    verify(sessionBlacklistService).blacklist(session.getId());
   }
 
   @Test
@@ -55,6 +59,7 @@ class JwtSignOutHandlerTest {
     jwtSignOutHandler.logout(request, new MockHttpServletResponse(), null);
 
     verify(jwtSessionRepository, never()).save(any());
+    verify(sessionBlacklistService, never()).blacklist(any());
   }
 
   @Test

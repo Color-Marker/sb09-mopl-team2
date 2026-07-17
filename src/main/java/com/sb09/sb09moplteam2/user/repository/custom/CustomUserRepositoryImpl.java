@@ -6,11 +6,14 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.sb09.sb09moplteam2.exception.ErrorCode;
+import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.user.dto.UserSearchCondition;
 import com.sb09.sb09moplteam2.user.entity.QUser;
 import com.sb09.sb09moplteam2.user.entity.Role;
 import com.sb09.sb09moplteam2.user.entity.User;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -80,9 +83,24 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
     if (!StringUtils.hasText(cursor)) {
       return null;
     }
+    if (condition.getIdAfter() == null) {
+      MoplException exception = new MoplException(ErrorCode.INVALID_REQUEST);
+      exception.addDetail("idAfter", "커서 사용 시 보조 커서(idAfter)가 필요합니다");
+      throw exception;
+    }
 
     boolean asc = isAscending(condition);
 
+    try {
+      return buildCursorExpression(condition, cursor, asc);
+    } catch (IllegalArgumentException | DateTimeParseException e) {
+      MoplException exception = new MoplException(ErrorCode.INVALID_REQUEST, e);
+      exception.addDetail("cursor", cursor);
+      throw exception;
+    }
+  }
+
+  private BooleanExpression buildCursorExpression(UserSearchCondition condition, String cursor, boolean asc) {
     return switch (resolveSortBy(condition)) {
       case "email" -> asc
           ? user.email.gt(cursor).or(user.email.eq(cursor).and(user.id.gt(condition.getIdAfter())))
