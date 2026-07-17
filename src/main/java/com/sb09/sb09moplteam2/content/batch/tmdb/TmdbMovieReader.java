@@ -40,13 +40,21 @@ public class TmdbMovieReader implements ItemReader<TmdbEventResponse> {
   }
 
   private void fetchNextPage() {
-    TmdbPageResponse<TmdbEventResponse> response = contentType == ContentType.movie
-        ? tmdbClient.fetchMovies(currentPage)
-        : tmdbClient.fetchTvSeries(currentPage);
+    try {
+      TmdbPageResponse<TmdbEventResponse> response = contentType == ContentType.movie
+          ? tmdbClient.fetchMovies(currentPage)
+          : tmdbClient.fetchTvSeries(currentPage);
 
-    buffer = response.results();
-    bufferIndex = 0;
-    log.info("TMDB {}데이터 {}페이지 로드 완 - {}건 (스레: {})", contentType, currentPage, buffer.size(), partitionName);
+      buffer = response.results();
+      bufferIndex = 0;
+      log.info("TMDB {} 데이터 {}페이지 로드 완료 - {}건 ({})",
+          contentType, currentPage, buffer.size(), partitionName);
+    } catch (Exception e) {
+      log.warn("TMDB {} {}페이지 조회 실패 - 스킵하고 다음 페이지로 진행 ({}): {}",
+          contentType, currentPage, partitionName, e.getMessage());
+      buffer = List.of();
+      bufferIndex = 0;
+    }
     currentPage++;
   }
 }
