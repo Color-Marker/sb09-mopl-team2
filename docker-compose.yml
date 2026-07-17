@@ -38,7 +38,6 @@ services:
     env_file:
       - .env
     environment:
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mopl
       - STORAGE_TYPE=local
       - STORAGE_LOCAL_ROOT_PATH=.mopl/storage
