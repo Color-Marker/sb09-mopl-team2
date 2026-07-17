@@ -36,7 +36,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class TmdbBatchConfig {
 
   private static final int GRID_SIZE = 10;
-  private static final int MAX_PAGES = 500; // 배치 1회당 최대 수집 페이지
+  private static final int MAX_PAGES = 10; // 배치 1회당 최대 수집 페이지
 
   private final JobRepository jobRepository;
   private final PlatformTransactionManager transactionManager;
