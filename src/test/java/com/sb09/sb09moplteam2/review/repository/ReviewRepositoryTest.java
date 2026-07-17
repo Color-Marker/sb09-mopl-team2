@@ -10,6 +10,7 @@ import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.review.entity.Review;
 
 import com.sb09.sb09moplteam2.user.entity.User;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @DataJpaTest
 @Import({QuerydslConfig.class, TestJpaConfig.class, MockSearchTestConfig.class})
@@ -175,10 +177,17 @@ class ReviewRepositoryTest {
         .description("설명")
         .externalId("test-external-id")
         .build());
+
     Review review1 = em.persist(Review.builder().rating(3.0).text("리뷰1").content(content).user(user).build());
-    em.flush();
     Review review2 = em.persist(Review.builder().rating(4.0).text("리뷰2").content(content).user(user).build());
     em.flush();
+
+    ReflectionTestUtils.setField(review1, "createdAt", Instant.parse("2026-01-01T00:00:00Z"));
+    ReflectionTestUtils.setField(review2, "createdAt", Instant.parse("2026-01-01T00:00:01Z"));
+    em.persist(review1);
+    em.persist(review2);
+    em.flush();
+    em.clear();
 
     List<Review> firstPage = reviewRepository.findReviewsWithCursor(
         content.getId(), null, null, 1, "DESCENDING", "createdAt"
@@ -203,10 +212,17 @@ class ReviewRepositoryTest {
         .description("설명")
         .externalId("test-external-id")
         .build());
+
     Review review1 = em.persist(Review.builder().rating(3.0).text("리뷰1").content(content).user(user).build());
-    em.flush();
     Review review2 = em.persist(Review.builder().rating(4.0).text("리뷰2").content(content).user(user).build());
     em.flush();
+
+    ReflectionTestUtils.setField(review1, "createdAt", Instant.parse("2026-01-01T00:00:00Z"));
+    ReflectionTestUtils.setField(review2, "createdAt", Instant.parse("2026-01-01T00:00:01Z"));
+    em.persist(review1);
+    em.persist(review2);
+    em.flush();
+    em.clear();
 
     List<Review> firstPage = reviewRepository.findReviewsWithCursor(
         content.getId(), null, null, 1, "ASCENDING", "createdAt"
