@@ -6,6 +6,7 @@ import java.util.UUID;
 public record WatchingSessionChatResponse(
     UUID senderId,
     String senderName,
+    String senderProfileImageUrl,
     String content,
     Instant sentAt
 ) {

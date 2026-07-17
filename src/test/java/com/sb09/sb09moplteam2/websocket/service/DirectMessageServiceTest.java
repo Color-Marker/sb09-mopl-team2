@@ -9,11 +9,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
+import com.sb09.sb09moplteam2.event.message.MessageCreatedEvent;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
-import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
@@ -202,13 +202,15 @@ class DirectMessageServiceTest {
         .willReturn(Optional.of(otherParticipant));
     given(userRepository.findById(otherUserId)).willReturn(Optional.of(receiver));
 
-    DirectMessageResponse response = directMessageService.send(conversationId, myUserId, content);
+    DirectMessageDto response = directMessageService.send(conversationId, myUserId, content);
 
     assertThat(response.conversationId()).isEqualTo(conversationId);
-    assertThat(response.senderId()).isEqualTo(myUserId);
+    assertThat(response.sender().userId()).isEqualTo(myUserId);
+    assertThat(response.receiver().userId()).isEqualTo(otherUserId);
     assertThat(response.content()).isEqualTo(content);
-    assertThat(response.sentAt()).isNotNull();
+    assertThat(response.createdAt()).isNotNull();
     verify(directMessageRepository).save(any(DirectMessage.class));
+    verify(eventPublisher).publishEvent(any(MessageCreatedEvent.class));
   }
 
   @Test

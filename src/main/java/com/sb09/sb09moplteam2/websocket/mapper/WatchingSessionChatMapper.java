@@ -12,6 +12,7 @@ public class WatchingSessionChatMapper {
     return new WatchingSessionChatResponse(
         sender.getId(),
         sender.getName(),
+        sender.getProfileImageUrl(),
         content,
         Instant.now()
     );
