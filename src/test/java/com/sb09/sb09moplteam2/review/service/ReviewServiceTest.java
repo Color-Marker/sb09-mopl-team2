@@ -23,6 +23,7 @@ import com.sb09.sb09moplteam2.review.mapper.ReviewMapper;
 import com.sb09.sb09moplteam2.review.repository.ReviewRepository;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -249,5 +250,88 @@ class ReviewServiceTest {
     assertThat(result.data()).hasSize(1);
     assertThat(result.hasNext()).isFalse();
     assertThat(result.sortBy()).isEqualTo("createdAt");
+  }
+
+  @Test
+  @DisplayName("리뷰 삭제 후 통계 갱신 중 콘텐츠가 없으면 예외를 던진다")
+  void 리뷰_삭제후_통계_갱신시_콘텐츠가_없으면_예외를_던진다() {
+    UUID userId = UUID.randomUUID();
+    UUID reviewId = UUID.randomUUID();
+    UUID contentId = UUID.randomUUID();
+
+    User user = mock(User.class);
+    given(user.getId()).willReturn(userId);
+
+    Content content = mock(Content.class);
+    given(content.getId()).willReturn(contentId);
+
+    Review review = mock(Review.class);
+    given(review.getUser()).willReturn(user);
+    given(review.getContent()).willReturn(content);
+
+    given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+    given(reviewRepository.findByContentId(contentId)).willReturn(List.of());
+    given(contentRepository.findById(contentId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> reviewService.delete(reviewId, userId))
+        .isInstanceOf(ContentNotFoundException.class);
+
+    verify(reviewRepository).delete(review);
+  }
+
+  @Test
+  @DisplayName("리뷰 목록 조회 시 다음 페이지가 있으면 커서 정보를 반환한다 - createdAt 기준")
+  void 리뷰_목록_조회시_다음_페이지가_있으면_커서정보를_반환한다_createdAt() {
+    UUID contentId = UUID.randomUUID();
+    UUID reviewId1 = UUID.randomUUID();
+
+    Review review1 = mock(Review.class);
+    Review review2 = mock(Review.class);
+    Instant createdAt = Instant.parse("2026-01-01T00:00:00Z");
+    given(review1.getId()).willReturn(reviewId1);
+    given(review1.getCreatedAt()).willReturn(createdAt);
+
+    ReviewDto dto1 = new ReviewDto(reviewId1, contentId, null, "리뷰1", 4.0);
+
+    given(reviewRepository.findReviewsWithCursor(any(), any(), any(), anyInt(), any(), any()))
+        .willReturn(List.of(review1, review2));
+    given(reviewMapper.toDto(review1)).willReturn(dto1);
+    given(reviewRepository.countByContentId(contentId)).willReturn(5L);
+
+    CursorResponseReviewDto result = reviewService.findAll(
+        contentId, null, null, 1, "DESCENDING", "createdAt"
+    );
+
+    assertThat(result.data()).hasSize(1);
+    assertThat(result.hasNext()).isTrue();
+    assertThat(result.nextIdAfter()).isEqualTo(reviewId1);
+    assertThat(result.nextCursor()).isEqualTo(createdAt.toString());
+  }
+
+  @Test
+  @DisplayName("리뷰 목록 조회 시 다음 페이지가 있으면 커서 정보를 반환한다 - rating 기준")
+  void 리뷰_목록_조회시_다음_페이지가_있으면_커서정보를_반환한다_rating() {
+    UUID contentId = UUID.randomUUID();
+    UUID reviewId1 = UUID.randomUUID();
+
+    Review review1 = mock(Review.class);
+    Review review2 = mock(Review.class);
+    given(review1.getId()).willReturn(reviewId1);
+    given(review1.getRating()).willReturn(4.5);
+
+    ReviewDto dto1 = new ReviewDto(reviewId1, contentId, null, "리뷰1", 4.5);
+
+    given(reviewRepository.findReviewsWithCursor(any(), any(), any(), anyInt(), any(), any()))
+        .willReturn(List.of(review1, review2));
+    given(reviewMapper.toDto(review1)).willReturn(dto1);
+    given(reviewRepository.countByContentId(contentId)).willReturn(5L);
+
+    CursorResponseReviewDto result = reviewService.findAll(
+        contentId, null, null, 1, "DESCENDING", "rating"
+    );
+
+    assertThat(result.hasNext()).isTrue();
+    assertThat(result.nextIdAfter()).isEqualTo(reviewId1);
+    assertThat(result.nextCursor()).isEqualTo(String.valueOf(4.5));
   }
 }
