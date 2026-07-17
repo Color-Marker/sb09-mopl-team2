@@ -20,15 +20,20 @@ public class ContentSearchInitializer {
 
   @EventListener(ApplicationReadyEvent.class)
   public void reindexAll() {
-    long existingCount = contentSearchRepository.count();
-    if (existingCount > 0) {
-      log.info("Elasticsearch에 이미 색인된 데이터가 있어 재색인을 건너뜁니다 - {}건", existingCount);
-      return;
-    }
+    try {
+      long existingCount = contentSearchRepository.count();
+      if (existingCount > 0) {
+        log.info("Elasticsearch에 이미 색인된 데이터가 있어 재색인을 건너뜁니다 - {}건", existingCount);
+        return;
+      }
 
-    List<Content> allContents = contentRepository.findAll();
-    allContents.forEach(content ->
-        contentSearchService.index(ContentDocument.from(content)));
-    log.info("Elasticsearch 색인 완료 - {}건", allContents.size());
+      List<Content> allContents = contentRepository.findAll();
+      allContents.forEach(content ->
+          contentSearchService.index(ContentDocument.from(content)));
+      log.info("Elasticsearch 색인 완료 - {}건", allContents.size());
+    } catch (Exception e) {
+      // ES 미가용 시 검색 기능만 비활성화하고 앱은 정상 기동 (연결 복구 후 재기동하면 재색인됨)
+      log.warn("Elasticsearch 연결 실패로 콘텐츠 재색인을 건너뜁니다: {}", e.getMessage());
+    }
   }
 }
