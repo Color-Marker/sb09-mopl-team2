@@ -49,7 +49,7 @@ class WatchingSessionChatControllerTest {
   @Test
   void 메시지_전송에_성공하면_해당_콘텐츠_채팅_destination으로_브로드캐스트한다() {
     WatchingSessionChatResponse response = new WatchingSessionChatResponse(
-        senderId, "테스트유저", request.content(), Instant.now());
+        senderId, "테스트유저", "https://example.com/profile.jpg", request.content(), Instant.now());
 
     given(watchingSessionChatService.sendMessage(contentId, senderId, request.content()))
         .willReturn(response);

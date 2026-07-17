@@ -1,9 +1,10 @@
 package com.sb09.sb09moplteam2.websocket.controller;
 
+import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.exception.ErrorResponse;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
+import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.dto.request.DirectMessageRequest;
-import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.service.DirectMessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,11 +35,13 @@ class DirectMessageControllerTest {
 
   private UUID conversationId;
   private UUID senderId;
+  private UUID receiverId;
 
   @BeforeEach
   void setUp() {
     conversationId = UUID.randomUUID();
     senderId = UUID.randomUUID();
+    receiverId = UUID.randomUUID();
   }
 
   // ───────────────────────────── sendDirectMessage ─────────────────────────────
@@ -46,8 +49,14 @@ class DirectMessageControllerTest {
   @Test
   void sendDirectMessage_정상_전송시_해당_대화방_토픽으로_브로드캐스트한다() {
     DirectMessageRequest request = new DirectMessageRequest("안녕하세요");
-    DirectMessageResponse response = new DirectMessageResponse(
-        UUID.randomUUID(), conversationId, senderId, "안녕하세요", Instant.now());
+    DirectMessageDto response = new DirectMessageDto(
+        UUID.randomUUID(),
+        conversationId,
+        Instant.now(),
+        new UserSummary(senderId, "sender", null),
+        new UserSummary(receiverId, "receiver", null),
+        "안녕하세요"
+    );
 
     given(directMessageService.send(conversationId, senderId, "안녕하세요"))
         .willReturn(response);
@@ -55,15 +64,21 @@ class DirectMessageControllerTest {
     directMessageController.sendDirectMessage(conversationId, request, senderId);
 
     verify(messagingTemplate).convertAndSend(
-        eq("/sub/conversations/" + conversationId), eq(response));
+        eq("/sub/conversations/" + conversationId + "/direct-messages"), eq(response));
   }
 
   @Test
   void sendDirectMessage_서비스에_conversationId_senderId_content를_그대로_전달한다() {
     String content = "테스트 메시지";
     DirectMessageRequest request = new DirectMessageRequest(content);
-    DirectMessageResponse response = new DirectMessageResponse(
-        UUID.randomUUID(), conversationId, senderId, content, Instant.now());
+    DirectMessageDto response = new DirectMessageDto(
+        UUID.randomUUID(),
+        conversationId,
+        Instant.now(),
+        new UserSummary(senderId, "sender", null),
+        new UserSummary(receiverId, "receiver", null),
+        content
+    );
 
     given(directMessageService.send(conversationId, senderId, content))
         .willReturn(response);

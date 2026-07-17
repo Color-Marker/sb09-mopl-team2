@@ -2,8 +2,8 @@ package com.sb09.sb09moplteam2.websocket.controller;
 
 import com.sb09.sb09moplteam2.exception.ErrorResponse;
 import com.sb09.sb09moplteam2.exception.MoplException;
+import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.dto.request.DirectMessageRequest;
-import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.service.DirectMessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,14 +29,12 @@ public class DirectMessageController {
 
   /**
    * DM 전송
-   *
    * 클라이언트 전송 경로: /app/dm/{conversationId}
    * 브로드캐스트 경로:    /topic/conversations/{conversationId}
-   *
    * 클라이언트는 CONNECT 후 /topic/conversations/{conversationId} 를 구독하고,
    * 메시지를 보낼 때는 /app/dm/{conversationId} 로 전송합니다.
    */
-  @MessageMapping("/dm/{conversationId}")
+  @MessageMapping("/conversations/{conversationId}/direct-messages")
   public void sendDirectMessage(
       @DestinationVariable UUID conversationId,
       @Payload @Valid DirectMessageRequest request,
@@ -44,12 +42,12 @@ public class DirectMessageController {
   ) {
     log.debug("STOMP DM 수신: conversationId={}, senderId={}", conversationId, senderId);
 
-    DirectMessageResponse response = directMessageService.send(
+    DirectMessageDto response = directMessageService.send(
         conversationId, senderId, request.content());
 
     // 대화방 구독자 전체에게 브로드캐스트
     messagingTemplate.convertAndSend(
-        "/sub/conversations/" + conversationId,
+        "/sub/conversations/" + conversationId + "/direct-messages",
         response
     );
   }
