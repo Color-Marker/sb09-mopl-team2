@@ -38,6 +38,7 @@ public class WatchingSessionEventListener {
 
     Matcher matcher = WATCH_DESTINATION_PATTERN.matcher(destination);
     if (!matcher.matches()) {
+      log.debug("watch 세션 대상 아닌 구독: destination={}", destination);
       return;
     }
 
