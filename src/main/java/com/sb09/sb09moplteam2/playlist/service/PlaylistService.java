@@ -27,7 +27,9 @@ import com.sb09.sb09moplteam2.playlist.repository.PlaylistRepository;
 import com.sb09.sb09moplteam2.playlist.repository.PlaylistSubscriptionRepository;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.user.repository.UserRepository;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -97,11 +99,21 @@ public class PlaylistService {
     boolean hasNext = playlists.size() > limit;
     List<Playlist> content = hasNext ? playlists.subList(0, limit) : playlists;
 
+    List<UUID> playlistIds = content.stream().map(Playlist::getId).toList();
+
+    Map<UUID, List<PlaylistItem>> itemsMap = playlistItemRepository
+          .findByPlaylistIdInOrderByOrderIndex(playlistIds).stream()
+        .collect(Collectors.groupingBy(item -> item.getPlaylist().getId()));
+
+    Set<UUID> subscribedPlaylistIds = currentUserId != null
+        ? new HashSet<>(playlistSubscriptionRepository
+        .findPlaylistIdsBySubscriberIdAndPlaylistIdIn(currentUserId, playlistIds))
+        : Set.of();
+
     List<PlaylistDto> data = content.stream()
         .map(playlist -> {
-          List<PlaylistItem> items = playlistItemRepository.findByPlaylistIdOrderByOrderIndex(playlist.getId());
-          boolean subscribedByMe = currentUserId != null &&
-              playlistSubscriptionRepository.existsByPlaylistIdAndSubscriberId(playlist.getId(), currentUserId);
+          List<PlaylistItem> items = itemsMap.getOrDefault(playlist.getId(), List.of());
+          boolean subscribedByMe = subscribedPlaylistIds.contains(playlist.getId());
           return playlistMapper.toDto(playlist, items, subscribedByMe);
         })
         .toList();

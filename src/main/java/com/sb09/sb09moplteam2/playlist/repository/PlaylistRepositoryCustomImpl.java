@@ -11,7 +11,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
 
+@Repository
 @RequiredArgsConstructor
 public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
 
@@ -34,7 +36,7 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
     BooleanBuilder builder = new BooleanBuilder();
 
     if (keywordLike != null && !keywordLike.isBlank()) {
-      builder.and(playlist.title.containsIgnoreCase(keywordLike));
+      builder.and(playlist.title.containsIgnoreCase(keywordLike.trim()));
     }
     if (ownerIdEqual != null) {
       builder.and(playlist.owner.id.eq(ownerIdEqual));
@@ -53,30 +55,20 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
     if (cursor != null && !cursor.isBlank() && idAfter != null) {
       if (sortByUpdatedAt) {
         Instant cursorValue = Instant.parse(cursor);
-        if (isAsc) {
-          builder.and(
-              playlist.updatedAt.gt(cursorValue)
-                  .or(playlist.updatedAt.eq(cursorValue).and(playlist.id.gt(idAfter)))
-          );
-        } else {
-          builder.and(
-              playlist.updatedAt.lt(cursorValue)
-                  .or(playlist.updatedAt.eq(cursorValue).and(playlist.id.lt(idAfter)))
-          );
-        }
+        builder.and(isAsc
+            ? playlist.updatedAt.gt(cursorValue)
+            .or(playlist.updatedAt.eq(cursorValue).and(playlist.id.gt(idAfter)))
+            : playlist.updatedAt.lt(cursorValue)
+                .or(playlist.updatedAt.eq(cursorValue).and(playlist.id.gt(idAfter)))
+        );
       } else {
         Long cursorValue = Long.parseLong(cursor);
-        if (isAsc) {
-          builder.and(
-              playlist.subscriberCount.gt(cursorValue)
-                  .or(playlist.subscriberCount.eq(cursorValue).and(playlist.id.gt(idAfter)))
-          );
-        } else {
-          builder.and(
-              playlist.subscriberCount.lt(cursorValue)
-                  .or(playlist.subscriberCount.eq(cursorValue).and(playlist.id.lt(idAfter)))
-          );
-        }
+        builder.and(isAsc
+            ? playlist.subscriberCount.gt(cursorValue)
+            .or(playlist.subscriberCount.eq(cursorValue).and(playlist.id.gt(idAfter)))
+            : playlist.subscriberCount.lt(cursorValue)
+                .or(playlist.subscriberCount.eq(cursorValue).and(playlist.id.gt(idAfter)))
+        );
       }
     }
 
