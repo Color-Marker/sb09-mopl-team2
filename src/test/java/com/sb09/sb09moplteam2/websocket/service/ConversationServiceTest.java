@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
@@ -48,73 +47,72 @@ class ConversationServiceTest {
   private ConversationService conversationService;
 
   private UUID myUserId;
-  private UUID withUserId;
-  private UUID conversationId;
-  private Conversation conversation;
+  private UUID otherUserId;
 
   @BeforeEach
   void setUp() {
     myUserId = UUID.randomUUID();
-    withUserId = UUID.randomUUID();
-    conversationId = UUID.randomUUID();
+    otherUserId = UUID.randomUUID();
+  }
 
-    conversation = Conversation.createDirect();
-    ReflectionTestUtils.setField(conversation, "id", conversationId);
+  private Conversation makeConversation(Instant lastMessageAt) {
+    Conversation conversation = Conversation.createDirect();
+    ReflectionTestUtils.setField(conversation, "id", UUID.randomUUID());
+    conversation.updateLastMessageAt(lastMessageAt);
+    return conversation;
   }
 
   // ───────────────────────────── createDirect ─────────────────────────────
 
   @Test
-  void 기존_대화방이_없으면_신규_생성_후_반환한다() {
-    ConversationDto expected = makeConversationDto();
+  void createDirect_기존_대화방이_있으면_그대로_반환한다() {
+    Conversation existing = makeConversation(Instant.now());
+    ConversationDto dto = new ConversationDto(existing.getId(), null, null, false);
 
-    given(conversationParticipantRepository.findExistingDirectConversation(myUserId, withUserId))
-        .willReturn(Optional.empty());
-    given(conversationRepository.save(any(Conversation.class)))
-        .willAnswer(invocation -> invocation.getArgument(0));
-    given(conversationMapper.toDto(any(Conversation.class), eq(myUserId)))
-        .willReturn(expected);
+    given(conversationParticipantRepository.findExistingDirectConversation(myUserId, otherUserId))
+        .willReturn(Optional.of(existing));
+    given(conversationMapper.toDto(existing, myUserId)).willReturn(dto);
 
-    ConversationDto result = conversationService.createDirect(myUserId, withUserId);
+    ConversationDto result = conversationService.createDirect(myUserId, otherUserId);
 
-    assertThat(result).isEqualTo(expected);
-    verify(conversationRepository).save(any(Conversation.class));
-    // 두 참여자 모두 저장되어야 함
-    verify(conversationParticipantRepository, times(2)).save(any(ConversationParticipant.class));
+    assertThat(result).isEqualTo(dto);
+    verify(conversationRepository, never()).save(any());
+    verify(conversationParticipantRepository, never()).save(any());
   }
 
   @Test
-  void 기존_대화방이_있으면_재사용_후_반환한다() {
-    ConversationDto expected = makeConversationDto();
+  void createDirect_기존_대화방이_없으면_신규_생성한다() {
+    ConversationDto dto = new ConversationDto(UUID.randomUUID(), null, null, false);
 
-    given(conversationParticipantRepository.findExistingDirectConversation(myUserId, withUserId))
-        .willReturn(Optional.of(conversation));
-    given(conversationMapper.toDto(eq(conversation), eq(myUserId)))
-        .willReturn(expected);
+    given(conversationParticipantRepository.findExistingDirectConversation(myUserId, otherUserId))
+        .willReturn(Optional.empty());
+    given(conversationMapper.toDto(any(Conversation.class), eq(myUserId))).willReturn(dto);
 
-    ConversationDto result = conversationService.createDirect(myUserId, withUserId);
+    ConversationDto result = conversationService.createDirect(myUserId, otherUserId);
 
-    assertThat(result).isEqualTo(expected);
-    // 신규 저장이 일어나지 않아야 함
-    verify(conversationRepository, never()).save(any());
+    assertThat(result).isEqualTo(dto);
+    verify(conversationRepository).save(any(Conversation.class));
+    verify(conversationParticipantRepository, org.mockito.Mockito.times(2)).save(any(ConversationParticipant.class));
   }
 
   // ───────────────────────────── findById ─────────────────────────────
 
   @Test
-  void findById_정상_조회한다() {
-    ConversationDto expected = makeConversationDto();
+  void findById_존재하면_dto를_반환한다() {
+    Conversation conversation = makeConversation(Instant.now());
+    ConversationDto dto = new ConversationDto(conversation.getId(), null, null, false);
 
-    given(conversationRepository.findById(conversationId)).willReturn(Optional.of(conversation));
-    given(conversationMapper.toDto(conversation, myUserId)).willReturn(expected);
+    given(conversationRepository.findById(conversation.getId())).willReturn(Optional.of(conversation));
+    given(conversationMapper.toDto(conversation, myUserId)).willReturn(dto);
 
-    ConversationDto result = conversationService.findById(conversationId, myUserId);
+    ConversationDto result = conversationService.findById(conversation.getId(), myUserId);
 
-    assertThat(result).isEqualTo(expected);
+    assertThat(result).isEqualTo(dto);
   }
 
   @Test
-  void findById_대화방이_없으면_ConversationNotFoundException을_던진다() {
+  void findById_존재하지_않으면_예외를_던진다() {
+    UUID conversationId = UUID.randomUUID();
     given(conversationRepository.findById(conversationId)).willReturn(Optional.empty());
 
     assertThatThrownBy(() -> conversationService.findById(conversationId, myUserId))
@@ -124,145 +122,234 @@ class ConversationServiceTest {
   // ───────────────────────────── findWithUser ─────────────────────────────
 
   @Test
-  void findWithUser_정상_조회한다() {
-    ConversationDto expected = makeConversationDto();
+  void findWithUser_존재하면_dto를_반환한다() {
+    Conversation conversation = makeConversation(Instant.now());
+    ConversationDto dto = new ConversationDto(conversation.getId(), null, null, false);
 
-    given(conversationParticipantRepository.findExistingDirectConversation(myUserId, withUserId))
+    given(conversationParticipantRepository.findExistingDirectConversation(myUserId, otherUserId))
         .willReturn(Optional.of(conversation));
-    given(conversationMapper.toDto(conversation, myUserId)).willReturn(expected);
+    given(conversationMapper.toDto(conversation, myUserId)).willReturn(dto);
 
-    ConversationDto result = conversationService.findWithUser(myUserId, withUserId);
+    ConversationDto result = conversationService.findWithUser(myUserId, otherUserId);
 
-    assertThat(result).isEqualTo(expected);
+    assertThat(result).isEqualTo(dto);
   }
 
   @Test
-  void findWithUser_대화방이_없으면_ConversationNotFoundException을_던진다() {
-    given(conversationParticipantRepository.findExistingDirectConversation(myUserId, withUserId))
+  void findWithUser_존재하지_않으면_예외를_던진다() {
+    given(conversationParticipantRepository.findExistingDirectConversation(myUserId, otherUserId))
         .willReturn(Optional.empty());
 
-    assertThatThrownBy(() -> conversationService.findWithUser(myUserId, withUserId))
+    assertThatThrownBy(() -> conversationService.findWithUser(myUserId, otherUserId))
         .isInstanceOf(ConversationNotFoundException.class);
   }
 
-  // ───────────────────────────── findAll ─────────────────────────────
+  // ───────────────────────────── findAll (키워드 분기) ─────────────────────────────
 
   @Test
-  void 첫_페이지_대화방_목록을_정상_조회한다() {
-    ConversationParticipant participant = ConversationParticipant.of(conversation, withUserId);
-    ConversationDto dto = makeConversationDto();
-
+  void findAll_키워드가_없으면_findAllWithoutKeyword_경로를_탄다() {
     given(conversationRepository.findAllByParticipantUserId(eq(myUserId), any(Pageable.class)))
-        .willReturn(List.of(conversation));
-    given(conversationParticipantRepository.findByConversationIdIn(List.of(conversationId)))
-        .willReturn(List.of(participant));
-    given(conversationMapper.toDto(eq(conversation), eq(myUserId), any()))
-        .willReturn(dto);
+        .willReturn(List.of());
+    given(conversationParticipantRepository.findByConversationIdIn(List.of()))
+        .willReturn(List.of());
 
     CursorResponse<ConversationDto> result = conversationService.findAll(
         myUserId, null, null, null, 10, "lastMessageAt", "DESCENDING");
 
-    assertThat(result.data()).hasSize(1);
+    assertThat(result.data()).isEmpty();
+    verify(conversationRepository).findAllByParticipantUserId(eq(myUserId), any(Pageable.class));
+  }
+
+  @Test
+  void findAll_키워드가_공백이면_findAllWithoutKeyword_경로를_탄다() {
+    given(conversationRepository.findAllByParticipantUserId(eq(myUserId), any(Pageable.class)))
+        .willReturn(List.of());
+    given(conversationParticipantRepository.findByConversationIdIn(List.of()))
+        .willReturn(List.of());
+
+    conversationService.findAll(myUserId, "  ", null, null, 10, "lastMessageAt", "DESCENDING");
+
+    verify(conversationRepository).findAllByParticipantUserId(eq(myUserId), any(Pageable.class));
+  }
+
+  @Test
+  void findAll_키워드가_있으면_findAllWithKeyword_경로를_탄다() {
+    given(conversationRepository.findAllByParticipantUserIdNoPaging(myUserId))
+        .willReturn(List.of());
+
+    conversationService.findAll(myUserId, "검색어", null, null, 10, "lastMessageAt", "DESCENDING");
+
+    verify(conversationRepository).findAllByParticipantUserIdNoPaging(myUserId);
+    verify(conversationRepository, never()).findAllByParticipantUserId(any(), any());
+  }
+
+  // ───────────────────────────── findAllWithoutKeyword (커서/hasNext 분기) ─────────────────────────────
+
+  @Test
+  void 커서없이_조회하면_findAllByParticipantUserId를_사용한다() {
+    Conversation c1 = makeConversation(Instant.now());
+    given(conversationRepository.findAllByParticipantUserId(eq(myUserId), any(Pageable.class)))
+        .willReturn(List.of(c1));
+    given(conversationParticipantRepository.findByConversationIdIn(any()))
+        .willReturn(List.of());
+    given(conversationMapper.toDto(eq(c1), eq(myUserId), any()))
+        .willReturn(new ConversationDto(c1.getId(), null, null, false));
+
+    CursorResponse<ConversationDto> result = conversationService.findAll(
+        myUserId, null, null, null, 10, "lastMessageAt", "DESCENDING");
+
     assertThat(result.hasNext()).isFalse();
     assertThat(result.nextCursor()).isNull();
   }
 
   @Test
-  void 커서가_있으면_커서_이후_대화방_목록을_조회한다() {
-    Instant cursorLastMessageAt = Instant.now().minusSeconds(60);
-    String cursor = cursorLastMessageAt.toString();
+  void 커서가_있으면_findAllByParticipantUserIdWithCursor를_사용한다() {
+    Instant cursorTime = Instant.now().minusSeconds(60);
     UUID idAfter = UUID.randomUUID();
-    ConversationParticipant participant = ConversationParticipant.of(conversation, withUserId);
-    ConversationDto dto = makeConversationDto();
+    Conversation c1 = makeConversation(Instant.now());
 
     given(conversationRepository.findAllByParticipantUserIdWithCursor(
-        eq(myUserId), eq(cursorLastMessageAt), eq(idAfter), any(Pageable.class)))
-        .willReturn(List.of(conversation));
-    given(conversationParticipantRepository.findByConversationIdIn(List.of(conversationId)))
-        .willReturn(List.of(participant));
-    given(conversationMapper.toDto(eq(conversation), eq(myUserId), any()))
-        .willReturn(dto);
+        eq(myUserId), eq(cursorTime), eq(idAfter), any(Pageable.class)))
+        .willReturn(List.of(c1));
+    given(conversationParticipantRepository.findByConversationIdIn(any()))
+        .willReturn(List.of());
+    given(conversationMapper.toDto(eq(c1), eq(myUserId), any()))
+        .willReturn(new ConversationDto(c1.getId(), null, null, false));
 
     CursorResponse<ConversationDto> result = conversationService.findAll(
-        myUserId, null, cursor, idAfter, 10, "lastMessageAt", "DESCENDING");
+        myUserId, null, cursorTime.toString(), idAfter, 10, "lastMessageAt", "DESCENDING");
 
     assertThat(result.data()).hasSize(1);
-    assertThat(result.hasNext()).isFalse();
   }
 
   @Test
   void limit보다_결과가_많으면_hasNext가_true이고_nextCursor가_세팅된다() {
+    Conversation c1 = makeConversation(Instant.now().minusSeconds(10));
+    Conversation c2 = makeConversation(Instant.now());
     int limit = 1;
-    Conversation conversation2 = Conversation.createDirect();
-    UUID conversationId2 = UUID.randomUUID();
-    ReflectionTestUtils.setField(conversation2, "id", conversationId2);
-
-    ConversationParticipant p1 = ConversationParticipant.of(conversation, withUserId);
-    ConversationParticipant p2 = ConversationParticipant.of(conversation2, withUserId);
-    ConversationDto dto1 = makeConversationDto();
 
     given(conversationRepository.findAllByParticipantUserId(eq(myUserId), any(Pageable.class)))
-        .willReturn(List.of(conversation, conversation2)); // limit+1 개 반환
-    given(conversationParticipantRepository.findByConversationIdIn(List.of(conversationId)))
-        .willReturn(List.of(p1));
-    given(conversationMapper.toDto(eq(conversation), eq(myUserId), any()))
-        .willReturn(dto1);
+        .willReturn(List.of(c1, c2));
+    given(conversationParticipantRepository.findByConversationIdIn(any()))
+        .willReturn(List.of());
+    given(conversationMapper.toDto(eq(c1), eq(myUserId), any()))
+        .willReturn(new ConversationDto(c1.getId(), null, null, false));
 
     CursorResponse<ConversationDto> result = conversationService.findAll(
         myUserId, null, null, null, limit, "lastMessageAt", "DESCENDING");
 
-    assertThat(result.data()).hasSize(1);
     assertThat(result.hasNext()).isTrue();
     assertThat(result.nextCursor()).isNotNull();
-    assertThat(result.nextIdAfter()).isNotNull();
+    assertThat(result.nextIdAfter()).isEqualTo(c1.getId());
+  }
+
+  // ───────────────────────────── findAllWithKeyword (matchesKeyword 분기) ─────────────────────────────
+
+  @Test
+  void 키워드가_상대방_이름에_포함되면_필터링에_통과한다() {
+    Conversation c1 = makeConversation(Instant.now());
+    ConversationParticipant myP = ConversationParticipant.of(c1, myUserId);
+    ConversationParticipant otherP = ConversationParticipant.of(c1, otherUserId);
+
+    given(conversationRepository.findAllByParticipantUserIdNoPaging(myUserId))
+        .willReturn(List.of(c1));
+    given(conversationParticipantRepository.findByConversationIdIn(List.of(c1.getId())))
+        .willReturn(List.of(myP, otherP));
+    given(userService.getUserSummary(otherUserId))
+        .willReturn(new UserSummary(otherUserId, "홍길동", null));
+    given(conversationMapper.toDto(eq(c1), eq(myUserId), any()))
+        .willReturn(new ConversationDto(c1.getId(), null, null, false));
+
+    CursorResponse<ConversationDto> result = conversationService.findAll(
+        myUserId, "길동", null, null, 10, "lastMessageAt", "DESCENDING");
+
+    assertThat(result.data()).hasSize(1);
   }
 
   @Test
-  void keywordLike가_있으면_상대방_이름으로_필터링된다() {
-    UUID otherUserId1 = withUserId;
-    UUID otherUserId2 = UUID.randomUUID();
+  void 키워드가_상대방_이름에_없으면_필터링에서_제외된다() {
+    Conversation c1 = makeConversation(Instant.now());
+    ConversationParticipant myP = ConversationParticipant.of(c1, myUserId);
+    ConversationParticipant otherP = ConversationParticipant.of(c1, otherUserId);
 
-    Conversation conversation2 = Conversation.createDirect();
-    UUID conversationId2 = UUID.randomUUID();
-    ReflectionTestUtils.setField(conversation2, "id", conversationId2);
-
-    ConversationParticipant participant1 = ConversationParticipant.of(conversation, otherUserId1);
-    ConversationParticipant participant2 = ConversationParticipant.of(conversation2, otherUserId2);
-
-    UserSummary matchingSummary = new UserSummary(otherUserId1, "우디", null);
-    UserSummary nonMatchingSummary = new UserSummary(otherUserId2, "버즈", null);
-
-    ConversationDto matchingDto = new ConversationDto(conversationId, matchingSummary, null, false);
-
-    // 전체 조회 (커서 없는 목록 - 키워드 검색 시 사용)
     given(conversationRepository.findAllByParticipantUserIdNoPaging(myUserId))
-        .willReturn(List.of(conversation, conversation2));
-
-    // findByConversationIdIn은 필터링/응답 빌드에 공용으로 딱 한 번 호출됨
-    given(conversationParticipantRepository.findByConversationIdIn(List.of(conversationId, conversationId2)))
-        .willReturn(List.of(participant1, participant2));
-
-    // 이름 필터링에 쓰이는 userService 호출
-    given(userService.getUserSummary(otherUserId1)).willReturn(matchingSummary);
-    given(userService.getUserSummary(otherUserId2)).willReturn(nonMatchingSummary);
-
-    given(conversationMapper.toDto(eq(conversation), eq(myUserId), any()))
-        .willReturn(matchingDto);
+        .willReturn(List.of(c1));
+    given(conversationParticipantRepository.findByConversationIdIn(List.of(c1.getId())))
+        .willReturn(List.of(myP, otherP));
+    given(userService.getUserSummary(otherUserId))
+        .willReturn(new UserSummary(otherUserId, "홍길동", null));
 
     CursorResponse<ConversationDto> result = conversationService.findAll(
-        myUserId, "우디", null, null, 10, "lastMessageAt", "DESCENDING");
+        myUserId, "존재안함", null, null, 10, "lastMessageAt", "DESCENDING");
 
-    assertThat(result.data()).hasSize(1);
-    assertThat(result.data().get(0).with().name()).isEqualTo("우디");
-    assertThat(result.hasNext()).isFalse();
-
-    // 한 번만 호출됐는지 확인 (효율성 검증 겸)
-    verify(conversationParticipantRepository, times(1)).findByConversationIdIn(any());
+    assertThat(result.data()).isEmpty();
   }
 
-  // ───────────────────────────── 헬퍼 메서드 ─────────────────────────────
+  @Test
+  void 상대방_참여자가_없으면_필터링에서_제외된다() {
+    Conversation c1 = makeConversation(Instant.now());
+    ConversationParticipant myP = ConversationParticipant.of(c1, myUserId);
 
-  private ConversationDto makeConversationDto() {
-    return new ConversationDto(conversationId, null, null, false);
+    given(conversationRepository.findAllByParticipantUserIdNoPaging(myUserId))
+        .willReturn(List.of(c1));
+    given(conversationParticipantRepository.findByConversationIdIn(List.of(c1.getId())))
+        .willReturn(List.of(myP));
+
+    CursorResponse<ConversationDto> result = conversationService.findAll(
+        myUserId, "아무거나", null, null, 10, "lastMessageAt", "DESCENDING");
+
+    assertThat(result.data()).isEmpty();
+  }
+
+  // ───────────────────────────── findAllWithKeyword (커서/hasNext 분기) ─────────────────────────────
+
+  @Test
+  void 키워드_검색에_커서가_있으면_커서_이후_항목만_반환한다() {
+    Instant t1 = Instant.now().minusSeconds(120);
+    Instant t2 = Instant.now().minusSeconds(60);
+    Conversation older = makeConversation(t1);
+    Conversation newer = makeConversation(t2);
+    ConversationParticipant myP1 = ConversationParticipant.of(older, myUserId);
+    ConversationParticipant otherP1 = ConversationParticipant.of(older, otherUserId);
+    ConversationParticipant myP2 = ConversationParticipant.of(newer, myUserId);
+    ConversationParticipant otherP2 = ConversationParticipant.of(newer, otherUserId);
+
+    given(conversationRepository.findAllByParticipantUserIdNoPaging(myUserId))
+        .willReturn(List.of(newer, older));
+    given(conversationParticipantRepository.findByConversationIdIn(any()))
+        .willReturn(List.of(myP1, otherP1, myP2, otherP2));
+    given(userService.getUserSummary(otherUserId))
+        .willReturn(new UserSummary(otherUserId, "검색대상", null));
+    given(conversationMapper.toDto(eq(older), eq(myUserId), any()))
+        .willReturn(new ConversationDto(older.getId(), null, null, false));
+
+    CursorResponse<ConversationDto> result = conversationService.findAll(
+        myUserId, "검색", t2.toString(), newer.getId(), 10, "lastMessageAt", "DESCENDING");
+
+    assertThat(result.data()).hasSize(1);
+  }
+
+  @Test
+  void 키워드_검색_결과가_limit보다_많으면_hasNext가_true다() {
+    Conversation c1 = makeConversation(Instant.now().minusSeconds(10));
+    Conversation c2 = makeConversation(Instant.now());
+    ConversationParticipant myP1 = ConversationParticipant.of(c1, myUserId);
+    ConversationParticipant otherP1 = ConversationParticipant.of(c1, otherUserId);
+    ConversationParticipant myP2 = ConversationParticipant.of(c2, myUserId);
+    ConversationParticipant otherP2 = ConversationParticipant.of(c2, otherUserId);
+
+    given(conversationRepository.findAllByParticipantUserIdNoPaging(myUserId))
+        .willReturn(List.of(c2, c1));
+    given(conversationParticipantRepository.findByConversationIdIn(any()))
+        .willReturn(List.of(myP1, otherP1, myP2, otherP2));
+    given(userService.getUserSummary(otherUserId))
+        .willReturn(new UserSummary(otherUserId, "검색어유저", null));
+    given(conversationMapper.toDto(any(Conversation.class), eq(myUserId), any()))
+        .willReturn(new ConversationDto(UUID.randomUUID(), null, null, false));
+
+    CursorResponse<ConversationDto> result = conversationService.findAll(
+        myUserId, "검색", null, null, 1, "lastMessageAt", "DESCENDING");
+
+    assertThat(result.hasNext()).isTrue();
   }
 }

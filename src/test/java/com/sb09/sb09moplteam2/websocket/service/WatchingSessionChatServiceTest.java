@@ -61,7 +61,7 @@ class WatchingSessionChatServiceTest {
   void 활성_세션과_일치하는_콘텐츠면_메시지를_정상_전송한다() {
     String content = "안녕하세요";
     WatchingSessionChatResponse expectedResponse = new WatchingSessionChatResponse(
-        senderId, "테스트유저", content, Instant.now());
+        senderId, "테스트유저", "https://example.com/profile.jpg", content, Instant.now());
 
     given(watchingSessionRepository.findByUserIdAndStatus(senderId, WatchingSessionStatus.ACTIVE))
         .willReturn(Optional.of(activeSession));

@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.review.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sb09.sb09moplteam2.config.MockSearchTestConfig;
 import com.sb09.sb09moplteam2.config.QuerydslConfig;
 import com.sb09.sb09moplteam2.config.TestJpaConfig;
 import com.sb09.sb09moplteam2.content.entity.Content;
@@ -9,6 +10,7 @@ import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.review.entity.Review;
 
 import com.sb09.sb09moplteam2.user.entity.User;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,9 +18,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @DataJpaTest
-@Import({QuerydslConfig.class, TestJpaConfig.class})
+@Import({QuerydslConfig.class, TestJpaConfig.class, MockSearchTestConfig.class})
 class ReviewRepositoryTest {
 
   @Autowired
@@ -162,5 +165,129 @@ class ReviewRepositoryTest {
     assertThat(result.get(0).getRating()).isEqualTo(2.0);
     assertThat(result.get(1).getRating()).isEqualTo(3.0);
     assertThat(result.get(2).getRating()).isEqualTo(5.0);
+  }
+
+  @Test
+  @DisplayName("createdAt 내림차순 커서 기준으로 다음 페이지를 조회한다")
+  void findReviewsWithCursor_createdAt_내림차순_커서로_다음_페이지를_조회한다() {
+    User user = em.persist(new User("테스터", "test@test.com", "password"));
+    Content content = em.persist(Content.builder()
+        .type(ContentType.movie)
+        .title("테스트 영화")
+        .description("설명")
+        .externalId("test-external-id")
+        .build());
+
+    Review review1 = em.persist(Review.builder().rating(3.0).text("리뷰1").content(content).user(user).build());
+    Review review2 = em.persist(Review.builder().rating(4.0).text("리뷰2").content(content).user(user).build());
+    em.flush();
+
+    ReflectionTestUtils.setField(review1, "createdAt", Instant.parse("2026-01-01T00:00:00Z"));
+    ReflectionTestUtils.setField(review2, "createdAt", Instant.parse("2026-01-01T00:00:01Z"));
+    em.persist(review1);
+    em.persist(review2);
+    em.flush();
+    em.clear();
+
+    List<Review> firstPage = reviewRepository.findReviewsWithCursor(
+        content.getId(), null, null, 1, "DESCENDING", "createdAt"
+    );
+    Review last = firstPage.get(0);
+
+    List<Review> result = reviewRepository.findReviewsWithCursor(
+        content.getId(), last.getCreatedAt().toString(), last.getId(), 10, "DESCENDING", "createdAt"
+    );
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getText()).isEqualTo("리뷰1");
+  }
+
+  @Test
+  @DisplayName("createdAt 오름차순 커서 기준으로 다음 페이지를 조회한다")
+  void findReviewsWithCursor_createdAt_오름차순_커서로_다음_페이지를_조회한다() {
+    User user = em.persist(new User("테스터", "test@test.com", "password"));
+    Content content = em.persist(Content.builder()
+        .type(ContentType.movie)
+        .title("테스트 영화")
+        .description("설명")
+        .externalId("test-external-id")
+        .build());
+
+    Review review1 = em.persist(Review.builder().rating(3.0).text("리뷰1").content(content).user(user).build());
+    Review review2 = em.persist(Review.builder().rating(4.0).text("리뷰2").content(content).user(user).build());
+    em.flush();
+
+    ReflectionTestUtils.setField(review1, "createdAt", Instant.parse("2026-01-01T00:00:00Z"));
+    ReflectionTestUtils.setField(review2, "createdAt", Instant.parse("2026-01-01T00:00:01Z"));
+    em.persist(review1);
+    em.persist(review2);
+    em.flush();
+    em.clear();
+
+    List<Review> firstPage = reviewRepository.findReviewsWithCursor(
+        content.getId(), null, null, 1, "ASCENDING", "createdAt"
+    );
+    Review last = firstPage.get(0);
+
+    List<Review> result = reviewRepository.findReviewsWithCursor(
+        content.getId(), last.getCreatedAt().toString(), last.getId(), 10, "ASCENDING", "createdAt"
+    );
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getText()).isEqualTo("리뷰2");
+  }
+
+  @Test
+  @DisplayName("rating 내림차순 커서 기준으로 다음 페이지를 조회한다")
+  void findReviewsWithCursor_rating_내림차순_커서로_다음_페이지를_조회한다() {
+    User user = em.persist(new User("테스터", "test@test.com", "password"));
+    Content content = em.persist(Content.builder()
+        .type(ContentType.movie)
+        .title("테스트 영화")
+        .description("설명")
+        .externalId("test-external-id")
+        .build());
+    em.persist(Review.builder().rating(5.0).text("리뷰1").content(content).user(user).build());
+    em.persist(Review.builder().rating(3.0).text("리뷰2").content(content).user(user).build());
+    em.flush();
+
+    List<Review> firstPage = reviewRepository.findReviewsWithCursor(
+        content.getId(), null, null, 1, "DESCENDING", "rating"
+    );
+    Review last = firstPage.get(0);
+
+    List<Review> result = reviewRepository.findReviewsWithCursor(
+        content.getId(), String.valueOf(last.getRating()), last.getId(), 10, "DESCENDING", "rating"
+    );
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getText()).isEqualTo("리뷰2");
+  }
+
+  @Test
+  @DisplayName("rating 오름차순 커서 기준으로 다음 페이지를 조회한다")
+  void findReviewsWithCursor_rating_오름차순_커서로_다음_페이지를_조회한다() {
+    User user = em.persist(new User("테스터", "test@test.com", "password"));
+    Content content = em.persist(Content.builder()
+        .type(ContentType.movie)
+        .title("테스트 영화")
+        .description("설명")
+        .externalId("test-external-id")
+        .build());
+    em.persist(Review.builder().rating(3.0).text("리뷰1").content(content).user(user).build());
+    em.persist(Review.builder().rating(5.0).text("리뷰2").content(content).user(user).build());
+    em.flush();
+
+    List<Review> firstPage = reviewRepository.findReviewsWithCursor(
+        content.getId(), null, null, 1, "ASCENDING", "rating"
+    );
+    Review last = firstPage.get(0);
+
+    List<Review> result = reviewRepository.findReviewsWithCursor(
+        content.getId(), String.valueOf(last.getRating()), last.getId(), 10, "ASCENDING", "rating"
+    );
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getText()).isEqualTo("리뷰2");
   }
 }

@@ -29,7 +29,7 @@ class TmdbMovieReaderTest {
     TmdbPageResponse<TmdbEventResponse> page = new TmdbPageResponse<>(List.of(item1, item2), 1, 1);
     given(tmdbClient.fetchMovies(1)).willReturn(page);
 
-    TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.movie);
+    TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.movie, 1, 1, "partition0");
 
     TmdbEventResponse result1 = reader.read();
     TmdbEventResponse result2 = reader.read();
@@ -48,10 +48,32 @@ class TmdbMovieReaderTest {
 
     given(tmdbClient.fetchTvSeries(1)).willReturn(page);
 
-    TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.tvSeries);
+    TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.tvSeries, 1, 1, "partition0");
 
     TmdbEventResponse result = reader.read();
 
     assertThat(result.name()).isEqualTo("드라마1");
+  }
+
+  @Test
+  @DisplayName("startPage부터 endPage까지 여러 페이지를 순회한다")
+  void read_startPage부터_endPage까지_여러_페이지를_읽는다() {
+    TmdbEventResponse item1 = new TmdbEventResponse(1L, "영화1", null, "줄거리1", null, null, List.of(28));
+    TmdbEventResponse item2 = new TmdbEventResponse(2L, "영화2", null, "줄거리2", null, null, List.of(35));
+    TmdbPageResponse<TmdbEventResponse> page1 = new TmdbPageResponse<>(List.of(item1), 2, 2);
+    TmdbPageResponse<TmdbEventResponse> page2 = new TmdbPageResponse<>(List.of(item2), 2, 2);
+
+    given(tmdbClient.fetchMovies(3)).willReturn(page1);
+    given(tmdbClient.fetchMovies(4)).willReturn(page2);
+
+    TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.movie, 3, 4, "partition1");
+
+    TmdbEventResponse result1 = reader.read();
+    TmdbEventResponse result2 = reader.read();
+    TmdbEventResponse result3 = reader.read();
+
+    assertThat(result1.title()).isEqualTo("영화1");
+    assertThat(result2.title()).isEqualTo("영화2");
+    assertThat(result3).isNull();
   }
 }

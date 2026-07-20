@@ -11,25 +11,50 @@ services:
     volumes:
       - ./nginx/static:/usr/share/nginx/html:ro
       - ./nginx/nginx-local.conf:/etc/nginx/nginx.conf:ro
+    
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    networks:
+      - mopl-network
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - db
-      - redis
-      - broker
+      db:
+        condition: service_started
+      redis:
+          condition: service_started
+      broker:
+          condition: service_started
+      elasticsearch:
+          condition: service_healthy
     env_file:
       - .env
     environment:
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mopl
       - STORAGE_TYPE=local
       - STORAGE_LOCAL_ROOT_PATH=.mopl/storage
       - KAFKA_BOOTSTRAP_SERVERS=broker:29092
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - ELASTICSEARCH_URIS=http://elasticsearch:9200
       - COOKIE_SECURE=false # 로컬은 http라 Secure 쿠키 비활성화 (https 배포 환경에서는 true)
     expose:
       - 8080
@@ -38,7 +63,7 @@ services:
     volumes:
       - binary-content-storage:/app/.mopl/storage
     deploy:
-      replicas: 2
+      replicas: 1 # 2
 
   db:
     image: postgres:16-alpine
@@ -101,6 +126,7 @@ volumes:
   postgres-data:
   binary-content-storage:
   redis-data:
+  elasticsearch-data:
 
 networks:
   mopl-network:

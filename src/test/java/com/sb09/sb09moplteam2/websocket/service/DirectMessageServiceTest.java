@@ -9,11 +9,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.sb09.sb09moplteam2.dto.CursorResponse;
+import com.sb09.sb09moplteam2.event.message.MessageCreatedEvent;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationNotFoundException;
 import com.sb09.sb09moplteam2.exception.websocket.ConversationParticipantNotFoundException;
 import com.sb09.sb09moplteam2.user.entity.User;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
-import com.sb09.sb09moplteam2.websocket.dto.response.DirectMessageResponse;
 import com.sb09.sb09moplteam2.websocket.entity.Conversation;
 import com.sb09.sb09moplteam2.websocket.entity.ConversationParticipant;
 import com.sb09.sb09moplteam2.websocket.entity.DirectMessage;
@@ -202,13 +202,15 @@ class DirectMessageServiceTest {
         .willReturn(Optional.of(otherParticipant));
     given(userRepository.findById(otherUserId)).willReturn(Optional.of(receiver));
 
-    DirectMessageResponse response = directMessageService.send(conversationId, myUserId, content);
+    DirectMessageDto response = directMessageService.send(conversationId, myUserId, content);
 
     assertThat(response.conversationId()).isEqualTo(conversationId);
-    assertThat(response.senderId()).isEqualTo(myUserId);
+    assertThat(response.sender().userId()).isEqualTo(myUserId);
+    assertThat(response.receiver().userId()).isEqualTo(otherUserId);
     assertThat(response.content()).isEqualTo(content);
-    assertThat(response.sentAt()).isNotNull();
+    assertThat(response.createdAt()).isNotNull();
     verify(directMessageRepository).save(any(DirectMessage.class));
+    verify(eventPublisher).publishEvent(any(MessageCreatedEvent.class));
   }
 
   @Test
@@ -254,6 +256,34 @@ class DirectMessageServiceTest {
 
     assertThatThrownBy(() -> directMessageService.send(conversationId, strangerUserId, "내용"))
         .isInstanceOf(ConversationParticipantNotFoundException.class);
+  }
+
+  @Test
+  void send_sender가_존재하지_않으면_UserNotFoundException을_던진다() {
+    given(conversationRepository.findById(conversationId)).willReturn(Optional.of(conversation));
+    given(conversationParticipantRepository.existsByConversationAndUserId(conversation, myUserId))
+        .willReturn(true);
+    given(directMessageRepository.save(any(DirectMessage.class)))
+        .willAnswer(invocation -> invocation.getArgument(0));
+    given(userRepository.findById(myUserId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> directMessageService.send(conversationId, myUserId, "내용"))
+        .isInstanceOf(com.sb09.sb09moplteam2.exception.user.UserNotFoundException.class);
+  }
+
+  @Test
+  void send_다른_참여자가_없으면_NoSuchElementException을_던진다() {
+    given(conversationRepository.findById(conversationId)).willReturn(Optional.of(conversation));
+    given(conversationParticipantRepository.existsByConversationAndUserId(conversation, myUserId))
+        .willReturn(true);
+    given(directMessageRepository.save(any(DirectMessage.class)))
+        .willAnswer(invocation -> invocation.getArgument(0));
+    given(userRepository.findById(myUserId)).willReturn(Optional.of(sender));
+    given(conversationParticipantRepository.findOtherParticipants(conversationId, myUserId))
+        .willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> directMessageService.send(conversationId, myUserId, "내용"))
+        .isInstanceOf(java.util.NoSuchElementException.class);
   }
 
   // ───────────────────────────── read ─────────────────────────────

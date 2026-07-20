@@ -18,6 +18,7 @@ import com.sb09.sb09moplteam2.content.dto.request.ContentCreateRequest;
 import com.sb09.sb09moplteam2.content.dto.request.ContentUpdateRequest;
 import com.sb09.sb09moplteam2.content.dto.response.CursorResponseContentDto;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import com.sb09.sb09moplteam2.content.service.ContentService;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import java.util.Collections;
@@ -54,6 +55,9 @@ class ContentControllerTest {
 
   @Autowired
   private ObjectMapper objectMapper;
+
+  @MockitoBean
+  private ContentSearchService contentSearchService;
 
   @Test
   @DisplayName("콘텐츠 생성 성공")

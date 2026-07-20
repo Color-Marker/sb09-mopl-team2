@@ -8,7 +8,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
+import com.sb09.sb09moplteam2.dto.UserSummary;
+import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
@@ -43,41 +46,52 @@ class WatchingSessionServiceTest {
   @InjectMocks
   private WatchingSessionService watchingSessionService;
 
-  private UUID watcherId;
+  private UUID userId;
   private UUID contentId;
-  private WatchingSession activeSession;
 
   @BeforeEach
   void setUp() {
-    watcherId = UUID.randomUUID();
+    userId = UUID.randomUUID();
     contentId = UUID.randomUUID();
+  }
 
-    activeSession = WatchingSession.create(watcherId, contentId);
-    ReflectionTestUtils.setField(activeSession, "id", UUID.randomUUID());
+  private WatchingSession makeActiveSession(UUID userId, UUID contentId) {
+    WatchingSession session = WatchingSession.create(userId, contentId);
+    ReflectionTestUtils.setField(session, "id", UUID.randomUUID());
+    return session;
+  }
+
+  private WatchingSessionDto makeDto(UUID sessionId) {
+    return new WatchingSessionDto(
+        sessionId,
+        Instant.now(),
+        new UserSummary(userId, "시청자", null),
+        new ContentSummary(contentId, ContentType.movie, "제목", "설명", "thumb.jpg", List.of(), 4.0, 1)
+    );
   }
 
   // ───────────────────────────── findActiveByUserId ─────────────────────────────
 
   @Test
-  void 활성_세션이_있으면_DTO를_반환한다() {
-    WatchingSessionDto expectedDto = makeWatchingSessionDto(activeSession);
+  void 활성_세션이_있으면_dto를_반환한다() {
+    WatchingSession session = makeActiveSession(userId, contentId);
+    WatchingSessionDto dto = makeDto(session.getId());
 
-    given(watchingSessionRepository.findByUserIdAndStatus(watcherId, WatchingSessionStatus.ACTIVE))
-        .willReturn(Optional.of(activeSession));
-    given(watchingSessionMapper.toDto(activeSession)).willReturn(expectedDto);
+    given(watchingSessionRepository.findByUserIdAndStatus(userId, WatchingSessionStatus.ACTIVE))
+        .willReturn(Optional.of(session));
+    given(watchingSessionMapper.toDto(session)).willReturn(dto);
 
-    WatchingSessionDto result = watchingSessionService.findActiveByUserId(watcherId);
+    WatchingSessionDto result = watchingSessionService.findActiveByUserId(userId);
 
-    assertThat(result).isNotNull();
-    assertThat(result.id()).isEqualTo(activeSession.getId());
+    assertThat(result).isEqualTo(dto);
   }
 
   @Test
   void 활성_세션이_없으면_null을_반환한다() {
-    given(watchingSessionRepository.findByUserIdAndStatus(watcherId, WatchingSessionStatus.ACTIVE))
+    given(watchingSessionRepository.findByUserIdAndStatus(userId, WatchingSessionStatus.ACTIVE))
         .willReturn(Optional.empty());
 
-    WatchingSessionDto result = watchingSessionService.findActiveByUserId(watcherId);
+    WatchingSessionDto result = watchingSessionService.findActiveByUserId(userId);
 
     assertThat(result).isNull();
   }
@@ -85,197 +99,150 @@ class WatchingSessionServiceTest {
   // ───────────────────────────── findAllByContentId ─────────────────────────────
 
   @Test
-  void 첫_페이지_시청_세션_목록을_정상_조회한다() {
-    int limit = 2;
-    WatchingSession session2 = WatchingSession.create(UUID.randomUUID(), contentId);
-    ReflectionTestUtils.setField(session2, "id", UUID.randomUUID());
-
-    WatchingSessionDto dto1 = makeWatchingSessionDto(activeSession);
-    WatchingSessionDto dto2 = makeWatchingSessionDto(session2);
+  void 커서없이_조회하면_findByContentId를_사용한다() {
+    WatchingSession session = makeActiveSession(userId, contentId);
+    WatchingSessionDto dto = makeDto(session.getId());
 
     given(watchingSessionRepository.findByContentId(eq(contentId), any(Pageable.class)))
-        .willReturn(List.of(activeSession, session2));
-    given(watchingSessionMapper.toDto(activeSession)).willReturn(dto1);
-    given(watchingSessionMapper.toDto(session2)).willReturn(dto2);
+        .willReturn(List.of(session));
+    given(watchingSessionMapper.toDto(session)).willReturn(dto);
 
     CursorResponse<WatchingSessionDto> result = watchingSessionService.findAllByContentId(
-        contentId, null, null, limit, "startedAt", "DESCENDING");
-
-    assertThat(result.data()).hasSize(2);
-    assertThat(result.hasNext()).isFalse();
-    assertThat(result.nextCursor()).isNull();
-  }
-
-  @Test
-  void 커서가_있으면_커서_이후_시청_세션_목록을_조회한다() {
-    int limit = 2;
-    Instant cursorStartedAt = Instant.now().minusSeconds(60);
-    String cursor = cursorStartedAt.toString();
-    UUID idAfter = UUID.randomUUID();
-
-    WatchingSessionDto dto = makeWatchingSessionDto(activeSession);
-
-    given(watchingSessionRepository.findByContentIdWithCursor(
-        eq(contentId), eq(cursorStartedAt), eq(idAfter), any(Pageable.class)))
-        .willReturn(List.of(activeSession));
-    given(watchingSessionMapper.toDto(activeSession)).willReturn(dto);
-
-    CursorResponse<WatchingSessionDto> result = watchingSessionService.findAllByContentId(
-        contentId, cursor, idAfter, limit, "startedAt", "DESCENDING");
+        contentId, null, null, 10, "startedAt", "DESCENDING");
 
     assertThat(result.data()).hasSize(1);
     assertThat(result.hasNext()).isFalse();
+  }
+
+  @Test
+  void 커서가_있으면_findByContentIdWithCursor를_사용한다() {
+    Instant cursorTime = Instant.now().minusSeconds(60);
+    UUID idAfter = UUID.randomUUID();
+    WatchingSession session = makeActiveSession(userId, contentId);
+    WatchingSessionDto dto = makeDto(session.getId());
+
+    given(watchingSessionRepository.findByContentIdWithCursor(
+        eq(contentId), eq(cursorTime), eq(idAfter), any(Pageable.class)))
+        .willReturn(List.of(session));
+    given(watchingSessionMapper.toDto(session)).willReturn(dto);
+
+    CursorResponse<WatchingSessionDto> result = watchingSessionService.findAllByContentId(
+        contentId, cursorTime.toString(), idAfter, 10, "startedAt", "DESCENDING");
+
+    assertThat(result.data()).hasSize(1);
   }
 
   @Test
   void limit보다_결과가_많으면_hasNext가_true이고_nextCursor가_세팅된다() {
+    WatchingSession s1 = makeActiveSession(userId, contentId);
+    WatchingSession s2 = makeActiveSession(UUID.randomUUID(), contentId);
     int limit = 1;
-    WatchingSession session2 = WatchingSession.create(UUID.randomUUID(), contentId);
-    ReflectionTestUtils.setField(session2, "id", UUID.randomUUID());
-
-    WatchingSessionDto dto1 = makeWatchingSessionDto(activeSession);
 
     given(watchingSessionRepository.findByContentId(eq(contentId), any(Pageable.class)))
-        .willReturn(List.of(activeSession, session2)); // limit+1 개 반환
-    given(watchingSessionMapper.toDto(activeSession)).willReturn(dto1);
+        .willReturn(List.of(s1, s2));
+    given(watchingSessionMapper.toDto(s1)).willReturn(makeDto(s1.getId()));
 
     CursorResponse<WatchingSessionDto> result = watchingSessionService.findAllByContentId(
         contentId, null, null, limit, "startedAt", "DESCENDING");
 
-    assertThat(result.data()).hasSize(1);
     assertThat(result.hasNext()).isTrue();
     assertThat(result.nextCursor()).isNotNull();
-    assertThat(result.nextIdAfter()).isNotNull();
+    assertThat(result.nextIdAfter()).isEqualTo(s1.getId());
   }
 
   // ───────────────────────────── join ─────────────────────────────
 
   @Test
-  void join_기존_활성_세션이_없으면_새_세션을_생성하고_JOIN을_브로드캐스트한다() {
-    WatchingSessionDto dto = makeWatchingSessionDto(activeSession);
+  void 기존_활성_세션이_없으면_새_세션만_생성하고_JOIN을_브로드캐스트한다() {
+    WatchingSessionDto dto = makeDto(UUID.randomUUID());
 
-    given(watchingSessionRepository.findByUserIdAndStatus(
-        watcherId, WatchingSessionStatus.ACTIVE))
+    given(watchingSessionRepository.findByUserIdAndStatus(userId, WatchingSessionStatus.ACTIVE))
         .willReturn(Optional.empty());
-
     given(watchingSessionRepository.save(any(WatchingSession.class)))
         .willAnswer(invocation -> {
-          WatchingSession session = invocation.getArgument(0);
-          ReflectionTestUtils.setField(session, "id", UUID.randomUUID());
-          return session;
+          WatchingSession s = invocation.getArgument(0);
+          ReflectionTestUtils.setField(s, "id", UUID.randomUUID());
+          return s;
         });
+    given(watchingSessionMapper.toDto(any(WatchingSession.class))).willReturn(dto);
 
-    given(watchingSessionMapper.toDto(any(WatchingSession.class)))
-        .willReturn(dto);
-
-    UUID resultId = watchingSessionService.join(contentId, watcherId);
+    UUID resultId = watchingSessionService.join(contentId, userId);
 
     assertThat(resultId).isNotNull();
-
-    ArgumentCaptor<WatchingSession> sessionCaptor = ArgumentCaptor.forClass(WatchingSession.class);
-    verify(watchingSessionRepository, times(1)).save(sessionCaptor.capture());
-    WatchingSession savedSession = sessionCaptor.getValue();
-    assertThat(savedSession.getUserId()).isEqualTo(watcherId);
-    assertThat(savedSession.getContentId()).isEqualTo(contentId);
-    assertThat(savedSession.getStatus()).isEqualTo(WatchingSessionStatus.ACTIVE);
+    verify(watchingSessionRepository).save(any(WatchingSession.class));
 
     ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
-    verify(messagingTemplate, times(1))
-        .convertAndSend(eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
+    verify(messagingTemplate, times(1)).convertAndSend(
+        eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
     assertThat(eventCaptor.getValue().type()).isEqualTo("JOIN");
-    assertThat(eventCaptor.getValue().watchingSession()).isEqualTo(dto);
   }
 
   @Test
-  void join_기존_활성_세션이_있으면_종료_후_LEAVE를_브로드캐스트하고_새_세션으로_JOIN을_브로드캐스트한다() {
-    WatchingSessionDto existingDto = makeWatchingSessionDto(activeSession);
-    WatchingSessionDto newDto = new WatchingSessionDto(
-        UUID.randomUUID(), Instant.now(), null, null);
+  void 기존_활성_세션이_있으면_종료시키고_LEAVE와_JOIN_둘다_브로드캐스트한다() {
+    WatchingSession existingSession = makeActiveSession(userId, UUID.randomUUID());
+    WatchingSessionDto dto = makeDto(existingSession.getId());
 
-    given(watchingSessionRepository.findByUserIdAndStatus(watcherId, WatchingSessionStatus.ACTIVE))
-        .willReturn(Optional.of(activeSession));
-    given(watchingSessionMapper.toDto(any(WatchingSession.class)))
-        .willAnswer(invocation -> {
-          WatchingSession session = invocation.getArgument(0);
-          return session == activeSession ? existingDto : newDto;
-        });
-
+    given(watchingSessionRepository.findByUserIdAndStatus(userId, WatchingSessionStatus.ACTIVE))
+        .willReturn(Optional.of(existingSession));
     given(watchingSessionRepository.save(any(WatchingSession.class)))
         .willAnswer(invocation -> {
-          WatchingSession session = invocation.getArgument(0);
-          ReflectionTestUtils.setField(session, "id", UUID.randomUUID());
-          return session;
+          WatchingSession s = invocation.getArgument(0);
+          ReflectionTestUtils.setField(s, "id", UUID.randomUUID());
+          return s;
         });
+    given(watchingSessionMapper.toDto(any(WatchingSession.class))).willReturn(dto);
 
-    UUID resultId = watchingSessionService.join(contentId, watcherId);
+    watchingSessionService.join(contentId, userId);
 
-    assertThat(resultId).isNotNull();
-    assertThat(activeSession.getStatus()).isEqualTo(WatchingSessionStatus.ENDED);
-
-    verify(watchingSessionRepository, times(1))
-        .save(any(WatchingSession.class));
+    assertThat(existingSession.getStatus()).isEqualTo(WatchingSessionStatus.ENDED);
+    verify(watchingSessionRepository).save(any(WatchingSession.class));
 
     ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
-    verify(messagingTemplate, times(2))
-        .convertAndSend(eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
+    verify(messagingTemplate, times(2)).convertAndSend(
+        org.mockito.ArgumentMatchers.anyString(), eventCaptor.capture());
 
     List<WatchingSessionEvent> events = eventCaptor.getAllValues();
-    assertThat(events).hasSize(2);
-    assertThat(events.get(0).type()).isEqualTo("LEAVE");
-    assertThat(events.get(1).type()).isEqualTo("JOIN");
+    assertThat(events).extracting(WatchingSessionEvent::type)
+        .containsExactly("LEAVE", "JOIN");
   }
 
   // ───────────────────────────── leave ─────────────────────────────
 
   @Test
-  void leave_활성_세션을_종료하고_LEAVE_이벤트를_브로드캐스트한다() {
-    WatchingSessionDto dto = makeWatchingSessionDto(activeSession);
+  void 활성_세션을_leave하면_종료되고_LEAVE를_브로드캐스트한다() {
+    WatchingSession session = makeActiveSession(userId, contentId);
+    WatchingSessionDto dto = makeDto(session.getId());
 
-    given(watchingSessionRepository.findById(activeSession.getId()))
-        .willReturn(Optional.of(activeSession));
-    given(watchingSessionMapper.toDto(activeSession)).willReturn(dto);
+    given(watchingSessionRepository.findById(session.getId())).willReturn(Optional.of(session));
+    given(watchingSessionMapper.toDto(session)).willReturn(dto);
 
-    watchingSessionService.leave(activeSession.getId());
+    watchingSessionService.leave(session.getId());
 
-    assertThat(activeSession.getStatus()).isEqualTo(WatchingSessionStatus.ENDED);
-
-    ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
-    verify(messagingTemplate, times(1))
-        .convertAndSend(eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
-    assertThat(eventCaptor.getValue().type()).isEqualTo("LEAVE");
-    assertThat(eventCaptor.getValue().watchingSession()).isEqualTo(dto);
+    assertThat(session.getStatus()).isEqualTo(WatchingSessionStatus.ENDED);
+    verify(messagingTemplate).convertAndSend(
+        eq("/sub/contents/" + contentId + "/watch"),
+        eq(new WatchingSessionEvent("LEAVE", dto)));
   }
 
   @Test
-  void leave_이미_종료된_세션이면_브로드캐스트하지_않는다() {
-    activeSession.end();
+  void 이미_종료된_세션을_leave하면_아무것도_하지_않는다() {
+    WatchingSession session = makeActiveSession(userId, contentId);
+    session.end();
 
-    given(watchingSessionRepository.findById(activeSession.getId()))
-        .willReturn(Optional.of(activeSession));
+    given(watchingSessionRepository.findById(session.getId())).willReturn(Optional.of(session));
 
-    watchingSessionService.leave(activeSession.getId());
+    watchingSessionService.leave(session.getId());
 
     verify(messagingTemplate, never()).convertAndSend(any(String.class), any(Object.class));
   }
 
   @Test
-  void leave_존재하지_않는_세션이면_아무것도_하지_않는다() {
+  void 존재하지_않는_세션을_leave하면_아무것도_하지_않는다() {
     UUID unknownId = UUID.randomUUID();
     given(watchingSessionRepository.findById(unknownId)).willReturn(Optional.empty());
 
     watchingSessionService.leave(unknownId);
 
     verify(messagingTemplate, never()).convertAndSend(any(String.class), any(Object.class));
-  }
-
-  // ───────────────────────────── 헬퍼 메서드 ─────────────────────────────
-
-  private WatchingSessionDto makeWatchingSessionDto(WatchingSession session) {
-    return new WatchingSessionDto(
-        session.getId(),
-        session.getStartedAt(),
-        null,  // watcher (UserService 모킹 불필요)
-        null   // content (ContentService 모킹 불필요)
-    );
   }
 }

@@ -7,10 +7,17 @@ spring:
       maxRequestSize: 30MB  # 한 번에 최대 업로드 가능 용량
   datasource:
     driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/mopl?reWriteBatchedInserts=true
   jpa:
     hibernate:
       ddl-auto: update
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_updates: true
+        order_inserts: true
   profiles:
     active:
       - ${SPRING_PROFILES_ACTIVE:dev}
@@ -63,6 +70,8 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
 
 management:
   endpoints:
@@ -139,6 +148,7 @@ Sports:
 logging:
   level:
     root: info
+    com.sb09.sb09moplteam2: debug
 
 sse:
   timeout: 300000

@@ -13,20 +13,24 @@ public class TmdbMovieReader implements ItemReader<TmdbEventResponse> {
 
   private final TmdbClient tmdbClient;
   private final ContentType contentType;
-  private int currentPage = 1;
-  private int totalPages = 1;
+  private int currentPage;
+  private final int endPage;
+  private final String partitionName;
   private List<TmdbEventResponse> buffer = new ArrayList<>();
   private int bufferIndex = 0;
 
-  public TmdbMovieReader(TmdbClient tmdbClient, ContentType contentType) {
+  public TmdbMovieReader(TmdbClient tmdbClient, ContentType contentType, int startPage, int endPage, String partitionName) {
     this.tmdbClient = tmdbClient;
     this.contentType = contentType;
+    this.currentPage = startPage;
+    this.endPage = endPage;
+    this.partitionName = partitionName;
   }
 
   @Override
   public TmdbEventResponse read() {
     if (bufferIndex >= buffer.size()) {
-      if (currentPage > totalPages) {
+      if (currentPage > endPage) {
         return null;
       }
       fetchNextPage();
@@ -36,14 +40,21 @@ public class TmdbMovieReader implements ItemReader<TmdbEventResponse> {
   }
 
   private void fetchNextPage() {
-    TmdbPageResponse<TmdbEventResponse> response = contentType == ContentType.movie
-        ? tmdbClient.fetchMovies(currentPage)
-        : tmdbClient.fetchTvSeries(currentPage);
+    try {
+      TmdbPageResponse<TmdbEventResponse> response = contentType == ContentType.movie
+          ? tmdbClient.fetchMovies(currentPage)
+          : tmdbClient.fetchTvSeries(currentPage);
 
-    totalPages = Math.min(response.totalPages(), 5); // 최대 5페이지
-    buffer = response.results();
-    bufferIndex = 0;
+      buffer = response.results();
+      bufferIndex = 0;
+      log.info("TMDB {} 데이터 {}페이지 로드 완료 - {}건 ({})",
+          contentType, currentPage, buffer.size(), partitionName);
+    } catch (Exception e) {
+      log.warn("TMDB {} {}페이지 조회 실패 - 스킵하고 다음 페이지로 진행 ({}): {}",
+          contentType, currentPage, partitionName, e.getMessage());
+      buffer = List.of();
+      bufferIndex = 0;
+    }
     currentPage++;
-    log.info("TMDB {} 데이터 {}페이지 로드 완료 - {}건", contentType, currentPage - 1, buffer.size());
   }
 }
