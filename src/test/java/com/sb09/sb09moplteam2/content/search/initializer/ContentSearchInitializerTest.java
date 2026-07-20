@@ -15,12 +15,15 @@ import com.sb09.sb09moplteam2.content.search.ContentSearchRepository;
 import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.IndexOperations;
 
 @ExtendWith(MockitoExtension.class)
 class ContentSearchInitializerTest {
@@ -31,11 +34,23 @@ class ContentSearchInitializerTest {
   @Mock
   private ContentSearchService contentSearchService;
 
+  @Mock
+  private ElasticsearchOperations elasticsearchOperations;
+
+  @Mock
+  private IndexOperations indexOperations;
+
   @InjectMocks
   private ContentSearchInitializer contentSearchInitializer;
 
   @Mock
   private ContentSearchRepository contentSearchRepository;
+
+  @BeforeEach
+  void setUp() {
+    given(elasticsearchOperations.indexOps(ContentDocument.class)).willReturn(indexOperations);
+    given(indexOperations.exists()).willReturn(true);
+  }
 
   @Test
   @DisplayName("색인된 데이터가 없으면 전체 콘텐츠를 색인한다")
