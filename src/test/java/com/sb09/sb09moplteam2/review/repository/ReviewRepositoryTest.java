@@ -290,4 +290,72 @@ class ReviewRepositoryTest {
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getText()).isEqualTo("리뷰2");
   }
+
+  @Test
+  @DisplayName("createdAt이 같을 때 내림차순 커서로 다음 페이지를 조회한다")
+  void findReviewsWithCursor_createdAt이_같을때_내림차순_커서로_다음_페이지를_조회한다() {
+    User user = em.persist(new User("테스터", "test@test.com", "password"));
+    Content content = em.persist(Content.builder()
+        .type(ContentType.movie)
+        .title("테스트 영화")
+        .description("설명")
+        .externalId("test-external-id")
+        .build());
+
+    Review review1 = em.persist(Review.builder().rating(3.0).text("리뷰1").content(content).user(user).build());
+    Review review2 = em.persist(Review.builder().rating(4.0).text("리뷰2").content(content).user(user).build());
+    Review review3 = em.persist(Review.builder().rating(5.0).text("리뷰3").content(content).user(user).build());
+    em.flush();
+
+    Instant tiedTime = Instant.parse("2026-01-01T00:00:00Z");
+    ReflectionTestUtils.setField(review1, "createdAt", tiedTime);
+    ReflectionTestUtils.setField(review2, "createdAt", tiedTime);
+    ReflectionTestUtils.setField(review3, "createdAt", tiedTime);
+    em.persist(review1);
+    em.persist(review2);
+    em.persist(review3);
+    em.flush();
+    em.clear();
+
+    List<Review> firstPage = reviewRepository.findReviewsWithCursor(
+        content.getId(), null, null, 1, "DESCENDING", "createdAt"
+    );
+    Review last = firstPage.get(0);
+
+    List<Review> result = reviewRepository.findReviewsWithCursor(
+        content.getId(), tiedTime.toString(), last.getId(), 10, "DESCENDING", "createdAt"
+    );
+
+    assertThat(result).hasSize(2);
+    assertThat(result).extracting(Review::getId).doesNotContain(last.getId());
+  }
+
+  @Test
+  @DisplayName("rating이 같을 때 내림차순 커서로 다음 페이지를 조회한다")
+  void findReviewsWithCursor_rating이_같을때_내림차순_커서로_다음_페이지를_조회한다() {
+    User user = em.persist(new User("테스터", "test@test.com", "password"));
+    Content content = em.persist(Content.builder()
+        .type(ContentType.movie)
+        .title("테스트 영화")
+        .description("설명")
+        .externalId("test-external-id")
+        .build());
+
+    em.persist(Review.builder().rating(3.0).text("리뷰1").content(content).user(user).build());
+    em.persist(Review.builder().rating(3.0).text("리뷰2").content(content).user(user).build());
+    em.persist(Review.builder().rating(3.0).text("리뷰3").content(content).user(user).build());
+    em.flush();
+
+    List<Review> firstPage = reviewRepository.findReviewsWithCursor(
+        content.getId(), null, null, 1, "DESCENDING", "rating"
+    );
+    Review last = firstPage.get(0);
+
+    List<Review> result = reviewRepository.findReviewsWithCursor(
+        content.getId(), "3.0", last.getId(), 10, "DESCENDING", "rating"
+    );
+
+    assertThat(result).hasSize(2);
+    assertThat(result).extracting(Review::getId).doesNotContain(last.getId());
+  }
 }

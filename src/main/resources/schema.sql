@@ -115,6 +115,10 @@ ALTER TABLE contents
     ADD CONSTRAINT chk_content_status
         CHECK (status IN ('UPCOMING', 'RELEASE'));
 
+ALTER TABLE contents
+    ADD CONSTRAINT uk_contents_type_external_id
+        UNIQUE (type, external_id);
+
 -- content_tags
 CREATE TABLE content_tags
 (

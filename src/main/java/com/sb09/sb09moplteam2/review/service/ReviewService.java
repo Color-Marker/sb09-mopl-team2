@@ -121,14 +121,14 @@ public class ReviewService {
           : String.valueOf(last.getRating());
       nextIdAfter = last.getId();
     }
-    long totalCount = reviewRepository.countByContentId(contentId);
+    Long totalCount = (idAfter == null) ? reviewRepository.countByContentId(contentId) : null;
 
     log.info("리뷰 목록 조회 완료 - 총 {}개", totalCount);
     return new CursorResponseReviewDto(
-        data, nextCursor, nextIdAfter, hasNext, (long) data.size(), sortBy, sortDirection
+        data, nextCursor, nextIdAfter, hasNext, totalCount, sortBy, sortDirection
     );
   }
-  //TODO 테스트 코드 작성
+
   private void updateContentReviewStats(UUID contentId) {
     List<Review> reviews = reviewRepository.findByContentId(contentId);
     int reviewCount = reviews.size();
