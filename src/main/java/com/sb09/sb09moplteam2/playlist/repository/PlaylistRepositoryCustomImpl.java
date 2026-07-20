@@ -31,23 +31,8 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
       String sortBy
   ) {
     QPlaylist playlist = QPlaylist.playlist;
-    QPlaylistSubscription subscription = QPlaylistSubscription.playlistSubscription;
 
-    BooleanBuilder builder = new BooleanBuilder();
-
-    if (keywordLike != null && !keywordLike.isBlank()) {
-      builder.and(playlist.title.containsIgnoreCase(keywordLike.trim()));
-    }
-    if (ownerIdEqual != null) {
-      builder.and(playlist.owner.id.eq(ownerIdEqual));
-    }
-    if (subscriberIdEqual != null) {
-      builder.and(playlist.id.in(
-          JPAExpressions.select(subscription.playlist.id)
-              .from(subscription)
-              .where(subscription.subscriber.id.eq(subscriberIdEqual))
-      ));
-    }
+    BooleanBuilder builder = buildFilterConditions(keywordLike, ownerIdEqual, subscriberIdEqual);
 
     boolean isAsc = "ASCENDING".equalsIgnoreCase(sortDirection);
     boolean sortByUpdatedAt = "updatedAt".equals(sortBy);
@@ -82,5 +67,48 @@ public class PlaylistRepositoryCustomImpl implements PlaylistRepositoryCustom {
         .orderBy(orderSpecifier, playlist.id.asc())
         .limit(limit + 1)
         .fetch();
+  }
+
+  @Override
+  public Long countPlaylists(
+      String keywordLike,
+      UUID ownerIdEqual,
+      UUID subscriberIdEqual
+  ) {
+    QPlaylist playlist = QPlaylist.playlist;
+    BooleanBuilder builder = buildFilterConditions(keywordLike, ownerIdEqual, subscriberIdEqual);
+
+    return queryFactory
+        .select(playlist.count())
+        .from(playlist)
+        .where(builder)
+        .fetchOne();
+  }
+
+  private BooleanBuilder buildFilterConditions(
+      String keywordLike,
+      UUID ownerIdEqual,
+      UUID subscriberIdEqual
+  ) {
+    QPlaylist playlist = QPlaylist.playlist;
+    QPlaylistSubscription subscription = QPlaylistSubscription.playlistSubscription;
+
+    BooleanBuilder builder = new BooleanBuilder();
+
+    if (keywordLike != null && !keywordLike.isBlank()) {
+      builder.and(playlist.title.containsIgnoreCase(keywordLike.trim()));
+    }
+    if (ownerIdEqual != null) {
+      builder.and(playlist.owner.id.eq(ownerIdEqual));
+    }
+    if (subscriberIdEqual != null) {
+      builder.and(playlist.id.in(
+          JPAExpressions.select(subscription.playlist.id)
+              .from(subscription)
+              .where(subscription.subscriber.id.eq(subscriberIdEqual))
+      ));
+    }
+
+    return builder;
   }
 }

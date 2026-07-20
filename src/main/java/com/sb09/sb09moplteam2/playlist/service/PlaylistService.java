@@ -102,7 +102,7 @@ public class PlaylistService {
     List<UUID> playlistIds = content.stream().map(Playlist::getId).toList();
 
     Map<UUID, List<PlaylistItem>> itemsMap = playlistItemRepository
-          .findByPlaylistIdInOrderByOrderIndex(playlistIds).stream()
+        .findByPlaylistIdInOrderByOrderIndex(playlistIds).stream()
         .collect(Collectors.groupingBy(item -> item.getPlaylist().getId()));
 
     Set<UUID> subscribedPlaylistIds = currentUserId != null
@@ -128,13 +128,17 @@ public class PlaylistService {
       nextIdAfter = last.getId();
     }
 
-    log.info("플레이리스트 목록 조회 완료 - 총 {}개", data.size());
+    Long totalCount = (idAfter == null)
+        ? playlistRepository.countPlaylists(keywordLike, ownerIdEqual, subscriberIdEqual)
+        : null;
+
+    log.info("플레이리스트 목록 조회 완료 - 총 {}개", totalCount);
     return new CursorResponsePlaylistDto(
         data,
         nextCursor,
         nextIdAfter,
         hasNext,
-        (long) data.size(),
+        totalCount,
         sortBy,
         sortDirection
     );

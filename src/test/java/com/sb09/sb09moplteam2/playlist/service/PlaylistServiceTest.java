@@ -511,4 +511,42 @@ class PlaylistServiceTest {
     assertThatThrownBy(() -> playlistService.unsubscribe(playlistId, subscriberId))
         .isInstanceOf(DuplicateSubscribeException.class);
   }
+  @Test
+  void 첫_페이지_조회시_totalCount를_계산한다() {
+    Playlist playlist = mock(Playlist.class);
+    given(playlist.getId()).willReturn(UUID.randomUUID());
+    given(playlistRepository.findPlaylistsWithCursor(
+        any(), any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyInt(), any(), any()))
+        .willReturn(List.of(playlist));
+    given(playlistItemRepository.findByPlaylistIdInOrderByOrderIndex(anyList()))
+        .willReturn(List.of());
+    given(playlistMapper.toDto(any(Playlist.class), anyList(), anyBoolean()))
+        .willReturn(mock(PlaylistDto.class));
+    given(playlistRepository.countPlaylists(any(), any(), any()))
+        .willReturn(5L);
+
+    CursorResponsePlaylistDto response = playlistService.findAll(
+        null, null, null, null, null, 5, "DESCENDING", "updatedAt", null);
+
+    assertThat(response.totalCount()).isEqualTo(5L);
+  }
+
+  @Test
+  void 다음_페이지_조회시_totalCount를_계산하지_않고_null을_반환한다() {
+    Playlist playlist = mock(Playlist.class);
+    given(playlist.getId()).willReturn(UUID.randomUUID());
+    given(playlistRepository.findPlaylistsWithCursor(
+        any(), any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyInt(), any(), any()))
+        .willReturn(List.of(playlist));
+    given(playlistItemRepository.findByPlaylistIdInOrderByOrderIndex(anyList()))
+        .willReturn(List.of());
+    given(playlistMapper.toDto(any(Playlist.class), anyList(), anyBoolean()))
+        .willReturn(mock(PlaylistDto.class));
+
+    CursorResponsePlaylistDto response = playlistService.findAll(
+        null, null, null, "0", UUID.randomUUID(), 5, "DESCENDING", "updatedAt", null);
+
+    assertThat(response.totalCount()).isNull();
+    then(playlistRepository).should(never()).countPlaylists(any(), any(), any());
+  }
 }
