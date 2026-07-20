@@ -41,7 +41,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
     QContent content = QContent.content;
     QContentTag contentTag = QContentTag.contentTag;
 
-    boolean isAsc = "ASC".equalsIgnoreCase(sortDirection);
+    boolean isAsc = "ASCENDING".equalsIgnoreCase(sortDirection);
 
     BooleanBuilder builder = new BooleanBuilder();
 
