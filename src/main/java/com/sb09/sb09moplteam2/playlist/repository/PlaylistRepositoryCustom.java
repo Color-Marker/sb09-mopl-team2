@@ -15,4 +15,10 @@ public interface PlaylistRepositoryCustom {
       String sortDirection,
       String sortBy
   );
+
+  Long countPlaylists(
+      String keywordLike,
+      UUID ownerIdEqual,
+      UUID subscriberIdEqual
+  );
 }

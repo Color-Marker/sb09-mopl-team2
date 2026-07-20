@@ -41,6 +41,8 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
     QContent content = QContent.content;
     QContentTag contentTag = QContentTag.contentTag;
 
+    boolean isAsc = "ASCENDING".equalsIgnoreCase(sortDirection);
+
     BooleanBuilder builder = new BooleanBuilder();
 
     // 필터 조건
@@ -48,7 +50,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
       builder.and(content.type.eq(ContentType.valueOf(typeEqual)));
     }
     if (keywordLike != null && !keywordLike.isBlank()) {
-      List<UUID> matchedIds = contentSearchService.searchIds(keywordLike);
+      List<UUID> matchedIds = contentSearchService.searchIds(keywordLike.trim());
       if(matchedIds.isEmpty()) {
         return new CursorResponseContentDto(List.of(), null, null, false, 0L, sortBy, sortDirection);
       }
@@ -64,17 +66,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
 
     // 커서 조건
     if (cursor != null && idAfter != null) {
-      boolean isAsc = "ASCENDING".equals(sortDirection);
       switch (sortBy) {
-        case "createdAt" -> {
-          LocalDateTime cursorValue = LocalDateTime.parse(cursor);
-          builder.and(isAsc
-              ? content.createdAt.gt(cursorValue)
-              .or(content.createdAt.eq(cursorValue).and(content.id.gt(idAfter)))
-              : content.createdAt.lt(cursorValue)
-                  .or(content.createdAt.eq(cursorValue).and(content.id.gt(idAfter)))
-          );
-        }
         case "watcherCount" -> {
           Long cursorValue = Long.parseLong(cursor);
           builder.and(isAsc
@@ -93,11 +85,20 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
                   .or(content.averageRating.eq(cursorValue).and(content.id.gt(idAfter)))
           );
         }
+
+        default -> {
+          LocalDateTime cursorValue = LocalDateTime.parse(cursor);
+          builder.and(isAsc ?
+              content.createdAt.gt(cursorValue)
+                  .or(content.createdAt.eq(cursorValue).and(content.id.gt(idAfter)))
+              : content.createdAt.lt(cursorValue)
+                  .or(content.createdAt.eq(cursorValue).and(content.id.gt(idAfter)))
+          );
+        }
       }
     }
 
     // 정렬
-    boolean isAsc = "ASCENDING".equals(sortDirection);
     OrderSpecifier<?> orderSpecifier = switch (sortBy) {
       case "watcherCount" -> isAsc ? content.watcherCount.asc() : content.watcherCount.desc();
       case "rate" -> isAsc ? content.averageRating.asc() : content.averageRating.desc();
@@ -145,11 +146,14 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
         .toList();
 
     // 총 개수
-    Long totalCount = queryFactory
-        .select(content.count())
-        .from(content)
-        .where(builder)
-        .fetchOne();
+    Long totalCount = null;
+    if(idAfter == null) {
+      totalCount = queryFactory
+          .select(content.count())
+          .from(content)
+          .where(builder)
+          .fetchOne();
+    }
 
     // nextCursor, nextIdAfter
     String nextCursor = null;
