@@ -271,4 +271,84 @@ class PlaylistRepositoryTest {
     assertThat(result).extracting(Playlist::getTitle)
         .containsExactly("두번째", "세번째");
   }
+  @Test
+  void updatedAt이_같을_때_내림차순_커서로_다음_페이지를_조회한다() {
+    User owner = saveUser("우디", "woody@mopl.io");
+    Playlist p1 = savePlaylist("첫번째", "설명", owner);
+    Playlist p2 = savePlaylist("두번째", "설명", owner);
+    Playlist p3 = savePlaylist("세번째", "설명", owner);
+
+    Instant tiedTime = Instant.now().truncatedTo(ChronoUnit.MICROS);
+    forceUpdatedAt(p1, tiedTime);
+    forceUpdatedAt(p2, tiedTime);
+    forceUpdatedAt(p3, tiedTime);
+
+    List<Playlist> firstPage = playlistRepository.findPlaylistsWithCursor(
+        null, null, null, null, null, 1, "DESCENDING", "updatedAt");
+    Playlist last = firstPage.get(0);
+
+    List<Playlist> result = playlistRepository.findPlaylistsWithCursor(
+        null, null, null,
+        tiedTime.toString(), last.getId(),
+        10, "DESCENDING", "updatedAt");
+
+    assertThat(result).hasSize(2);
+    assertThat(result).extracting(Playlist::getId).doesNotContain(last.getId());
+  }
+
+  @Test
+  void subscriberCount가_같을_때_내림차순_커서로_다음_페이지를_조회한다() {
+    User owner = saveUser("우디", "woody@mopl.io");
+    Playlist p1 = savePlaylist("첫번째", "설명", owner);
+    Playlist p2 = savePlaylist("두번째", "설명", owner);
+    Playlist p3 = savePlaylist("세번째", "설명", owner);
+
+    p1.incrementSubscriberCount();
+    p2.incrementSubscriberCount();
+    p3.incrementSubscriberCount();
+    entityManager.flush();
+    entityManager.clear();
+
+    List<Playlist> firstPage = playlistRepository.findPlaylistsWithCursor(
+        null, null, null, null, null, 1, "DESCENDING", "subscriberCount");
+    Playlist last = firstPage.get(0);
+
+    List<Playlist> result = playlistRepository.findPlaylistsWithCursor(
+        null, null, null, "1", last.getId(), 10, "DESCENDING", "subscriberCount");
+
+    assertThat(result).hasSize(2);
+    assertThat(result).extracting(Playlist::getId).doesNotContain(last.getId());
+  }
+
+  @Test
+  void 제목_키워드_끝에_공백이_있어도_정상_검색된다() {
+    User owner = saveUser("우디", "woody@mopl.io");
+    savePlaylist("액션 영화 모음", "설명", owner);
+    savePlaylist("코미디 모음", "설명", owner);
+    entityManager.flush();
+    entityManager.clear();
+
+    List<Playlist> result = playlistRepository.findPlaylistsWithCursor(
+        "액션 ", null, null, null, null, 10, "DESCENDING", "updatedAt");
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getTitle()).isEqualTo("액션 영화 모음");
+  }
+
+  @Test
+  void sortDirection이_소문자여도_정상_동작한다() {
+    User owner = saveUser("우디", "woody@mopl.io");
+    Playlist p1 = savePlaylist("첫번째", "설명", owner);
+    Playlist p2 = savePlaylist("두번째", "설명", owner);
+
+    Instant now = Instant.now();
+    forceUpdatedAt(p1, now.minus(1, ChronoUnit.MINUTES));
+    forceUpdatedAt(p2, now);
+
+    List<Playlist> result = playlistRepository.findPlaylistsWithCursor(
+        null, null, null, null, null, 10, "ascending", "updatedAt");
+
+    assertThat(result).extracting(Playlist::getTitle)
+        .containsExactly("첫번째", "두번째");
+  }
 }
