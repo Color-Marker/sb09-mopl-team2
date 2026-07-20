@@ -1,8 +1,10 @@
 package com.sb09.sb09moplteam2.content.search.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 import com.sb09.sb09moplteam2.content.search.ContentDocument;
 import com.sb09.sb09moplteam2.content.search.ContentSearchRepository;
@@ -68,7 +70,7 @@ class ContentSearchServiceTest {
         .type("movie")
         .build();
 
-    given(contentSearchRepository.findByTitleContainingOrDescriptionContaining("어벤져스", "어벤져스"))
+    given(contentSearchRepository.searchByKeyword("어벤져스"))
         .willReturn(List.of(doc1, doc2));
 
     List<UUID> result = contentSearchService.searchIds("어벤져스");
@@ -79,11 +81,41 @@ class ContentSearchServiceTest {
   @Test
   @DisplayName("일치하는 콘텐츠가 없으면 빈 목록을 반환한다")
   void searchIds_일치하는_콘텐츠가_없으면_빈_목록을_반환한다() {
-    given(contentSearchRepository.findByTitleContainingOrDescriptionContaining("없는검색어", "없는검색어"))
+    given(contentSearchRepository.searchByKeyword("없는검색어"))
         .willReturn(List.of());
 
     List<UUID> result = contentSearchService.searchIds("없는검색어");
 
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  @DisplayName("검색어 끝에 공백이 있으면 trim 후 검색한다")
+  void searchIds_검색어_끝에_공백이_있으면_trim_후_검색한다() {
+    given(contentSearchRepository.searchByKeyword("미국"))
+        .willReturn(List.of());
+
+    List<UUID> result = contentSearchService.searchIds("미국 ");
+
+    assertThat(result).isEmpty();
+    then(contentSearchRepository).should().searchByKeyword("미국");
+  }
+
+  @Test
+  @DisplayName("검색어가 공백만 있으면 ES 호출 없이 빈 목록을 반환한다")
+  void searchIds_검색어가_공백만_있으면_ES_호출없이_빈_목록을_반환한다() {
+    List<UUID> result = contentSearchService.searchIds("   ");
+
+    assertThat(result).isEmpty();
+    then(contentSearchRepository).should(never()).searchByKeyword(any());
+  }
+
+  @Test
+  @DisplayName("검색어가 null이면 ES 호출 없이 빈 목록을 반환한다")
+  void searchIds_검색어가_null이면_ES_호출없이_빈_목록을_반환한다() {
+    List<UUID> result = contentSearchService.searchIds(null);
+
+    assertThat(result).isEmpty();
+    then(contentSearchRepository).should(never()).searchByKeyword(any());
   }
 }
