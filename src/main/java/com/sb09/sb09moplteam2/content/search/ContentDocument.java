@@ -14,7 +14,9 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(indexName = "contents")
+// createIndex = false: 리포지토리 빈 생성 시 ES 접속(인덱스 자동 생성)을 막아 ES 미가용 환경에서도 앱이 기동되게 함.
+// 인덱스 생성은 ContentSearchInitializer가 기동 완료 후 담당.
+@Document(indexName = "contents", createIndex = false)
 public class ContentDocument {
 
   @Id
