@@ -39,30 +39,20 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
     if (cursor != null && !cursor.isBlank() && idAfter != null) {
       if (sortByCreatedAt) {
         Instant cursorValue = Instant.parse(cursor);
-        if (isAsc) {
-          builder.and(
-              review.createdAt.gt(cursorValue)
-                  .or(review.createdAt.eq(cursorValue).and(review.id.gt(idAfter)))
-          );
-        } else {
-          builder.and(
-              review.createdAt.lt(cursorValue)
-                  .or(review.createdAt.eq(cursorValue).and(review.id.lt(idAfter)))
-          );
-        }
+        builder.and(isAsc
+            ? review.createdAt.gt(cursorValue)
+            .or(review.createdAt.eq(cursorValue).and(review.id.gt(idAfter)))
+            : review.createdAt.lt(cursorValue)
+                .or(review.createdAt.eq(cursorValue).and(review.id.gt(idAfter)))
+        );
       } else {
         Double cursorValue = Double.parseDouble(cursor);
-        if (isAsc) {
-          builder.and(
-              review.rating.gt(cursorValue)
-                  .or(review.rating.eq(cursorValue).and(review.id.gt(idAfter)))
-          );
-        } else {
-          builder.and(
-              review.rating.lt(cursorValue)
-                  .or(review.rating.eq(cursorValue).and(review.id.lt(idAfter)))
-          );
-        }
+        builder.and(isAsc
+            ? review.rating.gt(cursorValue)
+            .or(review.rating.eq(cursorValue).and(review.id.gt(idAfter)))
+            : review.rating.lt(cursorValue)
+                .or(review.rating.eq(cursorValue).and(review.id.gt(idAfter)))
+        );
       }
     }
 
