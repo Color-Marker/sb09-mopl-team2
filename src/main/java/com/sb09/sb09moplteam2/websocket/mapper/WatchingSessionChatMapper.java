@@ -10,9 +10,11 @@ public class WatchingSessionChatMapper {
 
   public WatchingSessionChatResponse toResponse(User sender, String content) {
     return new WatchingSessionChatResponse(
-        sender.getId(),
-        sender.getName(),
-        sender.getProfileImageUrl(),
+        new WatchingSessionChatResponse.Sender(
+            sender.getId(),
+            sender.getName(),
+            sender.getProfileImageUrl()
+        ),
         content,
         Instant.now()
     );

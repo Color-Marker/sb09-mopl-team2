@@ -4,10 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record WatchingSessionChatResponse(
-    UUID senderId,
-    String senderName,
-    String senderProfileImageUrl,
+    Sender sender,
     String content,
     Instant sentAt
 ) {
+  public record Sender(
+      UUID userId,
+      String name,
+      String profileImageUrl
+  ) {}
 }
