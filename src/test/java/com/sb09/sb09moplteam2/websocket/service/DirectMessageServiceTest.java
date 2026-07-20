@@ -258,6 +258,34 @@ class DirectMessageServiceTest {
         .isInstanceOf(ConversationParticipantNotFoundException.class);
   }
 
+  @Test
+  void send_sender가_존재하지_않으면_UserNotFoundException을_던진다() {
+    given(conversationRepository.findById(conversationId)).willReturn(Optional.of(conversation));
+    given(conversationParticipantRepository.existsByConversationAndUserId(conversation, myUserId))
+        .willReturn(true);
+    given(directMessageRepository.save(any(DirectMessage.class)))
+        .willAnswer(invocation -> invocation.getArgument(0));
+    given(userRepository.findById(myUserId)).willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> directMessageService.send(conversationId, myUserId, "내용"))
+        .isInstanceOf(com.sb09.sb09moplteam2.exception.user.UserNotFoundException.class);
+  }
+
+  @Test
+  void send_다른_참여자가_없으면_NoSuchElementException을_던진다() {
+    given(conversationRepository.findById(conversationId)).willReturn(Optional.of(conversation));
+    given(conversationParticipantRepository.existsByConversationAndUserId(conversation, myUserId))
+        .willReturn(true);
+    given(directMessageRepository.save(any(DirectMessage.class)))
+        .willAnswer(invocation -> invocation.getArgument(0));
+    given(userRepository.findById(myUserId)).willReturn(Optional.of(sender));
+    given(conversationParticipantRepository.findOtherParticipants(conversationId, myUserId))
+        .willReturn(Optional.empty());
+
+    assertThatThrownBy(() -> directMessageService.send(conversationId, myUserId, "내용"))
+        .isInstanceOf(java.util.NoSuchElementException.class);
+  }
+
   // ───────────────────────────── read ─────────────────────────────
 
   @Test
