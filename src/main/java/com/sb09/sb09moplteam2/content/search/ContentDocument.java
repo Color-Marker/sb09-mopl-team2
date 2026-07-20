@@ -1,6 +1,7 @@
 package com.sb09.sb09moplteam2.content.search;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,12 +32,16 @@ public class ContentDocument {
   @Field(type = FieldType.Keyword)
   private String type;
 
-  public static ContentDocument from(Content content) {
+  @Field(type = FieldType.Keyword)
+  private List<String> tags;
+
+  public static ContentDocument from(Content content, List<String> tags) {
     return ContentDocument.builder()
         .id(content.getId().toString())
         .title(content.getTitle())
         .description(content.getDescription())
         .type(content.getType().name())
+        .tags(tags)
         .build();
   }
 }

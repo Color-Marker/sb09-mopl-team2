@@ -20,8 +20,15 @@ public class ContentSearchService {
   }
 
   public List<UUID> searchIds(String keyword) {
+    if(keyword == null) {
+      return List.of();
+    }
+    String trimmed = keyword.trim();
+    if (trimmed.isEmpty()) {
+      return List.of();
+    }
     return contentSearchRepository
-        .findByTitleContainingOrDescriptionContaining(keyword, keyword)
+        .searchByKeyword(trimmed)
         .stream()
         .map(doc -> UUID.fromString(doc.getId()))
         .toList();

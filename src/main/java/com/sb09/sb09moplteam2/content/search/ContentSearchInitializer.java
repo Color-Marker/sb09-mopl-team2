@@ -1,8 +1,13 @@
 package com.sb09.sb09moplteam2.content.search;
 
 import com.sb09.sb09moplteam2.content.entity.Content;
+import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
+import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -20,6 +25,7 @@ public class ContentSearchInitializer {
   private final ContentSearchService contentSearchService;
   private final ContentSearchRepository contentSearchRepository;
   private final ElasticsearchOperations elasticsearchOperations;
+  private final ContentTagRepository contentTagRepository;
 
   @EventListener(ApplicationReadyEvent.class)
   public void reindexAll() {
@@ -38,8 +44,16 @@ public class ContentSearchInitializer {
       }
 
       List<Content> allContents = contentRepository.findAll();
-      allContents.forEach(content ->
-          contentSearchService.index(ContentDocument.from(content)));
+
+      Map<UUID, List<String>> tagMap = contentTagRepository.findAll().stream()
+          .collect(Collectors.groupingBy(
+              tag -> tag.getContent().getId(),
+              Collectors.mapping(ContentTag::getTag, Collectors.toList())
+          ));
+      allContents.forEach(content ->{
+            List<String> tags = tagMap.getOrDefault(content.getId(), List.of());
+            contentSearchService.index(ContentDocument.from(content, tags));
+          });
       log.info("Elasticsearch 색인 완료 - {}건", allContents.size());
     } catch (Exception e) {
       // ES 미가용 시 검색 기능만 비활성화하고 앱은 정상 기동 (연결 복구 후 재기동하면 재색인됨)

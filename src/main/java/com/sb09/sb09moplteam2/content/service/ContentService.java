@@ -62,7 +62,7 @@ public class ContentService {
         .toList();
     contentTagRepository.saveAll(tags);
 
-    contentSearchService.index(ContentDocument.from(content));
+    contentSearchService.index(ContentDocument.from(content, request.tags()));
 
     log.info("콘텐츠 생성 완료 - id: {}", content.getId());
     return contentMapper.toDto(content, tags);
@@ -120,7 +120,8 @@ public class ContentService {
 
     List<ContentTag> tags = contentTagRepository.findByContentId(contentId);
 
-    contentSearchService.index(ContentDocument.from(content));
+    List<String> tagNames = tags.stream().map(ContentTag::getTag).toList();
+    contentSearchService.index(ContentDocument.from(content, tagNames));
 
     log.info("콘텐츠 수정 완료 - contentId: {}", contentId);
     return contentMapper.toDto(content, tags);
