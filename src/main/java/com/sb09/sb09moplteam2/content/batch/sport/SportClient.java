@@ -26,8 +26,8 @@ public class SportClient {
     return fetchEvents("/eventsnextleague.php?id=" + leagueId);
   }
 
-  public List<SportsEventResponse> fetchPastEvents(String leagueId) {
-    return fetchEvents("/eventspastleague.php?id=" + leagueId);
+  public List<SportsEventResponse> fetchPastEvents(String leagueId, String season) {
+    return fetchEvents("/eventsseason.php?id=" +  leagueId + "&season=" + season);
   }
 
   private List<SportsEventResponse> fetchEvents(String path) {
