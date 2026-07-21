@@ -25,6 +25,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
   public static final String USER_CACHE = "users";
+  public static final String NOTIFICATION_CACHE = "notificationList";
 
   public static final String SSE_CHANNEL = "sse-notification";
 
@@ -70,9 +71,14 @@ public class RedisConfig {
         .serializeValuesWith(
             RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer));
 
+    // 알림은 최신 값이 중요하니까 기본 캐시 설정에서 ttl 짧게 변경해서 씀
+    RedisCacheConfiguration notificationCacheConfig = cacheConfig
+        .entryTtl(Duration.ofMinutes(2));
+
     return RedisCacheManager.builder(connectionFactory)
         .cacheDefaults(cacheConfig)
         .withCacheConfiguration(USER_CACHE, cacheConfig)
+        .withCacheConfiguration(NOTIFICATION_CACHE, notificationCacheConfig)
         .build();
   }
 
