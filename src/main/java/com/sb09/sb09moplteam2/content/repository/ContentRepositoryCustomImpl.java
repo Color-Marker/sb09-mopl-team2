@@ -12,7 +12,7 @@ import com.sb09.sb09moplteam2.content.entity.QContent;
 import com.sb09.sb09moplteam2.content.entity.QContentTag;
 import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -45,13 +45,12 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
 
     BooleanBuilder builder = new BooleanBuilder();
 
-    // 필터 조건
     if (typeEqual != null) {
       builder.and(content.type.eq(ContentType.valueOf(typeEqual)));
     }
     if (keywordLike != null && !keywordLike.isBlank()) {
       List<UUID> matchedIds = contentSearchService.searchIds(keywordLike.trim());
-      if(matchedIds.isEmpty()) {
+      if (matchedIds.isEmpty()) {
         return new CursorResponseContentDto(List.of(), null, null, false, 0L, sortBy, sortDirection);
       }
       builder.and(content.id.in(matchedIds));
@@ -85,14 +84,13 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
                   .or(content.averageRating.eq(cursorValue).and(content.id.gt(idAfter)))
           );
         }
-
         default -> {
-          LocalDateTime cursorValue = LocalDateTime.parse(cursor);
-          builder.and(isAsc ?
-              content.createdAt.gt(cursorValue)
-                  .or(content.createdAt.eq(cursorValue).and(content.id.gt(idAfter)))
-              : content.createdAt.lt(cursorValue)
-                  .or(content.createdAt.eq(cursorValue).and(content.id.gt(idAfter)))
+          LocalDate cursorValue = LocalDate.parse(cursor);
+          builder.and(isAsc
+              ? content.releaseDate.gt(cursorValue)
+              .or(content.releaseDate.eq(cursorValue).and(content.id.gt(idAfter)))
+              : content.releaseDate.lt(cursorValue)
+                  .or(content.releaseDate.eq(cursorValue).and(content.id.gt(idAfter)))
           );
         }
       }
@@ -102,10 +100,9 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
     OrderSpecifier<?> orderSpecifier = switch (sortBy) {
       case "watcherCount" -> isAsc ? content.watcherCount.asc() : content.watcherCount.desc();
       case "rate" -> isAsc ? content.averageRating.asc() : content.averageRating.desc();
-      default -> isAsc ? content.createdAt.asc() : content.createdAt.desc();
+      default -> isAsc ? content.releaseDate.asc().nullsLast() : content.releaseDate.desc().nullsLast();
     };
 
-    // limit + 1 조회 (hasNext 판단용)
     List<Content> contents = queryFactory
         .selectFrom(content)
         .where(builder)
@@ -118,7 +115,6 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
       contents = contents.subList(0, limit);
     }
 
-    // 태그 조회
     List<UUID> contentIds = contents.stream().map(Content::getId).toList();
     List<ContentTag> tags = queryFactory
         .selectFrom(contentTag)
@@ -131,7 +127,6 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
             Collectors.mapping(ContentTag::getTag, Collectors.toList())
         ));
 
-    // ContentSummary 변환
     List<ContentSummary> data = contents.stream()
         .map(c -> new ContentSummary(
             c.getId(),
@@ -145,9 +140,8 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
         ))
         .toList();
 
-    // 총 개수
     Long totalCount = null;
-    if(idAfter == null) {
+    if (idAfter == null) {
       totalCount = queryFactory
           .select(content.count())
           .from(content)
@@ -155,7 +149,6 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
           .fetchOne();
     }
 
-    // nextCursor, nextIdAfter
     String nextCursor = null;
     UUID nextIdAfter = null;
     if (hasNext) {
@@ -163,7 +156,7 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
       nextCursor = switch (sortBy) {
         case "watcherCount" -> String.valueOf(last.getWatcherCount());
         case "rate" -> String.valueOf(last.getAverageRating());
-        default -> last.getCreatedAt().toString();
+        default -> last.getReleaseDate() != null ? last.getReleaseDate().toString() : null;
       };
       nextIdAfter = last.getId();
     }
