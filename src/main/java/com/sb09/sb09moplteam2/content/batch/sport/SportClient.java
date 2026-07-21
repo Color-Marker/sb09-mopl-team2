@@ -39,8 +39,10 @@ public class SportClient {
           .body(SportsPageResponse.class);
 
       if (response == null || response.events() == null) {
+        log.warn("TheSportsDB 응답 없음 - path: {}", path);
         return List.of();
       }
+      log.info("TheSportsDB 응답 - path: {}, 건수: {}", path, response.events().size());
       return response.events();
     } catch (Exception e) {
       log.error("TheSportsDB API 호출 실패: {}", path, e);
