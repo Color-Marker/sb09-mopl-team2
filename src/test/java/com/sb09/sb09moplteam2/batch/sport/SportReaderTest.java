@@ -48,14 +48,14 @@ class SportReaderTest {
   }
 
   @Test
-  void 다음_경기_버퍼를_모두_읽으면_과거_경기를_읽는다() {
+  void 다음_경기_버퍼를_모두_읽으면_시즌_경기를_읽는다() {
     // given
     SportsEventResponse next = new SportsEventResponse(
         "1", "A vs B", "설명", "thumb.jpg", "2026-08-01", "축구");
     SportsEventResponse past = new SportsEventResponse(
         "2", "C vs D", "설명", "thumb.jpg", "2026-01-01", "축구");
     given(sportClient.fetchNextEvents("4328")).willReturn(List.of(next));
-    given(sportClient.fetchPastEvents("4328")).willReturn(List.of(past));
+    given(sportClient.fetchPastEvents("4328", "2025-2026")).willReturn(List.of(past));
 
     SportReader reader = new SportReader(sportClient);
 
@@ -69,7 +69,7 @@ class SportReaderTest {
   void 첫번째_리그가_비어있으면_다음_리그로_넘어간다() {
     // given
     given(sportClient.fetchNextEvents("4328")).willReturn(List.of());
-    given(sportClient.fetchPastEvents("4328")).willReturn(List.of());
+    given(sportClient.fetchPastEvents("4328", "2025-2026")).willReturn(List.of());
     SportsEventResponse next = new SportsEventResponse(
         "3", "E vs F", "설명", "thumb.jpg", "2026-08-03", "축구");
     given(sportClient.fetchNextEvents("4387")).willReturn(List.of(next));
@@ -84,11 +84,15 @@ class SportReaderTest {
   @Test
   void 모든_리그를_다_읽으면_null을_반환한다() {
     given(sportClient.fetchNextEvents("4328")).willReturn(List.of());
-    given(sportClient.fetchPastEvents("4328")).willReturn(List.of());
+    given(sportClient.fetchPastEvents("4328", "2025-2026")).willReturn(List.of());
     given(sportClient.fetchNextEvents("4387")).willReturn(List.of());
-    given(sportClient.fetchPastEvents("4387")).willReturn(List.of());
+    given(sportClient.fetchPastEvents("4387", "2025-2026")).willReturn(List.of());
     given(sportClient.fetchNextEvents("4424")).willReturn(List.of());
-    given(sportClient.fetchPastEvents("4424")).willReturn(List.of());
+    given(sportClient.fetchPastEvents("4424", "2026")).willReturn(List.of());
+    given(sportClient.fetchNextEvents("4429")).willReturn(List.of());
+    given(sportClient.fetchPastEvents("4429", "2026")).willReturn(List.of());
+    given(sportClient.fetchNextEvents("4830")).willReturn(List.of());
+    given(sportClient.fetchPastEvents("4830", "2026")).willReturn(List.of());
 
     SportReader reader = new SportReader(sportClient);
 
