@@ -95,7 +95,7 @@ class ConversationMapperTest {
     ConversationDto result = conversationMapper.toDto(conversation, myUserId, participants);
 
     assertThat(result.with()).isEqualTo(otherSummary);
-    assertThat(result.latestMessage()).isEqualTo(lastMessageDto);
+    assertThat(result.lastestMessage()).isEqualTo(lastMessageDto);
   }
 
   @Test
@@ -109,7 +109,7 @@ class ConversationMapperTest {
 
     ConversationDto result = conversationMapper.toDto(conversation, myUserId, participants);
 
-    assertThat(result.latestMessage()).isNull();
+    assertThat(result.lastestMessage()).isNull();
   }
 
   @Test
