@@ -22,8 +22,8 @@ public class MessageCreatedEventListener {
     log.debug("MessageCreatedEvent 수신: receiverId={}", event.userId());
     sseService.publishToRedis(
         Set.of(event.userId()),
-        "dm.created",           // 프론트에서 구독할 이벤트 이름
-        event.messageDto()      // 실제 페이로드 (필드명은 MessageCreatedEvent 구조에 맞게)
+        "dm.created",
+        event.messageDto()
     );
   }
 }
