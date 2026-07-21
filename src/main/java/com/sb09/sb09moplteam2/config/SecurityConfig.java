@@ -10,6 +10,7 @@ import com.sb09.sb09moplteam2.security.jwt.JwtProvider;
 import com.sb09.sb09moplteam2.security.jwt.JwtSignInFilter;
 import com.sb09.sb09moplteam2.security.jwt.JwtSignOutHandler;
 import com.sb09.sb09moplteam2.security.oauth.OAuth2SignInFailureHandler;
+import com.sb09.sb09moplteam2.security.oauth.RedisOAuth2AuthorizationRequestRepository;
 import com.sb09.sb09moplteam2.security.oauth.OAuth2SignInSuccessHandler;
 import com.sb09.sb09moplteam2.user.mapper.UserMapper;
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
@@ -48,6 +49,7 @@ public class SecurityConfig {
   private final OAuth2SignInFailureHandler oAuth2SignInFailureHandler;
   private final SessionBlacklistService sessionBlacklistService;
   private final RefreshTokenCookieFactory refreshTokenCookieFactory;
+  private final RedisOAuth2AuthorizationRequestRepository redisOAuth2AuthorizationRequestRepository;
 
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -95,6 +97,9 @@ public class SecurityConfig {
             .deleteCookies("REFRESH_TOKEN")
         )
         .oauth2Login(oauth2 -> oauth2
+            // 다중 인스턴스에서 인가 요청/콜백 인스턴스가 달라도 동작하도록 인증 요청 상태를 Redis에 저장
+            .authorizationEndpoint(endpoint ->
+                endpoint.authorizationRequestRepository(redisOAuth2AuthorizationRequestRepository))
             .userInfoEndpoint(info -> info.userService(customOAuth2UserService))
             .successHandler(oAuth2SignInSuccessHandler)
             .failureHandler(oAuth2SignInFailureHandler)

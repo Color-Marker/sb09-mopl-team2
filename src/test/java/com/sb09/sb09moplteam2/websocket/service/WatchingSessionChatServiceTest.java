@@ -60,13 +60,28 @@ class WatchingSessionChatServiceTest {
   @Test
   void 활성_세션과_일치하는_콘텐츠면_메시지를_정상_전송한다() {
     String content = "안녕하세요";
-    WatchingSessionChatResponse expectedResponse = new WatchingSessionChatResponse(
-        senderId, "테스트유저", "https://example.com/profile.jpg", content, Instant.now());
 
-    given(watchingSessionRepository.findByUserIdAndStatus(senderId, WatchingSessionStatus.ACTIVE))
-        .willReturn(Optional.of(activeSession));
-    given(userRepository.findById(senderId)).willReturn(Optional.of(sender));
-    given(watchingSessionChatMapper.toResponse(sender, content)).willReturn(expectedResponse);
+    WatchingSessionChatResponse expectedResponse =
+        new WatchingSessionChatResponse(
+            new WatchingSessionChatResponse.Sender(
+                senderId,
+                "테스트유저",
+                "https://example.com/profile.jpg"
+            ),
+            content,
+            Instant.now()
+        );
+
+    given(watchingSessionRepository.findByUserIdAndStatus(
+        senderId,
+        WatchingSessionStatus.ACTIVE
+    )).willReturn(Optional.of(activeSession));
+
+    given(userRepository.findById(senderId))
+        .willReturn(Optional.of(sender));
+
+    given(watchingSessionChatMapper.toResponse(sender, content))
+        .willReturn(expectedResponse);
 
     WatchingSessionChatResponse result =
         watchingSessionChatService.sendMessage(contentId, senderId, content);
