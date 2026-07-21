@@ -11,6 +11,7 @@ import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
 import com.sb09.sb09moplteam2.event.message.RoleUpdatedEvent;
 import com.sb09.sb09moplteam2.event.message.SubsPlaylistWorkEvent;
 import com.sb09.sb09moplteam2.event.message.SubscribedPlaylistEvent;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -86,6 +87,13 @@ public class KafkaProduceRequiredEventListener {
       log.error("직렬화 실패", e);
       throw new RuntimeException(e);
     }
+  }
+
+  @PreDestroy
+  public void flushKafkaOnShutdown() {
+    log.info(">>> 애플리케이션 종료 - Kafka producer flush 시작");
+    kafkaTemplate.flush();
+    log.info(">>> Kafka producer flush 완료");
   }
 
 }

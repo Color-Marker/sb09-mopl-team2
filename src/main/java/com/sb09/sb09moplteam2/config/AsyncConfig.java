@@ -27,6 +27,8 @@ public class AsyncConfig {
     executor.setThreadNamePrefix("event-task-");
     executor.setTaskDecorator(
         new CompositeTaskDecorator(List.of(mdcTaskDecorator(), securityContextTaskDecorator())));
+    executor.setWaitForTasksToCompleteOnShutdown(true);
+    executor.setAwaitTerminationSeconds(20);
     executor.initialize();
     return executor;
   }
