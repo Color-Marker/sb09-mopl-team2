@@ -13,7 +13,7 @@ public class SportReader implements ItemReader<SportsEventResponse> {
 
   private final SportClient sportClient;
 
-  private static final List<String> LEAGUE_IDS = List.of("4328", "4387", "4424", "4429","4332","4335","4331","4334","4480","4391","4830","5124");
+  private static final List<String> LEAGUE_IDS = List.of("4328", "4387", "4424", "4429","4830");
 
   private List<SportsEventResponse> buffer = new ArrayList<>();
   private int index = 0;
