@@ -47,11 +47,13 @@ public class SportProcessor implements ItemProcessor<SportsEventResponse, Conten
     String status = (releaseDate != null && releaseDate.isAfter(LocalDate.now()))
         ? "UPCOMING" : "RELEASE";
 
+    String description = buildDescription(item, releaseDate);
+
     Content content = Content.builder()
         .type(ContentType.sport)
         .externalId(item.idEvent())
         .title(item.strEvent())
-        .description(item.description())
+        .description(description)
         .thumbnailUrl(item.thumbnail())
         .releaseDate(releaseDate)
         .status(status)
@@ -62,5 +64,19 @@ public class SportProcessor implements ItemProcessor<SportsEventResponse, Conten
         : List.of();
 
     return new ContentAndTags(content, tags);
+  }
+
+  private String buildDescription(SportsEventResponse item, LocalDate releaseDate) {
+    String dateText = releaseDate != null
+        ? releaseDate.toString() + " 경기"
+        : "";
+    String orignal = (item.description() != null && !item.description().isBlank())
+        ? item.description()
+        : "";
+
+    if(dateText.isEmpty()) {
+      return orignal;
+    }
+    return orignal.isEmpty() ? dateText : dateText + "\n\n" + orignal;
   }
 }
