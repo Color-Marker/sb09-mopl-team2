@@ -29,6 +29,10 @@ import com.sb09.sb09moplteam2.websocket.repository.DirectMessageRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import java.util.UUID;
@@ -51,7 +55,14 @@ public class BasicNotificationService implements NotificationService {
   private final NotificationMapper notificationMapper;
   private final ApplicationEventPublisher eventPublisher;
 
+  private final CacheManager cacheManager;
+
   @Transactional(readOnly = true)
+  @Cacheable(
+      cacheNames = "notificationList",
+      key = "#userId",
+      condition = "#request.cursor == null" // 첫 페이지 요청일 때만 캐싱
+  )
   @Override
   public CursorResponse<NotificationDto> list(UUID userId,
       NotificationListRequest request) {
@@ -76,6 +87,7 @@ public class BasicNotificationService implements NotificationService {
     );
   }
 
+  @CacheEvict(cacheNames = "notificationList", key = "#userId")
   @Override
   public void delete(UUID notificationId, UUID userId) {
     log.debug("알림 삭제 시작: id={}, userId={}", notificationId, userId);
@@ -90,6 +102,7 @@ public class BasicNotificationService implements NotificationService {
     notificationRepository.delete(notification);
   }
 
+  @CacheEvict(cacheNames = "notificationList", key = "#userId")
   @Override
   public void createFollowNotification(UUID userId, UUID followerId) {
 
@@ -110,6 +123,11 @@ public class BasicNotificationService implements NotificationService {
     String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
 
     createMany(userIds, title, content);
+
+    Cache cache = cacheManager.getCache("notificationList");  // 추가
+    if (cache != null) {
+      userIds.forEach(cache::evict);
+    }
   }
 
   @Override
@@ -124,6 +142,11 @@ public class BasicNotificationService implements NotificationService {
     String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
 
     create(userId, title, content);
+
+    Cache cache = cacheManager.getCache("notificationList");  // 추가
+    if (cache != null) {
+      cache.evict(userId);
+    }
   }
 
   @Override
@@ -135,8 +158,14 @@ public class BasicNotificationService implements NotificationService {
     String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
 
     createMany(userIds, title, content);
+
+    Cache cache = cacheManager.getCache("notificationList");  // 추가
+    if (cache != null) {
+      userIds.forEach(cache::evict);
+    }
   }
 
+  @CacheEvict(cacheNames = "notificationList", key = "#userId")
   @Override
   public void createRoleUpdateNotification(UUID userId, Role previous, Role now) {
     User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));
@@ -152,6 +181,7 @@ public class BasicNotificationService implements NotificationService {
     eventPublisher.publishEvent(new NotificationRoleEvent(dto, Instant.now()));
   }
 
+  @CacheEvict(cacheNames = "notificationList", key = "#userId")
   @Override
   public void createDmNotification(UUID userId, DirectMessageDto messageDto) {
     User user = userRepository.findById(userId).orElseThrow(() -> UserNotFoundException.withId(userId));

@@ -27,7 +27,14 @@ spring:
       security.protocol: SASL_SSL
       sasl.mechanism: PLAIN
       sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="${CONFLUENT_API_KEY}" password="${CONFLUENT_API_SECRET}";
-
+      connections.max.idle.ms: 180000
+      metadata.max.age.ms: 180000
+    producer:
+      properties:
+        request.timeout.ms: 30000
+        delivery.timeout.ms: 60000
+        reconnect.backoff.ms: 1000
+        reconnect.backoff.max.ms: 10000
 
 logging:
   level:
