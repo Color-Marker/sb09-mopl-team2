@@ -23,20 +23,22 @@ public interface WatchingSessionRepository extends JpaRepository<WatchingSession
   List<WatchingSession> findByUserId(UUID userId);
 
   // 특정 콘텐츠의 세션 목록 - 커서 없을 때 (첫 페이지)
-  // startedAt 기준 최신순
+  // startedAt 기준 최신순. "현재 시청자 목록"이므로 종료(ENDED)된 세션은 제외
   @Query("""
         SELECT w FROM WatchingSession w
         WHERE w.contentId = :contentId
+          AND w.status = 'ACTIVE'
         ORDER BY w.startedAt DESC, w.id DESC
         """)
   List<WatchingSession> findByContentId(
       @Param("contentId") UUID contentId, Pageable pageable);
 
   // 특정 콘텐츠의 세션 목록 - 커서 있을 때
-  // (startedAt 기준으로 그 이전 세션 조회)
+  // (startedAt 기준으로 그 이전 세션 조회, ACTIVE만)
   @Query("""
         SELECT w FROM WatchingSession w
         WHERE w.contentId = :contentId
+          AND w.status = 'ACTIVE'
           AND (w.startedAt < :cursorStartedAt
             OR (w.startedAt = :cursorStartedAt AND w.id < :idAfter))
         ORDER BY w.startedAt DESC, w.id DESC

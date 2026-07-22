@@ -136,6 +136,46 @@ class WatchingSessionRepositoryTest {
     assertThat(result).hasSize(1);
   }
 
+  @Test
+  @DisplayName("종료된(ENDED) 세션은 현재 시청자 목록에서 제외된다")
+  void findByContentId_종료된_세션은_제외된다() {
+    UUID contentId = UUID.randomUUID();
+
+    WatchingSession active = persistSession(UUID.randomUUID(), contentId);
+    WatchingSession ended = persistSession(UUID.randomUUID(), contentId);
+    ended.end();
+    em.flush();
+    em.clear();
+
+    List<WatchingSession> result = watchingSessionRepository.findByContentId(
+        contentId, PageRequest.of(0, 10));
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getId()).isEqualTo(active.getId());
+  }
+
+  @Test
+  @DisplayName("커서 조회에서도 종료된(ENDED) 세션은 제외된다")
+  void findByContentIdWithCursor_종료된_세션은_제외된다() {
+    UUID contentId = UUID.randomUUID();
+    Instant now = Instant.now();
+
+    WatchingSession cursorTarget = persistSessionWithStartedAt(UUID.randomUUID(), contentId, now);
+    WatchingSession olderActive =
+        persistSessionWithStartedAt(UUID.randomUUID(), contentId, now.minusSeconds(60));
+    WatchingSession olderEnded =
+        persistSessionWithStartedAt(UUID.randomUUID(), contentId, now.minusSeconds(120));
+    olderEnded.end();
+    em.flush();
+    em.clear();
+
+    List<WatchingSession> result = watchingSessionRepository.findByContentIdWithCursor(
+        contentId, cursorTarget.getStartedAt(), cursorTarget.getId(), PageRequest.of(0, 10));
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getId()).isEqualTo(olderActive.getId());
+  }
+
   // ───────────────────────────── findByContentIdWithCursor ─────────────────────────────
 
   @Test
