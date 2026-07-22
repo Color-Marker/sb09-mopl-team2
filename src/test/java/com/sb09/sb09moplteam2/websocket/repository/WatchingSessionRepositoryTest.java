@@ -158,7 +158,8 @@ class WatchingSessionRepositoryTest {
   @DisplayName("커서 조회에서도 종료된(ENDED) 세션은 제외된다")
   void findByContentIdWithCursor_종료된_세션은_제외된다() {
     UUID contentId = UUID.randomUUID();
-    Instant now = Instant.now();
+    // DB는 마이크로초 정밀도로 저장되므로 커서 비교에 나노초 값을 쓰면 flaky해짐
+    Instant now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
 
     WatchingSession cursorTarget = persistSessionWithStartedAt(UUID.randomUUID(), contentId, now);
     WatchingSession olderActive =
