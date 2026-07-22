@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
@@ -75,6 +76,8 @@ public class BasicNotificationServiceTest {
   @Mock
   private ApplicationEventPublisher eventPublisher;
 
+  @Mock
+  private CacheManager cacheManager;
 
   @Test
   void list_성공() {
