@@ -2,8 +2,10 @@ package com.sb09.sb09moplteam2.config;
 
 import com.sb09.sb09moplteam2.auth.batch.JwtSessionCleanupTasklet;
 import com.sb09.sb09moplteam2.auth.batch.PasswordResetTokenCleanupTasklet;
+import com.sb09.sb09moplteam2.auth.batch.WatchingSessionCleanupTasklet;
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;
+import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
 import com.sb09.sb09moplteam2.batch.listener.GlobalStepExceptionListener;
 import com.sb09.sb09moplteam2.batch.monitoring.BatchJobMetricsListener;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class SessionCleanupBatchConfig {
   private final PlatformTransactionManager transactionManager;
   private final JwtSessionRepository jwtSessionRepository;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
+  private final WatchingSessionRepository watchingSessionRepository;
   private final BatchJobMetricsListener batchJobMetricsListener;
   private final GlobalStepExceptionListener globalStepExceptionListener;
   private final RunIdIncrementer globalRunIdIncrementer;
@@ -36,6 +39,7 @@ public class SessionCleanupBatchConfig {
         .listener(batchJobMetricsListener)
         .start(jwtSessionCleanupStep())
         .next(passwordResetTokenCleanupStep())
+        .next(watchingSessionCleanupStep())
         .build();
   }
 
@@ -51,6 +55,14 @@ public class SessionCleanupBatchConfig {
   public Step passwordResetTokenCleanupStep() {
     return new StepBuilder("passwordResetTokenCleanupStep", jobRepository)
         .tasklet(new PasswordResetTokenCleanupTasklet(passwordResetTokenRepository), transactionManager)
+        .listener(globalStepExceptionListener)
+        .build();
+  }
+
+  @Bean
+  public Step watchingSessionCleanupStep() {
+    return new StepBuilder("watchingSessionCleanupStep", jobRepository)
+        .tasklet(new WatchingSessionCleanupTasklet(watchingSessionRepository), transactionManager)
         .listener(globalStepExceptionListener)
         .build();
   }

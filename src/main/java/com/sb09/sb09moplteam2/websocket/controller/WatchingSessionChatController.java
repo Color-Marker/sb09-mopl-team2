@@ -4,6 +4,7 @@ import com.sb09.sb09moplteam2.exception.ErrorResponse;
 import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.websocket.dto.request.WatchingSessionChatRequest;
 import com.sb09.sb09moplteam2.websocket.dto.response.WatchingSessionChatResponse;
+import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastRelay;
 import com.sb09.sb09moplteam2.websocket.service.WatchingSessionChatService;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -13,7 +14,6 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -32,7 +32,7 @@ import org.springframework.stereotype.Controller;
 public class WatchingSessionChatController {
 
   private final WatchingSessionChatService watchingSessionChatService;
-  private final SimpMessagingTemplate messagingTemplate;
+  private final StompBroadcastRelay stompBroadcastRelay;
 
   @MessageMapping("/contents/{contentId}/chat")
   public void sendMessage(
@@ -45,10 +45,8 @@ public class WatchingSessionChatController {
     WatchingSessionChatResponse response = watchingSessionChatService.sendMessage(
         contentId, senderId, request.content());
 
-    messagingTemplate.convertAndSend(
-        "/sub/contents/" + contentId + "/chat",
-        response
-    );
+    // 다중 인스턴스 브로드캐스트: Redis 경유로 모든 인스턴스의 구독자에게 전달
+    stompBroadcastRelay.broadcast("/sub/contents/" + contentId + "/chat", response);
   }
 
   @MessageExceptionHandler(MoplException.class)

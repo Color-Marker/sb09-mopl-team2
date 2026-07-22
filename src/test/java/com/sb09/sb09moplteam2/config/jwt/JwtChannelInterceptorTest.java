@@ -126,6 +126,43 @@ class JwtChannelInterceptorTest {
   }
 
   @Test
+  @DisplayName("하트비트 시 세션이 무효화되었으면 연결을 차단한다")
+  void heartbeat_세션_무효화되면_차단한다() {
+    interceptor = interceptor();
+    UUID sessionId = UUID.randomUUID();
+
+    given(sessionBlacklistService.isBlacklisted(sessionId)).willReturn(true);
+
+    StompHeaderAccessor accessor = StompHeaderAccessor
+        .createForHeartbeat();
+    Map<String, Object> attrs = new HashMap<>();
+    attrs.put(JwtChannelInterceptor.SESSION_ID_ATTRIBUTE, sessionId);
+    accessor.setSessionAttributes(attrs);
+    accessor.setLeaveMutable(true);
+
+    Message<byte[]> message = messageOf(accessor);
+    assertThatThrownBy(() -> interceptor.preSend(message, null))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  @DisplayName("하트비트 시 세션이 유효하면 통과시킨다")
+  void heartbeat_세션_유효하면_통과한다() {
+    interceptor = interceptor();
+    UUID sessionId = UUID.randomUUID();
+
+    given(sessionBlacklistService.isBlacklisted(sessionId)).willReturn(false);
+
+    StompHeaderAccessor accessor = StompHeaderAccessor.createForHeartbeat();
+    Map<String, Object> attrs = new HashMap<>();
+    attrs.put(JwtChannelInterceptor.SESSION_ID_ATTRIBUTE, sessionId);
+    accessor.setSessionAttributes(attrs);
+    accessor.setLeaveMutable(true);
+
+    assertThat(interceptor.preSend(messageOf(accessor), null)).isNotNull();
+  }
+
+  @Test
   @DisplayName("SUBSCRIBE 시 세션이 무효화되었으면 구독을 차단한다")
   void subscribe_세션_무효화되면_차단한다() {
     interceptor = interceptor();
