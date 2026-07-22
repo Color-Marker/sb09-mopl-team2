@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -49,4 +50,15 @@ public interface WatchingSessionRepository extends JpaRepository<WatchingSession
 
   // 특정 유저의 활성 세션 조회 (중복 세션 방지용)
   boolean existsByUserIdAndStatus(UUID userId, WatchingSessionStatus status);
+
+  // 오래된 ACTIVE 세션 일괄 종료 (연결 종료 이벤트 유실로 남은 유령 세션 정리용)
+  @Modifying
+  @Query("""
+        UPDATE WatchingSession w
+        SET w.status = com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus.ENDED,
+            w.endedAt = :now
+        WHERE w.status = com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus.ACTIVE
+          AND w.startedAt < :threshold
+        """)
+  int endAllActiveStartedBefore(@Param("threshold") Instant threshold, @Param("now") Instant now);
 }

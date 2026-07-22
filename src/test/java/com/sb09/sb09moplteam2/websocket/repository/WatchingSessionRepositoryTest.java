@@ -214,4 +214,45 @@ class WatchingSessionRepositoryTest {
 
     assertThat(result).isFalse();
   }
+
+  // ───────────────────────────── endAllActiveStartedBefore ─────────────────────────────
+
+  @Test
+  @DisplayName("기준 시각 이전에 시작된 ACTIVE 세션만 일괄 종료한다")
+  void endAllActiveStartedBefore_오래된_ACTIVE_세션만_종료한다() {
+    Instant now = Instant.now();
+    // 7시간 전 시작된 유령 ACTIVE 세션 → 종료 대상
+    WatchingSession stale = persistSessionWithStartedAt(
+        UUID.randomUUID(), UUID.randomUUID(), now.minusSeconds(7 * 3600));
+    // 방금 시작된 정상 ACTIVE 세션 → 유지
+    WatchingSession recent = persistSession(UUID.randomUUID(), UUID.randomUUID());
+    // 오래됐지만 이미 ENDED인 세션 → 대상 아님
+    WatchingSession alreadyEnded = persistSessionWithStartedAt(
+        UUID.randomUUID(), UUID.randomUUID(), now.minusSeconds(8 * 3600));
+    alreadyEnded.end();
+    em.flush();
+    em.clear();
+
+    int ended = watchingSessionRepository.endAllActiveStartedBefore(
+        now.minusSeconds(6 * 3600), now);
+
+    assertThat(ended).isEqualTo(1);
+    assertThat(watchingSessionRepository.findById(stale.getId()).orElseThrow().getStatus())
+        .isEqualTo(WatchingSessionStatus.ENDED);
+    assertThat(watchingSessionRepository.findById(recent.getId()).orElseThrow().getStatus())
+        .isEqualTo(WatchingSessionStatus.ACTIVE);
+  }
+
+  @Test
+  @DisplayName("종료 대상이 없으면 0을 반환한다")
+  void endAllActiveStartedBefore_대상없으면_0을_반환한다() {
+    persistSession(UUID.randomUUID(), UUID.randomUUID());
+    em.flush();
+    em.clear();
+
+    int ended = watchingSessionRepository.endAllActiveStartedBefore(
+        Instant.now().minusSeconds(6 * 3600), Instant.now());
+
+    assertThat(ended).isZero();
+  }
 }
