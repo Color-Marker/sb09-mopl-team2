@@ -121,7 +121,6 @@ services:
       - redis-data:/data
     command: redis-server --appendonly yes
 
-
 volumes:
   postgres-data:
   binary-content-storage:
