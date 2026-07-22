@@ -63,7 +63,7 @@ class TmdbClientTest {
     given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
     given(responseSpec.body(any(ParameterizedTypeReference.class))).willReturn(expected);
 
-    TmdbPageResponse<TmdbEventResponse> result = tmdbClient.fetchMovies(1);
+    TmdbPageResponse<TmdbEventResponse> result = tmdbClient.fetchMovies(1, "popularity.desc");
 
     assertThat(result).isEqualTo(expected);
     assertThat(result.results()).hasSize(1);
@@ -86,11 +86,11 @@ class TmdbClientTest {
     ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<Object[]> varsCaptor = ArgumentCaptor.forClass(Object[].class);
 
-    tmdbClient.fetchMovies(3);
+    tmdbClient.fetchMovies(3, "vote_average.desc");
 
     verify(requestHeadersUriSpec).uri(uriCaptor.capture(), varsCaptor.capture());
-    assertThat(uriCaptor.getValue()).contains("/3/movie/popular");
-    assertThat(varsCaptor.getValue()).containsExactly("test-api-key", 3);
+    assertThat(uriCaptor.getValue()).contains("/3/discover/movie");
+    assertThat(varsCaptor.getValue()).containsExactly("test-api-key", 3, "vote_average.desc");
   }
 
   @Test
@@ -109,7 +109,7 @@ class TmdbClientTest {
     given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
     given(responseSpec.body(any(ParameterizedTypeReference.class))).willReturn(expected);
 
-    TmdbPageResponse<TmdbEventResponse> result = tmdbClient.fetchTvSeries(1);
+    TmdbPageResponse<TmdbEventResponse> result = tmdbClient.fetchTvSeries(1, "popularity.desc");
 
     assertThat(result).isEqualTo(expected);
     assertThat(result.results().get(0).name()).isEqualTo("테스트 드라마");
@@ -130,9 +130,9 @@ class TmdbClientTest {
 
     ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
 
-    tmdbClient.fetchTvSeries(2);
+    tmdbClient.fetchTvSeries(2, "first_air_date.desc");
 
     verify(requestHeadersUriSpec).uri(uriCaptor.capture(), any(Object[].class));
-    assertThat(uriCaptor.getValue()).contains("/3/tv/popular");
+    assertThat(uriCaptor.getValue()).contains("/3/discover/tv");
   }
 }

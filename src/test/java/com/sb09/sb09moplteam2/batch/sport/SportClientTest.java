@@ -90,8 +90,8 @@ class SportClientTest {
   }
 
   @Test
-  @DisplayName("과거 경기 목록을 정상적으로 조회한다")
-  void fetchPastEvents_정상적으로_조회한다() {
+  @DisplayName("시즌 경기 목록을 정상적으로 조회한다")
+  void fetchPastEvents_시즌_경기를_정상적으로_조회한다() {
     given(sportProperties.baseUrl()).willReturn("https://www.thesportsdb.com/api/v1/json");
     given(sportProperties.key()).willReturn("123");
 
@@ -104,14 +104,14 @@ class SportClientTest {
     given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
     given(responseSpec.body(SportsPageResponse.class)).willReturn(response);
 
-    List<SportsEventResponse> result = sportClient.fetchPastEvents("4328");
+    List<SportsEventResponse> result = sportClient.fetchPastEvents("4328", "2025-2026");
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0).idEvent()).isEqualTo("2");
   }
 
   @Test
-  @DisplayName("과거 경기 조회 시 올바른 URI를 사용한다")
+  @DisplayName("시즌 경기 조회 시 올바른 URI를 사용한다")
   void fetchPastEvents_올바른_URI를_사용한다() {
     given(sportProperties.baseUrl()).willReturn("https://www.thesportsdb.com/api/v1/json");
     given(sportProperties.key()).willReturn("123");
@@ -123,11 +123,11 @@ class SportClientTest {
 
     ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
 
-    sportClient.fetchPastEvents("4424");
+    sportClient.fetchPastEvents("4424", "2026");
 
     verify(requestHeadersUriSpec).uri(uriCaptor.capture());
     assertThat(uriCaptor.getValue())
-        .isEqualTo("https://www.thesportsdb.com/api/v1/json/123/eventspastleague.php?id=4424");
+        .isEqualTo("https://www.thesportsdb.com/api/v1/json/123/eventsseason.php?id=4424&season=2026");
   }
 
   @Test

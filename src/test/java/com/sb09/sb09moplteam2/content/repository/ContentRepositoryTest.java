@@ -10,8 +10,7 @@ import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.entity.ContentTag;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.search.ContentSearchService;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
@@ -66,14 +65,14 @@ class ContentRepositoryTest {
   }
 
   @Test
-  @DisplayName("커서 없이 createdAt 내림차순으로 조회한다")
-  void findContentsWithCursor_커서없이_createdAt_내림차순으로_조회한다() {
+  @DisplayName("커서 없이 releaseDate 내림차순으로 조회한다")
+  void findContentsWithCursor_커서없이_releaseDate_내림차순으로_조회한다() {
     em.persist(Content.builder().type(ContentType.movie).externalId("ext-001").title("영화1").description("설명").build());
     em.persist(Content.builder().type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
     em.flush();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        null, null, null, null, null, 10, "DESCENDING", "createdAt"
+        null, null, null, null, null, 10, "DESCENDING", "releaseDate"
     );
 
     assertThat(result.data()).hasSize(2);
@@ -88,7 +87,7 @@ class ContentRepositoryTest {
     em.flush();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        "movie", null, null, null, null, 10, "DESCENDING", "createdAt"
+        "movie", null, null, null, null, 10, "DESCENDING", "releaseDate"
     );
     assertThat(result.data()).hasSize(1);
     assertThat(result.data().get(0).title()).isEqualTo("영화1");
@@ -105,7 +104,7 @@ class ContentRepositoryTest {
         .willReturn(List.of(content1.getId()));
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        null, "어벤져스", null, null, null, 10, "DESCENDING", "createdAt"
+        null, "어벤져스", null, null, null, 10, "DESCENDING", "releaseDate"
     );
 
     assertThat(result.data()).hasSize(1);
@@ -126,7 +125,7 @@ class ContentRepositoryTest {
     em.flush();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        null, null, null, null, null, 3, "DESCENDING", "createdAt"
+        null, null, null, null, null, 3, "DESCENDING", "releaseDate"
     );
     assertThat(result.data()).hasSize(3);
     assertThat(result.hasNext()).isTrue();
@@ -142,7 +141,7 @@ class ContentRepositoryTest {
     em.flush();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        null, null, List.of("액션"), null, null, 10, "DESCENDING", "createdAt"
+        null, null, List.of("액션"), null, null, 10, "DESCENDING", "releaseDate"
     );
 
     assertThat(result.data()).hasSize(1);
@@ -150,39 +149,27 @@ class ContentRepositoryTest {
   }
 
   @Test
-  @DisplayName("createdAt 커서로 다음 페이지를 조회한다")
-  void findContentsWithCursor_createdAt_커서로_다음_페이지를_조회한다() {
+  @DisplayName("releaseDate 커서로 다음 페이지를 조회한다")
+  void findContentsWithCursor_releaseDate_커서로_다음_페이지를_조회한다() {
     Content content1 = em.persist(Content.builder()
-        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명").build());
+        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명")
+        .releaseDate(LocalDate.of(2026, 1, 1))
+        .build());
     Content content2 = em.persist(Content.builder()
-        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
+        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명")
+        .releaseDate(LocalDate.of(2026, 1, 2))
+        .build());
     em.flush();
 
-    LocalDateTime base = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
-    forceCreatedAt(content1, base.minusMinutes(1));
-    forceCreatedAt(content2, base);
-
-    // DB에 실제로 반영된 값을 다시 조회해서 커서로 사용
-    Content refetchedContent1 = contentRepository.findById(content1.getId()).orElseThrow();
-    String cursor = refetchedContent1.getCreatedAt().toString();
-    UUID idAfter = refetchedContent1.getId();
+    String cursor = content1.getReleaseDate().toString();
+    UUID idAfter = content1.getId();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        null, null, null, cursor, idAfter, 10, "ASCENDING", "createdAt"
+        null, null, null, cursor, idAfter, 10, "ASCENDING", "releaseDate"
     );
 
     assertThat(result.data()).hasSize(1);
     assertThat(result.data().get(0).title()).isEqualTo("영화2");
-  }
-
-  private void forceCreatedAt(Content content, LocalDateTime time) {
-    em.getEntityManager().createQuery(
-            "update Content c set c.createdAt = :t where c.id = :id")
-        .setParameter("t", time)
-        .setParameter("id", content.getId())
-        .executeUpdate();
-    em.flush();
-    em.clear();
   }
 
   @Test
@@ -239,7 +226,7 @@ class ContentRepositoryTest {
     em.flush();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        null, null, null, null, null, 10, "DESCENDING", "createdAt"
+        null, null, null, null, null, 10, "DESCENDING", "releaseDate"
     );
 
     assertThat(result.totalCount()).isEqualTo(2L);
@@ -249,21 +236,20 @@ class ContentRepositoryTest {
   @DisplayName("다음 페이지(idAfter가 있음) 조회 시 totalCount는 계산하지 않고 null을 반환한다")
   void findContentsWithCursor_다음페이지_조회시_totalCount는_null을_반환한다() {
     Content content1 = em.persist(Content.builder()
-        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명").build());
-    Content content2 = em.persist(Content.builder()
-        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
+        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명")
+        .releaseDate(LocalDate.of(2026, 1, 1))
+        .build());
+    em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명")
+        .releaseDate(LocalDate.of(2026, 1, 2))
+        .build());
     em.flush();
 
-    LocalDateTime base = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
-    forceCreatedAt(content1, base.minusMinutes(1));
-    forceCreatedAt(content2, base);
-
-    Content refetchedContent1 = contentRepository.findById(content1.getId()).orElseThrow();
-    String cursor = refetchedContent1.getCreatedAt().toString();
-    UUID idAfter = refetchedContent1.getId();
+    String cursor = content1.getReleaseDate().toString();
+    UUID idAfter = content1.getId();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
-        null, null, null, cursor, idAfter, 10, "ASCENDING", "createdAt"
+        null, null, null, cursor, idAfter, 10, "ASCENDING", "releaseDate"
     );
 
     assertThat(result.totalCount()).isNull();
@@ -291,21 +277,20 @@ class ContentRepositoryTest {
   }
 
   @Test
-  @DisplayName("sortBy가 알 수 없는 값이면 createdAt 기준으로 커서 조건과 정렬을 처리한다")
-  void findContentsWithCursor_sortBy가_알수없는값이면_createdAt_기준으로_처리한다() {
+  @DisplayName("sortBy가 알 수 없는 값이면 releaseDate 기준으로 커서 조건과 정렬을 처리한다")
+  void findContentsWithCursor_sortBy가_알수없는값이면_releaseDate_기준으로_처리한다() {
     Content content1 = em.persist(Content.builder()
-        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명").build());
-    Content content2 = em.persist(Content.builder()
-        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명").build());
+        .type(ContentType.movie).externalId("ext-001").title("영화1").description("설명")
+        .releaseDate(LocalDate.of(2026, 1, 1))
+        .build());
+    em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-002").title("영화2").description("설명")
+        .releaseDate(LocalDate.of(2026, 1, 2))
+        .build());
     em.flush();
 
-    LocalDateTime base = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
-    forceCreatedAt(content1, base.minusMinutes(1));
-    forceCreatedAt(content2, base);
-
-    Content refetchedContent1 = contentRepository.findById(content1.getId()).orElseThrow();
-    String cursor = refetchedContent1.getCreatedAt().toString();
-    UUID idAfter = refetchedContent1.getId();
+    String cursor = content1.getReleaseDate().toString();
+    UUID idAfter = content1.getId();
 
     CursorResponseContentDto result = contentRepository.findContentsWithCursor(
         null, null, null, cursor, idAfter, 10, "ASCENDING", "invalidSortBy"
@@ -313,5 +298,26 @@ class ContentRepositoryTest {
 
     assertThat(result.data()).hasSize(1);
     assertThat(result.data().get(0).title()).isEqualTo("영화2");
+  }
+
+  @Test
+  @DisplayName("releaseDate가 없는 콘텐츠는 내림차순 정렬 시 맨 뒤로 정렬된다")
+  void findContentsWithCursor_releaseDate가_없으면_내림차순에서_맨뒤로_정렬된다() {
+    em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-001").title("날짜없음").description("설명")
+        .build());
+    em.persist(Content.builder()
+        .type(ContentType.movie).externalId("ext-002").title("날짜있음").description("설명")
+        .releaseDate(LocalDate.of(2026, 1, 1))
+        .build());
+    em.flush();
+
+    CursorResponseContentDto result = contentRepository.findContentsWithCursor(
+        null, null, null, null, null, 10, "DESCENDING", "releaseDate"
+    );
+
+    assertThat(result.data()).hasSize(2);
+    assertThat(result.data().get(0).title()).isEqualTo("날짜있음");
+    assertThat(result.data().get(1).title()).isEqualTo("날짜없음");
   }
 }

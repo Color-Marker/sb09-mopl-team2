@@ -50,12 +50,13 @@ class SportProcessorTest {
     assertThat(result.content().getType()).isEqualTo(ContentType.sport);
     assertThat(result.content().getExternalId()).isEqualTo("2001");
     assertThat(result.content().getTitle()).isEqualTo("결승전");
-    assertThat(result.content().getDescription()).isEqualTo("설명입니다");
+    assertThat(result.content().getDescription()).contains("2026-08-01 경기");
+    assertThat(result.content().getDescription()).contains("설명입니다");
     assertThat(result.content().getThumbnailUrl()).isEqualTo("thumb.jpg");
   }
 
   @Test
-  void 날짜가_미래인_경우_UPCOMING_상태로_설정된다() {
+  void 날짜가_미래인_경우_UPCOMING_상태로_설정되고_설명에_날짜가_표시된다() {
     String futureDate = LocalDate.now().plusDays(10).toString();
     SportsEventResponse item = new SportsEventResponse(
         "3001", "미래경기", "설명", "thumb.jpg", futureDate, "축구");
@@ -68,10 +69,11 @@ class SportProcessorTest {
 
     assertThat(result.content().getStatus()).isEqualTo("UPCOMING");
     assertThat(result.content().getReleaseDate()).isEqualTo(LocalDate.parse(futureDate));
+    assertThat(result.content().getDescription()).contains(futureDate + " 경기");
   }
 
   @Test
-  void 날짜가_과거인_경우_RELEASE_상태로_설정된다() {
+  void 날짜가_과거인_경우_RELEASE_상태로_설정되고_설명에_날짜가_표시된다() {
     String pastDate = LocalDate.now().minusDays(10).toString();
     SportsEventResponse item = new SportsEventResponse(
         "4001", "과거경기", "설명", "thumb.jpg", pastDate, "축구");
@@ -84,6 +86,7 @@ class SportProcessorTest {
 
     assertThat(result.content().getStatus()).isEqualTo("RELEASE");
     assertThat(result.content().getReleaseDate()).isEqualTo(LocalDate.parse(pastDate));
+    assertThat(result.content().getDescription()).contains(pastDate + " 경기");
   }
 
   @Test
@@ -102,7 +105,7 @@ class SportProcessorTest {
   }
 
   @Test
-  void 날짜가_null인_경우_releaseDate는_null이고_RELEASE_상태이다() {
+  void 날짜가_null인_경우_releaseDate는_null이고_RELEASE_상태이며_설명은_원본그대로다() {
     SportsEventResponse item = new SportsEventResponse(
         "5001", "경기", "설명", "thumb.jpg", null, "축구");
     given(contentRepository.findAllExternalIdsByType(ContentType.sport))
@@ -114,6 +117,7 @@ class SportProcessorTest {
 
     assertThat(result.content().getReleaseDate()).isNull();
     assertThat(result.content().getStatus()).isEqualTo("RELEASE");
+    assertThat(result.content().getDescription()).isEqualTo("설명");
   }
 
   @Test

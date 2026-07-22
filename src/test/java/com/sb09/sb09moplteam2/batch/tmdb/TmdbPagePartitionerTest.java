@@ -1,6 +1,8 @@
 package com.sb09.sb09moplteam2.batch.tmdb;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 
 import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbClient;
@@ -27,7 +29,7 @@ class TmdbPagePartitionerTest {
   @DisplayName("totalPages가 maxPages보다 크면 maxPages 기준으로 분할한다")
   void partition_maxPages_기준으로_분할한다() {
     TmdbPageResponse<TmdbEventResponse> response = new TmdbPageResponse<>(List.of(), 100, 100);
-    given(tmdbClient.fetchMovies(1)).willReturn(response);
+    given(tmdbClient.fetchMovies(anyInt(), any())).willReturn(response);
 
     TmdbPagePartitioner partitioner = new TmdbPagePartitioner(tmdbClient, ContentType.movie, 5);
 
@@ -44,7 +46,7 @@ class TmdbPagePartitionerTest {
   @DisplayName("totalPages가 maxPages보다 작으면 totalPages 기준으로 분할한다")
   void partition_totalPages가_작으면_totalPages_기준으로_분할한다() {
     TmdbPageResponse<TmdbEventResponse> response = new TmdbPageResponse<>(List.of(), 2, 2);
-    given(tmdbClient.fetchMovies(1)).willReturn(response);
+    given(tmdbClient.fetchMovies(anyInt(), any())).willReturn(response);
 
     TmdbPagePartitioner partitioner = new TmdbPagePartitioner(tmdbClient, ContentType.movie, 5);
 

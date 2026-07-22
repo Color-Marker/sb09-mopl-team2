@@ -25,26 +25,27 @@ public class TmdbClient {
       maxAttempts = 5,
       backoff = @Backoff(delay = 2000, multiplier = 2, maxDelay = 15000)
   )
-  public TmdbPageResponse<TmdbEventResponse> fetchMovies(int page) {
-    log.info("TMDB 영화 데이터 호출 - page: {}", page);
+  public TmdbPageResponse<TmdbEventResponse> fetchMovies(int page, String sortBy) {
+    log.info("TMDB 영화 데이터 호출 - page: {}, sortBy: {}", page, sortBy);
     return restClient.get()
-        .uri(tmdbProperties.baseUrl() + "/3/movie/popular?api_key={key}&page={page}&language=ko-KR",
-            tmdbProperties.key(), page)
+        .uri(tmdbProperties.baseUrl()
+                + "/3/discover/movie?api_key={key}&page={page}&language=ko-KR&sort_by={sortBy}&vote_count.gte=100",
+            tmdbProperties.key(), page, sortBy)
         .retrieve()
         .body(new ParameterizedTypeReference<>() {});
   }
-
 
   @Retryable(
       retryFor = { HttpServerErrorException.class, ResourceAccessException.class },
       maxAttempts = 3,
       backoff = @Backoff(delay = 1000, multiplier = 2)
   )
-  public TmdbPageResponse<TmdbEventResponse> fetchTvSeries(int page) {
-    log.info("TMDB TV시리즈 데이터 호출 - page: {}", page);
+  public TmdbPageResponse<TmdbEventResponse> fetchTvSeries(int page, String sortBy) {
+    log.info("TMDB TV시리즈 데이터 호출 - page: {}, sortBy: {}", page, sortBy);
     return restClient.get()
-        .uri(tmdbProperties.baseUrl() + "/3/tv/popular?api_key={key}&page={page}&language=ko-KR",
-            tmdbProperties.key(), page)
+        .uri(tmdbProperties.baseUrl()
+                + "/3/discover/tv?api_key={key}&page={page}&language=ko-KR&sort_by={sortBy}&vote_count.gte=100",
+            tmdbProperties.key(), page, sortBy)
         .retrieve()
         .body(new ParameterizedTypeReference<>() {});
   }

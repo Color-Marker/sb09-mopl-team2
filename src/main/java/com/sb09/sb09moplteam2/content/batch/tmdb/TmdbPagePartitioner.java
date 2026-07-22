@@ -49,9 +49,10 @@ public class TmdbPagePartitioner implements Partitioner {
 
 
   private int fetchTotalPages() {
+    String sortBy = TmdbSortByResolver.resolveTodaySortBy(contentType);
     TmdbPageResponse<TmdbEventResponse> response = contentType == ContentType.movie
-        ? tmdbClient.fetchMovies(1)
-        : tmdbClient.fetchTvSeries(1);
+        ? tmdbClient.fetchMovies(1, sortBy)
+        : tmdbClient.fetchTvSeries(1, sortBy);
 
     return Math.min(response.totalPages(), maxPages);
   }
