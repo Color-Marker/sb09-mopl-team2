@@ -22,7 +22,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastRelay;
 
 @ExtendWith(MockitoExtension.class)
 class WatchingSessionChatControllerTest {
@@ -30,7 +30,7 @@ class WatchingSessionChatControllerTest {
   @Mock
   private WatchingSessionChatService watchingSessionChatService;
   @Mock
-  private SimpMessagingTemplate messagingTemplate;
+  private StompBroadcastRelay stompBroadcastRelay;
 
   @InjectMocks
   private WatchingSessionChatController watchingSessionChatController;
@@ -65,8 +65,8 @@ class WatchingSessionChatControllerTest {
 
     ArgumentCaptor<Object> payloadCaptor = ArgumentCaptor.forClass(Object.class);
 
-    verify(messagingTemplate, times(1))
-        .convertAndSend(
+    verify(stompBroadcastRelay, times(1))
+        .broadcast(
             eq("/sub/contents/" + contentId + "/chat"),
             payloadCaptor.capture()
         );

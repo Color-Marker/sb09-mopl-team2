@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastRelay;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +28,7 @@ public class WatchingSessionService {
 
   private final WatchingSessionRepository watchingSessionRepository;
   private final WatchingSessionMapper watchingSessionMapper;
-  private final SimpMessagingTemplate messagingTemplate;
+  private final StompBroadcastRelay stompBroadcastRelay;
 
   // GET /api/users/{watcherId}/watching-sessions
   // 특정 유저의 활성 세션 단건 조회 (없으면 null 반환 - nullable)
@@ -112,7 +112,7 @@ public class WatchingSessionService {
     watchingSessionRepository.save(session);
 
     WatchingSessionDto dto = watchingSessionMapper.toDto(session);
-    messagingTemplate.convertAndSend(
+    stompBroadcastRelay.broadcast(
         "/sub/contents/" + contentId + "/watch",
         new WatchingSessionEvent("JOIN", dto)
     );
@@ -137,7 +137,7 @@ public class WatchingSessionService {
 
   private void broadcastLeave(WatchingSession session) {
     WatchingSessionDto dto = watchingSessionMapper.toDto(session);
-    messagingTemplate.convertAndSend(
+    stompBroadcastRelay.broadcast(
         "/sub/contents/" + session.getContentId() + "/watch",
         new WatchingSessionEvent("LEAVE", dto)
     );

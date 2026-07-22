@@ -30,7 +30,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastRelay;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,7 +41,7 @@ class WatchingSessionServiceTest {
   @Mock
   private WatchingSessionMapper watchingSessionMapper;
   @Mock
-  private SimpMessagingTemplate messagingTemplate;
+  private StompBroadcastRelay stompBroadcastRelay;
 
   @InjectMocks
   private WatchingSessionService watchingSessionService;
@@ -172,7 +172,7 @@ class WatchingSessionServiceTest {
     verify(watchingSessionRepository).save(any(WatchingSession.class));
 
     ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
-    verify(messagingTemplate, times(1)).convertAndSend(
+    verify(stompBroadcastRelay, times(1)).broadcast(
         eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
     assertThat(eventCaptor.getValue().type()).isEqualTo("JOIN");
   }
@@ -198,7 +198,7 @@ class WatchingSessionServiceTest {
     verify(watchingSessionRepository).save(any(WatchingSession.class));
 
     ArgumentCaptor<WatchingSessionEvent> eventCaptor = ArgumentCaptor.forClass(WatchingSessionEvent.class);
-    verify(messagingTemplate, times(2)).convertAndSend(
+    verify(stompBroadcastRelay, times(2)).broadcast(
         org.mockito.ArgumentMatchers.anyString(), eventCaptor.capture());
 
     List<WatchingSessionEvent> events = eventCaptor.getAllValues();
@@ -219,7 +219,7 @@ class WatchingSessionServiceTest {
     watchingSessionService.leave(session.getId());
 
     assertThat(session.getStatus()).isEqualTo(WatchingSessionStatus.ENDED);
-    verify(messagingTemplate).convertAndSend(
+    verify(stompBroadcastRelay).broadcast(
         eq("/sub/contents/" + contentId + "/watch"),
         eq(new WatchingSessionEvent("LEAVE", dto)));
   }
@@ -233,7 +233,7 @@ class WatchingSessionServiceTest {
 
     watchingSessionService.leave(session.getId());
 
-    verify(messagingTemplate, never()).convertAndSend(any(String.class), any(Object.class));
+    verify(stompBroadcastRelay, never()).broadcast(any(String.class), any(Object.class));
   }
 
   @Test
@@ -243,6 +243,6 @@ class WatchingSessionServiceTest {
 
     watchingSessionService.leave(unknownId);
 
-    verify(messagingTemplate, never()).convertAndSend(any(String.class), any(Object.class));
+    verify(stompBroadcastRelay, never()).broadcast(any(String.class), any(Object.class));
   }
 }

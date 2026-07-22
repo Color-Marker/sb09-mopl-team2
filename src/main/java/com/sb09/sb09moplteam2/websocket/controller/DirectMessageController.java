@@ -4,6 +4,7 @@ import com.sb09.sb09moplteam2.exception.ErrorResponse;
 import com.sb09.sb09moplteam2.exception.MoplException;
 import com.sb09.sb09moplteam2.websocket.dto.DirectMessageDto;
 import com.sb09.sb09moplteam2.websocket.dto.request.DirectMessageRequest;
+import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastRelay;
 import com.sb09.sb09moplteam2.websocket.service.DirectMessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -25,7 +25,7 @@ import java.util.UUID;
 public class DirectMessageController {
 
   private final DirectMessageService directMessageService;
-  private final SimpMessagingTemplate messagingTemplate;
+  private final StompBroadcastRelay stompBroadcastRelay;
 
   /**
    * DM 전송
@@ -45,8 +45,8 @@ public class DirectMessageController {
     DirectMessageDto response = directMessageService.send(
         conversationId, senderId, request.content());
 
-    // 대화방 구독자 전체에게 브로드캐스트
-    messagingTemplate.convertAndSend(
+    // 대화방 구독자 전체에게 브로드캐스트 (Redis 경유 - 다중 인스턴스 대응)
+    stompBroadcastRelay.broadcast(
         "/sub/conversations/" + conversationId + "/direct-messages",
         response
     );
