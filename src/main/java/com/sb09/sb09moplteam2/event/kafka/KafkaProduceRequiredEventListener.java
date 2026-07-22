@@ -82,8 +82,10 @@ public class KafkaProduceRequiredEventListener {
       String payload = objectMapper.writeValueAsString(event);
       String topic = "mopl.".concat(event.getClass().getSimpleName());
       sendWithRetry(topic, payload);
-    } catch (Exception e) {
+    } catch (JsonProcessingException e) {
       log.error("직렬화 실패: event={}",event, e);
+    } catch (Exception e){
+      log.error("Kafka 전송 처리 중 예외: event={}", event, e);
     }
   }
 
