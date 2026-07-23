@@ -277,4 +277,63 @@ class ContentServiceTest {
     assertThatThrownBy(() -> contentService.getContentSummary(contentId))
         .isInstanceOf(ContentNotFoundException.class);
   }
+
+  @Test
+  @DisplayName("콘텐츠 생성 시 태그를 포함하여 검색엔진에 색인한다")
+  void 콘텐츠_생성시_태그를_포함하여_색인한다() {
+    ContentCreateRequest request = new ContentCreateRequest(
+        ContentType.movie, "테스트 영화", "설명", List.of("액션", "SF")
+    );
+
+    given(contentRepository.save(any(Content.class))).willAnswer(invocation -> {
+      Content c = invocation.getArgument(0);
+      ReflectionTestUtils.setField(c, "id", UUID.randomUUID());
+      return c;
+    });
+    given(contentTagRepository.saveAll(anyList())).willReturn(List.of());
+
+    ContentDto expectedDto = new ContentDto(
+        UUID.randomUUID(), ContentType.movie, "테스트 영화", "설명",
+        null, List.of("액션", "SF"), 0.0, 0, 0L
+    );
+    given(contentMapper.toDto(any(Content.class), anyList())).willReturn(expectedDto);
+
+    contentService.create(request, null);
+
+    org.mockito.ArgumentCaptor<com.sb09.sb09moplteam2.content.search.ContentDocument> captor =
+        org.mockito.ArgumentCaptor.forClass(com.sb09.sb09moplteam2.content.search.ContentDocument.class);
+    verify(contentSearchService).index(captor.capture());
+    assertThat(captor.getValue().getTags()).containsExactly("액션", "SF");
+  }
+
+  @Test
+  @DisplayName("콘텐츠 수정 시 변경된 태그를 포함하여 검색엔진에 색인한다")
+  void 콘텐츠_수정시_변경된_태그를_포함하여_색인한다() {
+    UUID contentId = UUID.randomUUID();
+    Content content = mock(Content.class);
+    ContentUpdateRequest request = new ContentUpdateRequest("수정된 제목", "수정된 설명", List.of("드라마"));
+
+    com.sb09.sb09moplteam2.content.entity.ContentTag tag =
+        mock(com.sb09.sb09moplteam2.content.entity.ContentTag.class);
+    given(tag.getTag()).willReturn("드라마");
+
+    given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
+    given(content.getId()).willReturn(contentId);
+    given(content.getType()).willReturn(ContentType.movie);
+    given(content.getTitle()).willReturn("수정된 제목");
+    given(content.getDescription()).willReturn("수정된 설명");
+    given(contentTagRepository.findByContentId(contentId)).willReturn(List.of(tag));
+    ContentDto expectedDto = new ContentDto(
+        contentId, ContentType.movie, "수정된 제목", "수정된 설명",
+        null, List.of("드라마"), 0.0, 0, 0L
+    );
+    given(contentMapper.toDto(content, List.of(tag))).willReturn(expectedDto);
+
+    contentService.update(contentId, request, null);
+
+    org.mockito.ArgumentCaptor<com.sb09.sb09moplteam2.content.search.ContentDocument> captor =
+        org.mockito.ArgumentCaptor.forClass(com.sb09.sb09moplteam2.content.search.ContentDocument.class);
+    verify(contentSearchService).index(captor.capture());
+    assertThat(captor.getValue().getTags()).containsExactly("드라마");
+  }
 }
