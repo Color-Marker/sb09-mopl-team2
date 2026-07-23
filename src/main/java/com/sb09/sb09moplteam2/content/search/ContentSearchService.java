@@ -15,6 +15,10 @@ public class ContentSearchService {
     contentSearchRepository.save(document);
   }
 
+  public void indexAll(List<ContentDocument> documents) {
+    contentSearchRepository.saveAll(documents);
+  }
+
   public void delete(UUID contentId) {
     contentSearchRepository.deleteById(contentId.toString());
   }

@@ -27,6 +27,9 @@ public class ContentSearchInitializer {
   private final ElasticsearchOperations elasticsearchOperations;
   private final ContentTagRepository contentTagRepository;
 
+  private static final int CHUNK_SIZE = 20; // 1청크 당 20건식 색인 터진 이력이 있어 보수적으로 지정했습니다 여유가 있으면 계속 늘려가는 방식으로 해도 됩니다
+  private static final long DELAY_BETWEEN_CHUNKS_MILLIS = 2000; // 1청크 당 20건식 이후 2초 후 다음 청크 색인
+
   @EventListener(ApplicationReadyEvent.class)
   public void reindexAll() {
     try {
@@ -50,11 +53,37 @@ public class ContentSearchInitializer {
               tag -> tag.getContent().getId(),
               Collectors.mapping(ContentTag::getTag, Collectors.toList())
           ));
-      allContents.forEach(content ->{
-            List<String> tags = tagMap.getOrDefault(content.getId(), List.of());
-            contentSearchService.index(ContentDocument.from(content, tags));
-          });
-      log.info("Elasticsearch 색인 완료 - {}건", allContents.size());
+
+      int total = allContents.size();
+
+      for(int i = 0; i < total; i+= CHUNK_SIZE) {
+        int end = Math.min(i + CHUNK_SIZE, total);
+        List<Content> chunk = allContents.subList(i, end);
+
+        List<ContentDocument> documents = chunk.stream()
+            .map(content -> ContentDocument.from(
+                content, tagMap.getOrDefault(content.getId(), List.of())))
+            .toList();
+
+        try{
+          contentSearchService.indexAll(documents);
+          log.info("색인 진행 중 - {}/{} 건 완료", end, total);
+        } catch (Exception e){
+          log.warn("청크 색인 실패 - {}~{}, error: {}", i, end, e.getMessage());
+        }
+
+        if(end < total) {
+          try{
+            Thread.sleep(DELAY_BETWEEN_CHUNKS_MILLIS);
+          }catch(InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.warn("색인 작업이 중단됐습니다");
+            break;
+          }
+        }
+      }
+
+      log.info("Elasticsearch 색인 완료 - 전체{}건 완료", total);
     } catch (Exception e) {
       // ES 미가용 시 검색 기능만 비활성화하고 앱은 정상 기동 (연결 복구 후 재기동하면 재색인됨)
       log.warn("Elasticsearch 연결 실패로 콘텐츠 재색인을 건너뜁니다: {}", e.getMessage());
