@@ -44,9 +44,6 @@ management:
   endpoint:
     health:
       show-details: never
-  health:
-    elasticsearch:
-      enabled: false # ES 장애가 ALB 헬스체크(/actuator/health) 실패로 번지지 않도록 상태 판정에서 제외 (검색 기능 자체와는 무관)
   info:
     env:
       enabled: false
