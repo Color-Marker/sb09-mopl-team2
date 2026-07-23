@@ -311,4 +311,56 @@ class ConversationControllerTest {
         .andExpect(status().isUnauthorized());
   }
 
+  // ───────────────────────────── readMessage (messageId 포함 경로) ─────────────────────────────
+  // NOTE: 프론트가 여전히 구 경로(/direct-messages/{directMessageId}/read)를 호출하고 있어
+  // 하위 호환을 위해 별도 매핑을 추가함. 내부 로직은 read()와 동일하게 대화방 단위로 처리.
+
+  @Test
+  void readMessage_성공_200() throws Exception {
+    UUID directMessageId = UUID.randomUUID();
+    willDoNothing().given(directMessageService).read(conversationId, myUserId);
+
+    mockMvc.perform(post("/api/conversations/{conversationId}/direct-messages/{directMessageId}/read",
+            conversationId, directMessageId)
+            .with(userPrincipal(myUserId))
+            .with(csrf()))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void readMessage_대화방이_없으면_404() throws Exception {
+    UUID directMessageId = UUID.randomUUID();
+    willThrow(new ConversationNotFoundException(conversationId))
+        .given(directMessageService).read(conversationId, myUserId);
+
+    mockMvc.perform(post("/api/conversations/{conversationId}/direct-messages/{directMessageId}/read",
+            conversationId, directMessageId)
+            .with(userPrincipal(myUserId))
+            .with(csrf()))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void readMessage_참여자가_아니면_403() throws Exception {
+    UUID directMessageId = UUID.randomUUID();
+    willThrow(new ConversationParticipantNotFoundException(conversationId, myUserId))
+        .given(directMessageService).read(conversationId, myUserId);
+
+    mockMvc.perform(post("/api/conversations/{conversationId}/direct-messages/{directMessageId}/read",
+            conversationId, directMessageId)
+            .with(userPrincipal(myUserId))
+            .with(csrf()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void readMessage_인증없음_401() throws Exception {
+    UUID directMessageId = UUID.randomUUID();
+
+    mockMvc.perform(post("/api/conversations/{conversationId}/direct-messages/{directMessageId}/read",
+            conversationId, directMessageId)
+            .with(csrf()))
+        .andExpect(status().isUnauthorized());
+  }
+
 }
