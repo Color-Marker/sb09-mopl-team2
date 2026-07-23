@@ -7,6 +7,7 @@ import static org.mockito.BDDMockito.then;
 
 import com.sb09.sb09moplteam2.auth.repository.JwtSessionRepository;
 import com.sb09.sb09moplteam2.auth.repository.PasswordResetTokenRepository;
+import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
 import java.time.Instant;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,9 @@ class SessionCleanupTaskletTest {
 
   @Mock
   private PasswordResetTokenRepository passwordResetTokenRepository;
+
+  @Mock
+  private WatchingSessionRepository watchingSessionRepository;
 
   @Mock
   private StepExecution stepExecution;
@@ -66,5 +70,22 @@ class SessionCleanupTaskletTest {
     assertThat(status).isEqualTo(RepeatStatus.FINISHED);
     assertThat(contribution.getWriteCount()).isEqualTo(3);
     then(passwordResetTokenRepository).should().deleteAllUsedOrExpired(any(Instant.class));
+  }
+
+  @Test
+  @DisplayName("시청 세션 정리 태스크릿은 종료 건수를 기록하고 FINISHED를 반환한다")
+  void watchingSessionCleanupTasklet_종료하고_FINISHED를_반환한다() {
+    given(watchingSessionRepository.endAllActiveStartedBefore(any(Instant.class), any(Instant.class)))
+        .willReturn(7);
+    WatchingSessionCleanupTasklet tasklet =
+        new WatchingSessionCleanupTasklet(watchingSessionRepository);
+    StepContribution contribution = contribution();
+
+    RepeatStatus status = tasklet.execute(contribution, chunkContext());
+
+    assertThat(status).isEqualTo(RepeatStatus.FINISHED);
+    assertThat(contribution.getWriteCount()).isEqualTo(7);
+    then(watchingSessionRepository).should()
+        .endAllActiveStartedBefore(any(Instant.class), any(Instant.class));
   }
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.sb09.sb09moplteam2.redis.RedisSubscriber;
+import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastSubscriber;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.EnableCaching;
@@ -28,6 +29,7 @@ public class RedisConfig {
   public static final String NOTIFICATION_CACHE = "notificationList";
 
   public static final String SSE_CHANNEL = "sse-notification";
+  public static final String STOMP_CHANNEL = "stomp-broadcast";
 
   @Bean
   public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory,
@@ -85,10 +87,12 @@ public class RedisConfig {
   @Bean
   public RedisMessageListenerContainer redisMessageListenerContainer(
       RedisConnectionFactory connectionFactory,
-      RedisSubscriber redisSubscriber) {
+      RedisSubscriber redisSubscriber,
+      StompBroadcastSubscriber stompBroadcastSubscriber) {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(connectionFactory);
     container.addMessageListener(redisSubscriber, ChannelTopic.of(SSE_CHANNEL));
+    container.addMessageListener(stompBroadcastSubscriber, ChannelTopic.of(STOMP_CHANNEL));
     return container;
   }
 }

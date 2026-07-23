@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -43,9 +44,12 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
     StompCommand command = accessor.getCommand();
     if (StompCommand.CONNECT.equals(command)) {
       authenticateConnect(accessor);
-    } else if (StompCommand.SEND.equals(command) || StompCommand.SUBSCRIBE.equals(command)) {
+    } else if (StompCommand.SEND.equals(command) || StompCommand.SUBSCRIBE.equals(command)
+        || isHeartbeat(accessor, command)) {
       // 연결 이후 로그아웃/권한 변경/잠금으로 세션이 무효화되면 기존 웹소켓 연결도 차단해야 한다.
       // (CONNECT는 최초 1회만 인증되므로 메시지마다 블랙리스트를 재확인)
+      // 하트비트 포함: 메시지를 보내지 않는 유휴 연결도 로그아웃 시 하트비트 시점에 끊겨
+      // Disconnect 이벤트가 발생하고 시청 세션 퇴장 처리가 정상 수행됨
       rejectIfSessionBlacklisted(accessor);
     }
 
@@ -91,6 +95,10 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
     }
 
     log.debug("WebSocket CONNECT 인증 성공: userId={}", userId);
+  }
+
+  private boolean isHeartbeat(StompHeaderAccessor accessor, StompCommand command) {
+    return command == null && SimpMessageType.HEARTBEAT.equals(accessor.getMessageType());
   }
 
   private void rejectIfSessionBlacklisted(StompHeaderAccessor accessor) {
