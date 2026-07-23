@@ -85,6 +85,76 @@ class CustomUserRepositoryImplTest {
   }
 
   @Test
+  void searchUsers_emailLike로_이름도_검색된다() {
+    // 프론트는 검색어를 emailLike로 보내지만 이름으로도 찾을 수 있어야 함
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .emailLike("앨리스")
+        .limit(10)
+        .sortBy("name")
+        .sortDirection("ASCENDING")
+        .build();
+
+    List<User> result = userRepository.searchUsers(condition);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("앨리스");
+  }
+
+  @Test
+  void searchUsers_이메일_이름_모두_매칭되면_중복없이_조회된다() {
+    User dave = new User("dave", "dave@mopl.io", "pw");
+    em.persist(dave);
+    em.flush();
+    em.clear();
+
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .emailLike("dave")
+        .limit(10)
+        .sortBy("name")
+        .sortDirection("ASCENDING")
+        .build();
+
+    List<User> result = userRepository.searchUsers(condition);
+
+    assertThat(result).hasSize(1);
+    assertThat(userRepository.countUsers(condition)).isEqualTo(1);
+  }
+
+  @Test
+  void searchUsers_이름_검색은_대소문자를_구분하지_않는다() {
+    User dave = new User("Dave", "dave@mopl.io", "pw");
+    em.persist(dave);
+    em.flush();
+    em.clear();
+
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .emailLike("DAVE")
+        .limit(10)
+        .sortBy("name")
+        .sortDirection("ASCENDING")
+        .build();
+
+    List<User> result = userRepository.searchUsers(condition);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("Dave");
+  }
+
+  @Test
+  void countUsers_이름_검색_결과도_카운트된다() {
+    UserSearchCondition condition = UserSearchCondition.builder()
+        .emailLike("밥")
+        .limit(10)
+        .sortBy("name")
+        .sortDirection("ASCENDING")
+        .build();
+
+    long count = userRepository.countUsers(condition);
+
+    assertThat(count).isEqualTo(1);
+  }
+
+  @Test
   void searchUsers_roleEqual_필터() {
     UserSearchCondition condition = UserSearchCondition.builder()
         .roleEqual(Role.USER)

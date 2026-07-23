@@ -30,7 +30,7 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
     return queryFactory
         .selectFrom(user)
         .where(
-            emailLike(condition.getEmailLike()),
+            emailOrNameLike(condition.getEmailLike()),
             roleEq(condition.getRoleEqual()),
             lockedEq(condition.getIsLocked()),
             cursorCondition(condition)
@@ -46,7 +46,7 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
         .select(user.count())
         .from(user)
         .where(
-            emailLike(condition.getEmailLike()),
+            emailOrNameLike(condition.getEmailLike()),
             roleEq(condition.getRoleEqual()),
             lockedEq(condition.getIsLocked())
         )
@@ -54,8 +54,14 @@ public class CustomUserRepositoryImpl implements CustomUserRepository {
     return count == null ? 0 : count;
   }
 
-  private BooleanExpression emailLike(String emailLike) {
-    return StringUtils.hasText(emailLike) ? user.email.containsIgnoreCase(emailLike) : null;
+  // 프론트의 검색어는 emailLike 파라미터로 전달되지만, 관리자가 이름으로도 찾을 수 있도록
+  // 이메일과 이름을 함께 검색한다. (대소문자 구분 없음)
+  private BooleanExpression emailOrNameLike(String keyword) {
+    if (!StringUtils.hasText(keyword)) {
+      return null;
+    }
+    return user.email.containsIgnoreCase(keyword)
+        .or(user.name.containsIgnoreCase(keyword));
   }
 
   private BooleanExpression roleEq(Role role) {
