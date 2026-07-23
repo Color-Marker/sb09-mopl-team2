@@ -94,6 +94,9 @@ management:
   endpoint:
     health:
       show-details: always
+  health:
+    mail:
+      enabled: false
   observations:
     annotations:
       enabled: true
