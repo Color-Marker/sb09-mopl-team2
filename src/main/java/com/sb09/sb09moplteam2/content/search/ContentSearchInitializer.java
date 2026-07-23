@@ -37,12 +37,12 @@ public class ContentSearchInitializer {
       IndexOperations indexOps = elasticsearchOperations.indexOps(ContentDocument.class);
       if (!indexOps.exists()) {
         indexOps.createWithMapping();
-        log.info("Elasticsearch contents 인덱스를 생성했습니다");
+        log.info("Elasticsearch/Opensearch contents 인덱스를 생성했습니다");
       }
 
       long existingCount = contentSearchRepository.count();
       if (existingCount > 0) {
-        log.info("Elasticsearch에 이미 색인된 데이터가 있어 재색인을 건너뜁니다 - {}건", existingCount);
+        log.info("Elasticsearch/Opensearch 에 이미 색인된 데이터가 있어 재색인을 건너뜁니다 - {}건", existingCount);
         return;
       }
 
@@ -83,10 +83,10 @@ public class ContentSearchInitializer {
         }
       }
 
-      log.info("Elasticsearch 색인 완료 - 전체{}건 완료", total);
+      log.info("Elasticsearch/Opensearch 색인 완료 - 전체{}건 완료", total);
     } catch (Exception e) {
       // ES 미가용 시 검색 기능만 비활성화하고 앱은 정상 기동 (연결 복구 후 재기동하면 재색인됨)
-      log.warn("Elasticsearch 연결 실패로 콘텐츠 재색인을 건너뜁니다: {}", e.getMessage());
+      log.warn("Elasticsearch/Opensearch 연결 실패로 콘텐츠 재색인을 건너뜁니다: {}", e.getMessage());
     }
   }
 }
