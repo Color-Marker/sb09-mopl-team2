@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.sb09.sb09moplteam2.redis.RedisSubscriber;
+import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastSubscriber;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.EnableCaching;
@@ -25,8 +26,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
   public static final String USER_CACHE = "users";
+  public static final String NOTIFICATION_CACHE = "notificationList";
 
   public static final String SSE_CHANNEL = "sse-notification";
+  public static final String STOMP_CHANNEL = "stomp-broadcast";
 
   @Bean
   public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory,
@@ -70,19 +73,26 @@ public class RedisConfig {
         .serializeValuesWith(
             RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer));
 
+    // 알림은 최신 값이 중요하니까 기본 캐시 설정에서 ttl 짧게 변경해서 씀
+    RedisCacheConfiguration notificationCacheConfig = cacheConfig
+        .entryTtl(Duration.ofMinutes(2));
+
     return RedisCacheManager.builder(connectionFactory)
         .cacheDefaults(cacheConfig)
         .withCacheConfiguration(USER_CACHE, cacheConfig)
+        .withCacheConfiguration(NOTIFICATION_CACHE, notificationCacheConfig)
         .build();
   }
 
   @Bean
   public RedisMessageListenerContainer redisMessageListenerContainer(
       RedisConnectionFactory connectionFactory,
-      RedisSubscriber redisSubscriber) {
+      RedisSubscriber redisSubscriber,
+      StompBroadcastSubscriber stompBroadcastSubscriber) {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(connectionFactory);
     container.addMessageListener(redisSubscriber, ChannelTopic.of(SSE_CHANNEL));
+    container.addMessageListener(stompBroadcastSubscriber, ChannelTopic.of(STOMP_CHANNEL));
     return container;
   }
 }

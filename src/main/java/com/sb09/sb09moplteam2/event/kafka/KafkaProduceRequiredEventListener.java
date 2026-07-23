@@ -11,9 +11,15 @@ import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
 import com.sb09.sb09moplteam2.event.message.RoleUpdatedEvent;
 import com.sb09.sb09moplteam2.event.message.SubsPlaylistWorkEvent;
 import com.sb09.sb09moplteam2.event.message.SubscribedPlaylistEvent;
+import jakarta.annotation.PreDestroy;
+import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -75,17 +81,34 @@ public class KafkaProduceRequiredEventListener {
     try {
       String payload = objectMapper.writeValueAsString(event);
       String topic = "mopl.".concat(event.getClass().getSimpleName());
-      kafkaTemplate.send(topic, payload).whenComplete((result, ex) -> {
-        if (ex != null) {
-          log.error("Kafka 전송 실패: topic={}", topic, ex);
-        } else {
-          log.info("Kafka 전송 성공: topic={}, offset={}", topic, result.getRecordMetadata().offset());
-        }
-      });
+      sendWithRetry(topic, payload);
     } catch (JsonProcessingException e) {
-      log.error("직렬화 실패", e);
-      throw new RuntimeException(e);
+      log.error("직렬화 실패: event={}",event, e);
+    } catch (Exception e){
+      log.error("Kafka 전송 처리 중 예외: event={}", event, e);
     }
+  }
+
+  @Retryable(
+      retryFor = Exception.class,
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 1000, multiplier = 2)
+  )
+  public void sendWithRetry(String topic, String payload) throws Exception{
+    kafkaTemplate.send(topic, payload).get(5, TimeUnit.SECONDS);
+    log.info("Kafka 전송 성공: topic={}", topic);
+  }
+
+  @Recover
+  public void recover(Exception e, String topic, String payload) {
+    log.error("Kafka 전송 최종 실패 (재시도 모두 소진): topic={}, payload={}", topic, payload, e);
+  }
+
+  @PreDestroy
+  public void flushKafkaOnShutdown() {
+    log.info(">>> 애플리케이션 종료 - Kafka producer flush 시작");
+    kafkaTemplate.flush();
+    log.info(">>> Kafka producer flush 완료");
   }
 
 }

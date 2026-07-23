@@ -1,6 +1,11 @@
 spring:
   application:
     name: mopl
+  session:
+    store-type: redis
+    redis:
+      namespace: mopl:session
+
   servlet:
     multipart:
       maxFileSize: 10MB # 파일 하나의 최대 크기
@@ -25,7 +30,7 @@ spring:
     import: optional:file:.env[.properties]
   cache:
     type: redis
-    cache-names:
+    # cache-names:
       # - 쓸 캐시 이름들
     redis:
       enable-statistics: true
@@ -65,8 +70,12 @@ spring:
             scope: profile_nickname, profile_image
             client-name: Kakao
         provider:
+          google:
+            # prompt=select_account: 브라우저에 이미 로그인된 계정이 있어도 항상 계정 선택 화면을 표시
+            # (그 외 token-uri 등은 Spring 기본 google provider 설정을 그대로 사용)
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth?prompt=select_account
           kakao:
-            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            authorization-uri: https://kauth.kakao.com/oauth/authorize?prompt=select_account
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id

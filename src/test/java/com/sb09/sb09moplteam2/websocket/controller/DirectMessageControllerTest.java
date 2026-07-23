@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastRelay;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -28,7 +28,7 @@ class DirectMessageControllerTest {
   @Mock
   private DirectMessageService directMessageService;
   @Mock
-  private SimpMessagingTemplate messagingTemplate;
+  private StompBroadcastRelay stompBroadcastRelay;
 
   @InjectMocks
   private DirectMessageController directMessageController;
@@ -63,7 +63,7 @@ class DirectMessageControllerTest {
 
     directMessageController.sendDirectMessage(conversationId, request, senderId);
 
-    verify(messagingTemplate).convertAndSend(
+    verify(stompBroadcastRelay).broadcast(
         eq("/sub/conversations/" + conversationId + "/direct-messages"), eq(response));
   }
 

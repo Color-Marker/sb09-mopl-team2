@@ -1,6 +1,8 @@
 package com.sb09.sb09moplteam2.batch.tmdb;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 
 import com.sb09.sb09moplteam2.content.batch.tmdb.TmdbClient;
@@ -27,7 +29,7 @@ class TmdbMovieReaderTest {
     TmdbEventResponse item1 = new TmdbEventResponse(1L, "영화1", null, "줄거리1", null, null, List.of(28));
     TmdbEventResponse item2 = new TmdbEventResponse(2L, "영화2", null, "줄거리2", null, null, List.of(35));
     TmdbPageResponse<TmdbEventResponse> page = new TmdbPageResponse<>(List.of(item1, item2), 1, 1);
-    given(tmdbClient.fetchMovies(1)).willReturn(page);
+    given(tmdbClient.fetchMovies(anyInt(), any())).willReturn(page);
 
     TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.movie, 1, 1, "partition0");
 
@@ -46,7 +48,7 @@ class TmdbMovieReaderTest {
     TmdbEventResponse item = new TmdbEventResponse(1L, null, "드라마1", "줄거리", null, null, List.of(18));
     TmdbPageResponse<TmdbEventResponse> page = new TmdbPageResponse<>(List.of(item), 1, 1);
 
-    given(tmdbClient.fetchTvSeries(1)).willReturn(page);
+    given(tmdbClient.fetchTvSeries(anyInt(), any())).willReturn(page);
 
     TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.tvSeries, 1, 1, "partition0");
 
@@ -63,8 +65,8 @@ class TmdbMovieReaderTest {
     TmdbPageResponse<TmdbEventResponse> page1 = new TmdbPageResponse<>(List.of(item1), 2, 2);
     TmdbPageResponse<TmdbEventResponse> page2 = new TmdbPageResponse<>(List.of(item2), 2, 2);
 
-    given(tmdbClient.fetchMovies(3)).willReturn(page1);
-    given(tmdbClient.fetchMovies(4)).willReturn(page2);
+    given(tmdbClient.fetchMovies(org.mockito.ArgumentMatchers.eq(3), any())).willReturn(page1);
+    given(tmdbClient.fetchMovies(org.mockito.ArgumentMatchers.eq(4), any())).willReturn(page2);
 
     TmdbMovieReader reader = new TmdbMovieReader(tmdbClient, ContentType.movie, 3, 4, "partition1");
 
