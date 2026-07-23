@@ -100,4 +100,15 @@ public class ConversationController {
     directMessageService.read(conversationId, myUserId);
     return ResponseEntity.ok().build();
   }
+
+  @PostMapping("/{conversationId}/direct-messages/{directMessageId}/read")
+  public ResponseEntity<Void> readMessage(
+      @PathVariable UUID conversationId,
+      @PathVariable UUID directMessageId,
+      @AuthenticationPrincipal UUID myUserId
+  ) {
+    log.info("POST /api/conversations/{}/direct-messages/{}/read", conversationId, directMessageId);
+    directMessageService.read(conversationId, myUserId);
+    return ResponseEntity.ok().build();
+  }
 }
