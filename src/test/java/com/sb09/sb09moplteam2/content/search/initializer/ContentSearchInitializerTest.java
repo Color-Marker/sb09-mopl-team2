@@ -78,7 +78,8 @@ class ContentSearchInitializerTest {
     contentSearchInitializer.reindexAll();
 
     then(contentRepository).should().findAll();
-    then(contentSearchService).should(times(2)).index(any(ContentDocument.class));
+    // 청크 크기(20건)보다 작은 2건이므로 청크 1번만 발생 -> indexAll 1회 호출
+    then(contentSearchService).should(times(1)).indexAll(any(List.class));
   }
 
   @Test
@@ -90,7 +91,7 @@ class ContentSearchInitializerTest {
 
     contentSearchInitializer.reindexAll();
 
-    then(contentSearchService).should(times(0)).index(any(ContentDocument.class));
+    then(contentSearchService).should(times(0)).indexAll(any(List.class));
   }
 
   @Test
@@ -111,13 +112,15 @@ class ContentSearchInitializerTest {
     given(contentRepository.findAll()).willReturn(List.of(content));
     given(contentTagRepository.findAll()).willReturn(List.of(tag));
 
-    org.mockito.ArgumentCaptor<ContentDocument> captor =
-        org.mockito.ArgumentCaptor.forClass(ContentDocument.class);
+    org.mockito.ArgumentCaptor<List<ContentDocument>> captor =
+        org.mockito.ArgumentCaptor.forClass(List.class);
 
     contentSearchInitializer.reindexAll();
 
-    then(contentSearchService).should().index(captor.capture());
-    org.assertj.core.api.Assertions.assertThat(captor.getValue().getTags())
+    then(contentSearchService).should().indexAll(captor.capture());
+    List<ContentDocument> capturedDocuments = captor.getValue();
+    org.assertj.core.api.Assertions.assertThat(capturedDocuments).hasSize(1);
+    org.assertj.core.api.Assertions.assertThat(capturedDocuments.get(0).getTags())
         .containsExactly("액션");
   }
 }
