@@ -68,7 +68,7 @@ class PlaylistMapperTest {
     given(contentTagRepository.findByContentId(contentId)).willReturn(tags);
 
     ContentSummary contentSummary = new ContentSummary(
-        contentId, ContentType.movie, "영화1", "설명", null, List.of("액션"), 0.0, 0
+        contentId, ContentType.movie, "영화1", "설명", null, List.of("액션"), 0.0, 0, 0
     );
     given(contentMapper.toContentSummary(content, tags)).willReturn(contentSummary);
 

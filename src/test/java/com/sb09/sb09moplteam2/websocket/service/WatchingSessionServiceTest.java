@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
@@ -42,6 +43,8 @@ class WatchingSessionServiceTest {
   private WatchingSessionMapper watchingSessionMapper;
   @Mock
   private StompBroadcastRelay stompBroadcastRelay;
+  @Mock
+  private ContentRepository contentRepository;
 
   @InjectMocks
   private WatchingSessionService watchingSessionService;
@@ -66,7 +69,7 @@ class WatchingSessionServiceTest {
         sessionId,
         Instant.now(),
         new UserSummary(userId, "시청자", null),
-        new ContentSummary(contentId, ContentType.movie, "제목", "설명", "thumb.jpg", List.of(), 4.0, 1)
+        new ContentSummary(contentId, ContentType.movie, "제목", "설명", "thumb.jpg", List.of(), 4.0, 1, 1)
     );
   }
 

@@ -256,7 +256,7 @@ class ContentServiceTest {
     UUID contentId = UUID.randomUUID();
     Content content = mock(Content.class);
     ContentSummary summary = new ContentSummary(
-        contentId, ContentType.movie, "테스트 영화", "설명", null, List.of(), 0.0, 0
+        contentId, ContentType.movie, "테스트 영화", "설명", null, List.of(), 0.0, 0, 0
     );
 
     given(contentRepository.findById(contentId)).willReturn(Optional.of(content));
