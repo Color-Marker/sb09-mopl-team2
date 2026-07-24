@@ -1,5 +1,6 @@
 package com.sb09.sb09moplteam2.websocket.service;
 
+import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
@@ -29,6 +30,7 @@ public class WatchingSessionService {
   private final WatchingSessionRepository watchingSessionRepository;
   private final WatchingSessionMapper watchingSessionMapper;
   private final StompBroadcastRelay stompBroadcastRelay;
+  private final ContentRepository contentRepository;
 
   // GET /api/users/{watcherId}/watching-sessions
   // 특정 유저의 활성 세션 단건 조회 (없으면 null 반환 - nullable)
@@ -111,6 +113,8 @@ public class WatchingSessionService {
     WatchingSession session = WatchingSession.create(userId, contentId); // builder 대신 create()
     watchingSessionRepository.save(session);
 
+    increaseWatcherCount(contentId);
+
     WatchingSessionDto dto = watchingSessionMapper.toDto(session);
     stompBroadcastRelay.broadcast(
         "/sub/contents/" + contentId + "/watch",
@@ -130,6 +134,7 @@ public class WatchingSessionService {
         return; // 이미 종료된 세션이면 중복 브로드캐스트 방지
       }
       session.end();
+      decreaseWatcherCount(session.getContentId());
       broadcastLeave(session);
       log.debug("시청 세션 종료: sessionId={}, userId={}", session.getId(), session.getUserId());
     });
@@ -141,5 +146,16 @@ public class WatchingSessionService {
         "/sub/contents/" + session.getContentId() + "/watch",
         new WatchingSessionEvent("LEAVE", dto)
     );
+  }
+
+  private void increaseWatcherCount(UUID contentId) {
+    contentRepository.findById(contentId).ifPresent(content ->
+        content.updateWatcherCount(content.getWatcherCount() + 1));
+  }
+
+  private void decreaseWatcherCount(UUID contentId) {
+    contentRepository.findById(contentId).ifPresent(content -> {
+      content.updateWatcherCount(content.getWatcherCount() - 1);
+    });
   }
 }

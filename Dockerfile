@@ -4,6 +4,9 @@ FROM amazoncorretto:17 AS builder
 # 작업 디렉토리 설정
 WORKDIR /app
 
+# xargs 등 필요한 유틸리티 설치
+RUN yum install -y findutils && yum clean all
+
 # Gradle Wrapper 파일 먼저 복사
 COPY gradle ./gradle
 COPY gradlew ./gradlew

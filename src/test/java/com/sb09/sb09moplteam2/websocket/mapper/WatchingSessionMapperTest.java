@@ -51,7 +51,7 @@ class WatchingSessionMapperTest {
     UserSummary watcherSummary = new UserSummary(userId, "시청자", "profile.jpg");
     ContentSummary contentSummary = new ContentSummary(
         contentId, ContentType.movie, "테스트 컨텐츠", "설명", "thumb.jpg",
-        List.of("액션"), 4.5, 10);
+        List.of("액션"), 4.5, 10, 1);
 
     given(userService.getUserSummary(userId)).willReturn(watcherSummary);
     given(contentService.getContentSummary(contentId)).willReturn(contentSummary);
