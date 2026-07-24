@@ -38,7 +38,8 @@ public class ContentMapper {
         content.getThumbnailUrl(),
         tagNames,
         content.getAverageRating(),
-        content.getReviewCount()
+        content.getReviewCount(),
+        content.getWatcherCount()
     );
   }
 }

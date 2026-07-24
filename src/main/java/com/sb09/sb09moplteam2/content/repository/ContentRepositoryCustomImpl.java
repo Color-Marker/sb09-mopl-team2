@@ -136,7 +136,8 @@ public class ContentRepositoryCustomImpl implements ContentRepositoryCustom {
             c.getThumbnailUrl(),
             tagMap.getOrDefault(c.getId(), List.of()),
             c.getAverageRating(),
-            c.getReviewCount()
+            c.getReviewCount(),
+            c.getWatcherCount()
         ))
         .toList();
 
