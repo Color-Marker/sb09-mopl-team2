@@ -136,6 +136,8 @@ public class ContentService {
           log.warn("콘텐츠 없음 - contentId: {}", contentId);
           return new ContentNotFoundException();
         });
+
+    contentTagRepository.deleteByContentId(contentId);
     contentRepository.delete(content);
     contentSearchService.delete(contentId);
     log.info("콘텐츠 삭제 완료 - contentId: {}", contentId);
