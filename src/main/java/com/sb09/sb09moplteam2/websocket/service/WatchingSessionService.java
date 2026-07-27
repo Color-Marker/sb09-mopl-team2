@@ -107,6 +107,7 @@ public class WatchingSessionService {
     watchingSessionRepository.findByUserIdAndStatus(userId, WatchingSessionStatus.ACTIVE)
         .ifPresent(existing -> {
           existing.end(); // setStatus 대신 end() 사용
+          decreaseWatcherCount(existing.getContentId());
           broadcastLeave(existing);
         });
 
