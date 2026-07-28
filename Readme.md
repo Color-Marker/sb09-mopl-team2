@@ -1,6 +1,7 @@
 # **2조벌조**
 
 Sprint 9기 고급 프로젝트
+
 [![codecov](https://codecov.io/gh/Color-Marker/sb09-mopl-team2/branch/main/graph/badge.svg)](https://codecov.io/gh/Color-Marker/sb09-mopl-team2)
 
 ## **팀원 구성**
@@ -31,7 +32,7 @@ Sprint 9기 고급 프로젝트
 * 구글 및 카카오 계정 연동
 * TBDM, The Sports DB API 연동
 
-\---
+---
 
 ## **팀원별 구현 기능 상세**
 
