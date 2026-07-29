@@ -2,6 +2,9 @@ package com.sb09.sb09moplteam2.websocket.service;
 
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
+import com.sb09.sb09moplteam2.event.message.FollowUserChatEvent;
+import com.sb09.sb09moplteam2.follow.entity.Follow;
+import com.sb09.sb09moplteam2.follow.repository.FollowRepository;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
 
@@ -9,8 +12,11 @@ import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
 import com.sb09.sb09moplteam2.websocket.event.WatchingSessionEvent;
 import com.sb09.sb09moplteam2.websocket.mapper.WatchingSessionMapper;
 import com.sb09.sb09moplteam2.websocket.repository.WatchingSessionRepository;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastRelay;
@@ -31,6 +37,8 @@ public class WatchingSessionService {
   private final WatchingSessionMapper watchingSessionMapper;
   private final StompBroadcastRelay stompBroadcastRelay;
   private final ContentRepository contentRepository;
+  private final FollowRepository followRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   // GET /api/users/{watcherId}/watching-sessions
   // 특정 유저의 활성 세션 단건 조회 (없으면 null 반환 - nullable)
@@ -124,6 +132,14 @@ public class WatchingSessionService {
 
     log.debug("시청 세션 시작: sessionId={}, userId={}, contentId={}",
         session.getId(), userId, contentId);
+
+    List<Follow> followList = followRepository.findAllByFollowee_Id(userId);
+    Set<UUID> followerIds = followList.stream()
+        .map(follow -> follow.getFollower().getId())
+        .collect(Collectors.toSet());
+    eventPublisher.publishEvent(
+        new FollowUserChatEvent(followerIds, userId, contentId)
+    );
 
     return session.getId();
   }

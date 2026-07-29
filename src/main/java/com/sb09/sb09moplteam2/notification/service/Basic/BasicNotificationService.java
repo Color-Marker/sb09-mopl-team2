@@ -1,10 +1,13 @@
 package com.sb09.sb09moplteam2.notification.service.Basic;
 
+import com.sb09.sb09moplteam2.content.entity.Content;
+import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.event.message.DmEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationCreatedEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationDmEvent;
 import com.sb09.sb09moplteam2.event.message.NotificationRoleEvent;
+import com.sb09.sb09moplteam2.exception.content.ContentNotFoundException;
 import com.sb09.sb09moplteam2.exception.notification.NotificationForbiddenException;
 import com.sb09.sb09moplteam2.exception.notification.NotificationNotFoundException;
 import com.sb09.sb09moplteam2.exception.playlist.PlaylistNotFoundException;
@@ -51,6 +54,7 @@ public class BasicNotificationService implements NotificationService {
   private final UserRepository userRepository;
   private final PlaylistRepository playlistRepository;
   private final DirectMessageRepository messageRepository;
+  private final ContentRepository contentRepository;
   private final CursorResponseNotificationMapper cursorMapper;
   private final NotificationMapper notificationMapper;
   private final ApplicationEventPublisher eventPublisher;
@@ -123,6 +127,23 @@ public class BasicNotificationService implements NotificationService {
     String content = "[" + playlist.getTitle() + "] " + playlist.getDescription();
 
     createMany(userIds, title, content);
+
+    Cache cache = cacheManager.getCache("notificationList");  // 추가
+    if (cache != null) {
+      userIds.forEach(cache::evict);
+    }
+  }
+
+  @Override
+  public void createFollowUserChatEvent(Set<UUID> userIds, UUID followedId, UUID contentId) {
+
+    User followed = userRepository.findById(followedId).orElseThrow(() -> UserNotFoundException.withId(followedId));
+    Content content = contentRepository.findById(contentId).orElseThrow(() -> new ContentNotFoundException());
+
+    String title = followed.getName() + "님이 실시간 채팅에 참여하였습니다.";
+    String message = "[" + content.getTitle() + "] " + content.getDescription();
+
+    createMany(userIds, title, message);
 
     Cache cache = cacheManager.getCache("notificationList");  // 추가
     if (cache != null) {

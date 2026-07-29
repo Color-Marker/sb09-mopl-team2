@@ -13,6 +13,8 @@ import com.sb09.sb09moplteam2.dto.ContentSummary;
 import com.sb09.sb09moplteam2.dto.CursorResponse;
 import com.sb09.sb09moplteam2.dto.UserSummary;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
+import com.sb09.sb09moplteam2.event.message.FollowUserChatEvent;
+import com.sb09.sb09moplteam2.follow.repository.FollowRepository;
 import com.sb09.sb09moplteam2.websocket.dto.WatchingSessionDto;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSession;
 import com.sb09.sb09moplteam2.websocket.entity.WatchingSessionStatus;
@@ -30,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import com.sb09.sb09moplteam2.websocket.relay.StompBroadcastRelay;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -45,6 +48,10 @@ class WatchingSessionServiceTest {
   private StompBroadcastRelay stompBroadcastRelay;
   @Mock
   private ContentRepository contentRepository;
+  @Mock
+  private FollowRepository followRepository;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks
   private WatchingSessionService watchingSessionService;
@@ -154,7 +161,6 @@ class WatchingSessionServiceTest {
   }
 
   // ───────────────────────────── join ─────────────────────────────
-
   @Test
   void 기존_활성_세션이_없으면_새_세션만_생성하고_JOIN을_브로드캐스트한다() {
     WatchingSessionDto dto = makeDto(UUID.randomUUID());
@@ -168,6 +174,7 @@ class WatchingSessionServiceTest {
           return s;
         });
     given(watchingSessionMapper.toDto(any(WatchingSession.class))).willReturn(dto);
+    given(followRepository.findAllByFollowee_Id(userId)).willReturn(List.of()); // 추가
 
     UUID resultId = watchingSessionService.join(contentId, userId);
 
@@ -178,8 +185,9 @@ class WatchingSessionServiceTest {
     verify(stompBroadcastRelay, times(1)).broadcast(
         eq("/sub/contents/" + contentId + "/watch"), eventCaptor.capture());
     assertThat(eventCaptor.getValue().type()).isEqualTo("JOIN");
-  }
 
+    verify(eventPublisher).publishEvent(any(FollowUserChatEvent.class)); // 검증 추가(선택)
+  }
   @Test
   void 기존_활성_세션이_있으면_종료시키고_LEAVE와_JOIN_둘다_브로드캐스트한다() {
     WatchingSession existingSession = makeActiveSession(userId, UUID.randomUUID());
@@ -194,6 +202,7 @@ class WatchingSessionServiceTest {
           return s;
         });
     given(watchingSessionMapper.toDto(any(WatchingSession.class))).willReturn(dto);
+    given(followRepository.findAllByFollowee_Id(userId)).willReturn(List.of()); // 추가
 
     watchingSessionService.join(contentId, userId);
 
