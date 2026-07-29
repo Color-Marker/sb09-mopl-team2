@@ -929,8 +929,7 @@ src
 ---
 
 ## **구현 홈페이지**
-
-https://www.sb09-mopl-02-final-project.xyz/#/sign-in
+[홈페이지 링크](https://www.sb09-mopl-02-final-project.xyz)
 
 ---
 
