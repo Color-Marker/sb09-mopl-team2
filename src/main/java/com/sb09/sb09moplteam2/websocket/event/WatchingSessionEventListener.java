@@ -14,6 +14,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 @Slf4j
 @Component
@@ -23,9 +24,12 @@ public class WatchingSessionEventListener {
   private static final Pattern WATCH_DESTINATION_PATTERN =
       Pattern.compile("^/sub/contents/([0-9a-fA-F\\-]{36})/watch$");
 
+  private static final String KEY_DELIMITER = "::";
+
   private final WatchingSessionService watchingSessionService;
 
-  // webSocket session id -> (userId, contentId) 매핑용 (disconnect 시 조회)
+  // (웹소켓 세션 ID + 구독 ID) -> 시청 세션 정보
+  // 구독 해제(UNSUBSCRIBE) 프레임에는 destination이 없고 구독 ID만 전달되므로 구독 시점에 매핑
   private final Map<String, SessionInfo> sessionInfoMap = new ConcurrentHashMap<>();
 
   @EventListener
@@ -50,27 +54,45 @@ public class WatchingSessionEventListener {
     }
     UUID userId = UUID.fromString(principal.getName());
 
-    String webSocketSessionId = accessor.getSessionId();
     UUID watchingSessionId = watchingSessionService.join(contentId, userId);
 
-    sessionInfoMap.put(webSocketSessionId, new SessionInfo(userId, contentId, watchingSessionId));
-    log.debug("시청 세션 시작: userId={}, contentId={}, wsSessionId={}",
-        userId, contentId, webSocketSessionId);
+    String key = subscriptionKey(accessor.getSessionId(), accessor.getSubscriptionId());
+    sessionInfoMap.put(key, new SessionInfo(userId, contentId, watchingSessionId));
+    log.debug("시청 세션 시작: userId={}, contentId={}, key={}", userId, contentId, key);
   }
 
   @EventListener
-  public void handleDisconnect(SessionDisconnectEvent event) {
+  public void handleUnsubscribe(SessionUnsubscribeEvent event) {
     StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-    String webSocketSessionId = accessor.getSessionId();
+    String key = subscriptionKey(accessor.getSessionId(), accessor.getSubscriptionId());
 
-    SessionInfo info = sessionInfoMap.remove(webSocketSessionId);
+    SessionInfo info = sessionInfoMap.remove(key);
     if (info == null) {
       return;
     }
 
     watchingSessionService.leave(info.watchingSessionId());
-    log.debug("시청 세션 종료: userId={}, contentId={}, wsSessionId={}",
-        info.userId(), info.contentId(), webSocketSessionId);
+    log.debug("시청 세션 종료(구독 해제): userId={}, contentId={}", info.userId(), info.contentId());
+  }
+
+  @EventListener
+  public void handleDisconnect(SessionDisconnectEvent event) {
+    StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+    String sessionPrefix = accessor.getSessionId() + KEY_DELIMITER;
+
+    sessionInfoMap.entrySet().removeIf(entry -> {
+      if (!entry.getKey().startsWith(sessionPrefix)) {
+        return false;
+      }
+      SessionInfo info = entry.getValue();
+      watchingSessionService.leave(info.watchingSessionId());
+      log.debug("시청 세션 종료(연결 종료): userId={}, contentId={}", info.userId(), info.contentId());
+      return true;
+    });
+  }
+
+  private String subscriptionKey(String sessionId, String subscriptionId) {
+    return sessionId + KEY_DELIMITER + subscriptionId;
   }
 
   private record SessionInfo(UUID userId, UUID contentId, UUID watchingSessionId) {}

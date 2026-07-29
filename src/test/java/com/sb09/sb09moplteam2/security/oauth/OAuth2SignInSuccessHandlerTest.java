@@ -38,7 +38,7 @@ class OAuth2SignInSuccessHandlerTest {
   void setUp() {
     handler = new OAuth2SignInSuccessHandler(
         jwtProvider, jwtSessionRepository, sessionBlacklistService,
-        new RefreshTokenCookieFactory(false, jwtProvider)
+        new RefreshTokenCookieFactory(false, 3600)
     );
     ReflectionTestUtils.setField(handler, "frontendBaseUrl", "http://localhost:3000");
   }

@@ -147,6 +147,9 @@ mopl:
     base-url: ${FRONTEND_BASE_URL:http://localhost:8080}
   cookie:
     secure: ${COOKIE_SECURE:false} # https 환경에서만 true (prod 프로필에서 활성화)
+    # 리프레시 토큰 쿠키 수명(초). 미사용 상태로 이 시간이 지나면 재접속 시 로그인 화면으로 이동한다.
+    # 이용 중에는 액세스 토큰 만료(30분)마다 재발급되며 함께 갱신되므로 중간에 로그아웃되지 않는다.
+    refresh-token-max-age: ${REFRESH_TOKEN_COOKIE_MAX_AGE:3600} # 1시간
   mail:
     type: smtp
 
