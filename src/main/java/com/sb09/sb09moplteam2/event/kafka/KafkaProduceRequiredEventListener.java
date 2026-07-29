@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.event.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sb09.sb09moplteam2.event.message.FollowUserChatEvent;
 import com.sb09.sb09moplteam2.event.message.FollowUserWorkEvent;
 import com.sb09.sb09moplteam2.event.message.FollowedEvent;
 import com.sb09.sb09moplteam2.event.message.MessageCreatedEvent;
@@ -76,6 +77,12 @@ public class KafkaProduceRequiredEventListener {
     sendToKafka(event);
   }
 
+  @Async("eventTaskExecutor")
+  @TransactionalEventListener
+  public void on(FollowUserChatEvent event) {
+    log.info(">>> FollowUserChatEvent 리스너 진입: {}", event);
+    sendToKafka(event);
+  }
 
   private <T> void sendToKafka(T event) {
     try {

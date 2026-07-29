@@ -2,6 +2,7 @@ package com.sb09.sb09moplteam2.event.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sb09.sb09moplteam2.event.message.FollowUserChatEvent;
 import com.sb09.sb09moplteam2.event.message.FollowUserWorkEvent;
 import com.sb09.sb09moplteam2.event.message.FollowedEvent;
 import com.sb09.sb09moplteam2.event.message.MessageCreatedEvent;
@@ -76,6 +77,16 @@ public class NotificationRequiredTopicListener {
     try {
       MessageCreatedEvent event = objectMapper.readValue(kafkaEvent, MessageCreatedEvent.class);
       notificationService.createDmNotification(event.userId(), event.messageDto());
+    } catch (JsonProcessingException e){
+      throw new RuntimeException(e);
+    }
+  }
+
+  @KafkaListener(topics = "mopl.FollowUserChatEvent")
+  public void onFollowUserChatEvent(String kafkaEvent){ // 구독한 플리에 컨텐츠 추가됌
+    try {
+      FollowUserChatEvent event = objectMapper.readValue(kafkaEvent, FollowUserChatEvent.class);
+      notificationService.createFollowUserChatEvent(event.userIds(), event.followedId(), event.contentId());
     } catch (JsonProcessingException e){
       throw new RuntimeException(e);
     }
