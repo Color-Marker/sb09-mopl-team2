@@ -8,9 +8,9 @@ import com.sb09.sb09moplteam2.content.batch.sport.SportProcessor;
 import com.sb09.sb09moplteam2.content.batch.sport.SportReader;
 import com.sb09.sb09moplteam2.content.batch.sport.SportWriter;
 import com.sb09.sb09moplteam2.content.batch.sport.dto.SportsEventResponse;
-import com.sb09.sb09moplteam2.content.entity.Content;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -31,6 +31,7 @@ public class SportBatchConfig {
   private final SportClient sportClient;
   private final ContentRepository contentRepository;
   private final ContentTagRepository contentTagRepository;
+  private final ContentSearchService contentSearchService;
   private final BatchJobMetricsListener batchJobMetricsListener;
   private final GlobalStepExceptionListener globalStepExceptionListener;
   private final RunIdIncrementer globalRunIdIncrementer;
@@ -68,6 +69,6 @@ public class SportBatchConfig {
 
   @Bean
   public SportWriter sportsWriter() {
-    return new SportWriter(contentRepository,  contentTagRepository);
+    return new SportWriter(contentRepository, contentTagRepository, contentSearchService);
   }
 }

@@ -12,6 +12,7 @@ import com.sb09.sb09moplteam2.content.batch.tmdb.dto.TmdbEventResponse;
 import com.sb09.sb09moplteam2.content.entity.ContentType;
 import com.sb09.sb09moplteam2.content.repository.ContentRepository;
 import com.sb09.sb09moplteam2.content.repository.ContentTagRepository;
+import com.sb09.sb09moplteam2.content.search.ContentSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -36,13 +37,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class TmdbBatchConfig {
 
   private static final int GRID_SIZE = 10;
-  private static final int MAX_PAGES = 10; // 배치 1회당 최대 수집 페이지
+  private static final int MAX_PAGES = 10;
 
   private final JobRepository jobRepository;
   private final PlatformTransactionManager transactionManager;
   private final TmdbClient tmdbClient;
   private final ContentRepository contentRepository;
   private final ContentTagRepository contentTagRepository;
+  private final ContentSearchService contentSearchService;
   private final BatchJobMetricsListener batchJobMetricsListener;
   private final GlobalStepExceptionListener globalStepExceptionListener;
   private final RunIdIncrementer globalRunIdIncrementer;
@@ -71,7 +73,7 @@ public class TmdbBatchConfig {
         .<TmdbEventResponse, ContentAndTags>chunk(100, transactionManager)
         .reader(tmdbMovieReader(null, null, null))
         .processor(new TmdbMovieProcessor(contentRepository, ContentType.movie))
-        .writer(new TmdbMovieWriter(contentRepository, contentTagRepository))
+        .writer(new TmdbMovieWriter(contentRepository, contentTagRepository, contentSearchService))
         .listener(globalStepExceptionListener)
         .build();
   }
@@ -104,7 +106,7 @@ public class TmdbBatchConfig {
         .<TmdbEventResponse, ContentAndTags>chunk(100, transactionManager)
         .reader(tmdbTvSeriesReader(null, null, null))
         .processor(new TmdbMovieProcessor(contentRepository, ContentType.tvSeries))
-        .writer(new TmdbMovieWriter(contentRepository, contentTagRepository))
+        .writer(new TmdbMovieWriter(contentRepository, contentTagRepository, contentSearchService))
         .listener(globalStepExceptionListener)
         .build();
   }
