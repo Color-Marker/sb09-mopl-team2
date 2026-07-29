@@ -50,7 +50,7 @@ class JwtSignInFilterTest {
     filter = new JwtSignInFilter(
         authenticationManager, jwtProvider, jwtSessionRepository,
         userRepository, userMapper, objectMapper, sessionBlacklistService,
-        new RefreshTokenCookieFactory(false, jwtProvider)
+        new RefreshTokenCookieFactory(false, 3600)
     );
   }
 
