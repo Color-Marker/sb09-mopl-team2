@@ -935,6 +935,5 @@ https://www.sb09-mopl-02-final-project.xyz/#/sign-in
 ---
 
 ## **프로젝트 회고록**
-
-https://drive.google.com/file/d/1iCGXQNojcXSRJ-K8qkFTSBtSqWbmLEee/view?usp=drive\_link
+[발표자료](https://drive.google.com/file/d/1ZRFkvqR0H5v6fqNNYqBfm2V5hJuX1JXi/view?usp=sharing)
 
